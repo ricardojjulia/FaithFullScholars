@@ -2,7 +2,7 @@
 
 ## Recommendation
 
-Build FaithFull Scholars as a modular web application with a public discovery surface, authenticated scholar and institution dashboards, admin review tooling, and a structured relational data model. Do not start with a transaction marketplace, social feed, or video-hosting platform. Those choices would increase risk before the core discovery loop is proven.
+Build FaithFull Scholars as a Vercel-hosted Next.js application with a public discovery surface, authenticated scholar and institution dashboards, admin review tooling, and a Supabase-backed data layer. Supabase should provide Auth, Postgres, Row Level Security, and Storage. Do not start with a transaction marketplace, social feed, or video-hosting platform. Those choices would increase risk before the core discovery loop is proven.
 
 ## Architecture Shape
 
@@ -18,17 +18,55 @@ flowchart LR
   InstitutionDash --> InquiryAPI["Inquiry API"]
   AdminDash --> ReviewAPI["Review and Moderation API"]
 
-  Search --> DB[("Relational Database")]
+  Search --> DB[("Supabase Postgres + RLS")]
   ProfileAPI --> DB
   InquiryAPI --> DB
   ReviewAPI --> DB
+  ProfileAPI --> Storage["Supabase Storage"]
+  ReviewAPI --> Storage
 
   PublicWeb --> MediaEmbed["External Media Embeds"]
   MediaEmbed --> YouTube["YouTube"]
   MediaEmbed --> ExternalSites["Scholar and Institution Sites"]
 
   InquiryAPI --> Notifications["Email Notifications"]
+  PublicWeb --> Vercel["Vercel Hosting, Preview Deployments, CDN"]
 ```
+
+## Platform Architecture
+
+### Vercel
+
+Responsibilities:
+
+- Host the Next.js App Router application.
+- Provide preview deployments for pull requests and production deployments from `main`.
+- Run server-rendered routes and route handlers through Vercel Functions.
+- Serve public pages, optimized images, and cached assets.
+- Store environment variables for Supabase project URL, publishable key, and server-only service credentials when absolutely required.
+
+Controls:
+
+- Never expose Supabase service-role credentials through `NEXT_PUBLIC_` variables.
+- Use Vercel preview deployments to verify each feature branch before production.
+- Treat production Supabase environment variables as separate from preview/development variables.
+
+### Supabase
+
+Responsibilities:
+
+- Authenticate scholars, institution users, and admins.
+- Store relational domain data in Postgres.
+- Enforce access boundaries with Row Level Security.
+- Store CV files, profile photos, and optional scholar-uploaded assets in Supabase Storage.
+- Provide SQL migrations and seed data for reproducible environments.
+
+Controls:
+
+- Enable RLS on every table in exposed schemas.
+- Use app-controlled role records and policies for scholar, institution, and admin authorization.
+- Do not use user-editable metadata for authorization decisions.
+- Keep service-role access server-only and limited to administrative workflows that cannot be expressed through user-scoped policies.
 
 ## Core Subsystems
 
@@ -117,7 +155,7 @@ Controls:
 
 ## Data Architecture
 
-Use a relational database as the source of truth. The domain is relationship-heavy and benefits from constraints, joins, and auditable state transitions.
+Use Supabase Postgres as the source of truth. The domain is relationship-heavy and benefits from constraints, joins, full-text search, RLS, and auditable state transitions.
 
 Primary tables:
 
@@ -143,7 +181,7 @@ Primary tables:
 
 ## Search Architecture
 
-MVP search can begin with database-backed filtering and full-text indexes. A dedicated search engine can be introduced later if ranking, typo tolerance, faceting, and scale require it.
+MVP search can begin with Supabase Postgres filtering and full-text indexes. A dedicated search engine can be introduced later if ranking, typo tolerance, faceting, and scale require it.
 
 Searchable entities:
 
@@ -163,7 +201,7 @@ Ranking priorities:
 
 ## Media Architecture
 
-The MVP should link and embed external media instead of storing video.
+The MVP should link and embed external media instead of storing video. Supabase Storage is for CV files, profile photos, and scholar-owned documents, not direct video hosting.
 
 Supported media types:
 
@@ -173,6 +211,7 @@ Supported media types:
 - Institution page.
 - Podcast episode.
 - Downloadable syllabus link.
+- Uploaded CV or scholar document stored in Supabase Storage.
 
 Controls:
 
@@ -180,6 +219,7 @@ Controls:
 - Store normalized provider metadata.
 - Render embeds with privacy-conscious settings where possible.
 - Do not claim ownership of externally hosted content.
+- Use Supabase Storage policies so private files cannot be read publicly.
 
 ## Security Review
 
@@ -191,6 +231,7 @@ Required controls:
 - Ownership checks on all profile, course, CV, media, and availability edits.
 - Admin-only review and verification actions.
 - Public read access limited to approved and public records.
+- Supabase RLS policies that mirror application authorization, so direct Data API access cannot bypass server checks.
 
 ### Data Privacy
 
@@ -208,6 +249,7 @@ Required controls:
 - Let scholars choose public contact behavior.
 - Do not expose admin notes through public APIs.
 - Apply soft delete and audit history to moderation-sensitive records.
+- Keep Supabase Auth identity data separate from profile claims and platform roles.
 
 ### Abuse and Moderation
 
@@ -239,7 +281,7 @@ Needed for account verification, profile-review decisions, and inquiry notificat
 
 ### CV Files
 
-Support upload or external link. If upload is implemented, store files in private object storage with explicit public access controls for CVs the scholar chooses to publish.
+Support upload or external link. Uploaded files should use Supabase Storage with private-by-default buckets and policies that allow scholar-owned writes, admin review reads, and public reads only for explicitly published files tied to approved profiles.
 
 ### Future AI
 
@@ -266,10 +308,12 @@ AI constraints:
 | Scholars do not maintain availability | Medium | Make availability coarse, easy to update, and visible in completion checklist |
 | Institutions spam scholars | Medium | Require approved institution accounts and rate-limit inquiries |
 | External media links rot | Low | Add link status checks in later operations workflow |
+| RLS policies diverge from app authorization | High | Test direct Supabase access patterns and keep policies in migrations |
+| Vercel preview and production use wrong Supabase environment | Medium | Use separate env vars and document deployment setup |
 
 ## Initial ADRs
 
 - ADR 0001: Start as Scholar Profile Network, not full marketplace.
 - ADR 0002: Use external media hosting for MVP.
 - ADR 0003: Use admin-reviewed publication status before public profiles.
-- ADR 0004: Use structured taxonomy for discovery fields.
+- ADR 0004: Use Vercel and Supabase as the platform baseline.

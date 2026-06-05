@@ -2,6 +2,8 @@
 
 FaithFull Scholars is a planned professional network for professors in theological and biblical higher education. It is designed to help colleges, seminaries, churches, and ministry programs discover qualified scholars, review their curriculum vitae, inspect courses and sample teaching content, and understand their availability for adjunct teaching, guest lectures, curriculum review, and course licensing.
 
+The application target is a Vercel-hosted Next.js app backed by Supabase for Auth, Postgres data, Row Level Security, and file storage for CV/profile assets.
+
 ## Planning Package
 
 Start here if this repository is being read by an AI worker or implementation agent:
@@ -13,12 +15,14 @@ Start here if this repository is being read by an AI worker or implementation ag
 5. [Initial Product Spec](docs/superpowers/specs/2026-06-05-scholar-profile-network-design.md)
 6. [Roadmap](docs/product/roadmap.md)
 7. [Agent Ingestion Brief](docs/factory/agent-ingestion-brief.md)
+8. [Vercel and Supabase Deployment](docs/deployment/vercel-supabase.md)
 
 Initial ADRs:
 
 - [ADR 0001: Scholar Profile Network First](docs/adr/0001-scholar-profile-network-first.md)
 - [ADR 0002: External Media Hosting](docs/adr/0002-external-media-hosting.md)
 - [ADR 0003: Admin-Reviewed Public Profiles](docs/adr/0003-admin-reviewed-publication.md)
+- [ADR 0004: Vercel and Supabase Platform Baseline](docs/adr/0004-vercel-supabase-platform.md)
 
 ## Product Shape
 

@@ -8,6 +8,14 @@ Approved product direction: Scholar Profile Network first, public knowledge port
 
 Build a professional discovery platform for theological and biblical college professors that showcases scholar identity, CVs, courses, sample content, and availability for institutional opportunities.
 
+## Platform Baseline
+
+- Runtime: Next.js App Router deployed on Vercel.
+- Backend: Supabase Auth, Supabase Postgres, Supabase Row Level Security, and Supabase Storage.
+- Supabase SSR clients must use cookie-backed sessions for server-rendered authenticated routes.
+- Public pages can be statically optimized where data is public and approved; authenticated pages must be server-rendered or otherwise session-aware.
+- Supabase service-role credentials must remain server-only and must not be exposed through `NEXT_PUBLIC_` variables.
+
 ## Design Principles
 
 - Start with trust and inspectability before transactions.
@@ -228,6 +236,8 @@ Key fields:
 - Unit tests for profile completion rules, slug generation, URL validation, and taxonomy filters.
 - Integration tests for scholar onboarding, admin approval, public search, and inquiry submission.
 - Authorization tests for scholar, institution, admin, and public access boundaries.
+- Supabase RLS tests for direct table access, draft-profile isolation, scholar-owned writes, institution inquiry access, and admin-only review operations.
+- Supabase Storage policy tests for private CV access and public profile asset access.
 - Accessibility tests for profile pages, search results, forms, and admin review queues.
 - Seed-data smoke tests for public browsing and realistic theological taxonomy coverage.
 

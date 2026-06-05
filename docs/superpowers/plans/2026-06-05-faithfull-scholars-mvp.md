@@ -4,9 +4,9 @@
 
 **Goal:** Build the first usable FaithFull Scholars MVP: a trusted scholar profile network with public discovery, scholar-managed profiles, course showcases, availability, institution inquiries, and admin review.
 
-**Architecture:** Start with a single modular web application backed by a relational database. Keep public discovery, scholar dashboard, institution inquiry, and admin review as separate modules with explicit authorization and visibility rules. Use external media embeds for YouTube and other links instead of hosting video.
+**Architecture:** Start with a single modular Next.js App Router application deployed on Vercel and backed by Supabase Auth, Supabase Postgres, Row Level Security, and Supabase Storage. Keep public discovery, scholar dashboard, institution inquiry, and admin review as separate modules with explicit authorization and visibility rules. Use external media embeds for YouTube and other links instead of hosting video.
 
-**Tech Stack:** Recommended baseline is Next.js App Router, TypeScript, PostgreSQL, Prisma or Drizzle ORM, Tailwind CSS, shadcn/ui or equivalent accessible components, Playwright for browser tests, Vitest or Jest for unit tests, and an email provider for transactional notifications.
+**Tech Stack:** Next.js App Router, TypeScript, Vercel, Supabase Auth, Supabase Postgres, Supabase RLS, Supabase Storage, `@supabase/supabase-js`, `@supabase/ssr`, Tailwind CSS, shadcn/ui or equivalent accessible components, Playwright for browser tests, Vitest or Jest for unit tests, and an email provider for transactional notifications.
 
 ---
 
@@ -47,6 +47,7 @@ components/
   admin/
 lib/
   auth/
+  supabase/
   db/
   profiles/
   courses/
@@ -55,9 +56,10 @@ lib/
   review/
   media/
   taxonomy/
-prisma/
-  schema.prisma
-  seed.ts
+supabase/
+  config.toml
+  migrations/
+  seed.sql
 tests/
   unit/
   integration/
@@ -75,6 +77,7 @@ If a different framework is selected, preserve the same module boundaries.
 - Create: `package.json`
 - Create: `tsconfig.json`
 - Create: `next.config.ts`
+- Create: `vercel.json`
 - Create: `app/layout.tsx`
 - Create: `app/page.tsx`
 - Create: `README.md` updates as needed
@@ -89,7 +92,20 @@ npx create-next-app@latest . --ts --eslint --tailwind --app --src-dir false --im
 
 Expected: project files are created in the repository root without overwriting the existing docs.
 
-- [ ] **Step 2: Verify scaffold**
+- [ ] **Step 2: Add Vercel project defaults**
+
+Create `vercel.json`:
+
+```json
+{
+  "framework": "nextjs",
+  "regions": ["iad1"]
+}
+```
+
+Expected: Vercel recognizes the project as a Next.js app and deploys server routes in the selected region unless project settings override it.
+
+- [ ] **Step 3: Verify scaffold**
 
 ```bash
 npm run lint
@@ -98,7 +114,7 @@ npm run build
 
 Expected: both commands pass.
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 4: Commit**
 
 ```bash
 git add .
@@ -159,51 +175,129 @@ git add package.json package-lock.json playwright.config.ts tests/README.md
 git commit -m "chore: add verification gates"
 ```
 
+### Task 0.3: Configure Supabase and Vercel Environment Contracts
+
+**Files:**
+
+- Create: `.env.example`
+- Create: `lib/supabase/client.ts`
+- Create: `lib/supabase/server.ts`
+- Create: `lib/supabase/middleware.ts`
+- Create: `middleware.ts`
+- Modify: `package.json`
+
+- [ ] **Step 1: Add Supabase dependencies**
+
+```bash
+npm install @supabase/supabase-js @supabase/ssr
+```
+
+Expected: Supabase client libraries install successfully.
+
+- [ ] **Step 2: Add environment contract**
+
+Create `.env.example`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_PROJECT_ID=
+```
+
+Expected: public variables contain only URL and publishable key. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be referenced by browser code.
+
+- [ ] **Step 3: Add Supabase browser client**
+
+Create `lib/supabase/client.ts` with a browser-safe client factory that uses only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+
+- [ ] **Step 4: Add Supabase server client**
+
+Create `lib/supabase/server.ts` with a cookie-backed server client using the current Supabase SSR helper pattern for Next.js.
+
+- [ ] **Step 5: Add middleware session refresh**
+
+Create `middleware.ts` and `lib/supabase/middleware.ts` to refresh Supabase sessions for authenticated routes.
+
+- [ ] **Step 6: Add Vercel environment setup notes**
+
+Update README setup instructions to require these Vercel environment variables in Preview and Production:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PROJECT_ID`
+
+- [ ] **Step 7: Verify**
+
+```bash
+npm run verify
+```
+
+Expected: lint, tests, and build pass.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add .env.example lib/supabase middleware.ts package.json package-lock.json README.md
+git commit -m "chore: configure Supabase and Vercel environment contracts"
+```
+
 ## Phase 1: Domain and Database Foundation
 
 ### Task 1.1: Define Domain Schema
 
 **Files:**
 
-- Create: `prisma/schema.prisma`
+- Create: `supabase/config.toml`
+- Create: `supabase/migrations/<timestamp>_initial_schema.sql`
 - Create: `lib/db/client.ts`
 - Create: `lib/profiles/types.ts`
 - Create: `lib/courses/types.ts`
 - Create: `lib/inquiries/types.ts`
 
-- [ ] **Step 1: Add ORM**
+- [ ] **Step 1: Initialize Supabase**
 
 ```bash
-npm install @prisma/client
-npm install -D prisma
-npx prisma init
+npx supabase --help
+npx supabase init
 ```
 
-Expected: Prisma config files are created.
+Expected: Supabase config files are created. Use the CLI help output to verify command syntax before running project-specific commands.
 
-- [ ] **Step 2: Define schema models**
+- [ ] **Step 2: Create initial migration**
 
-Add models for:
+Use the Supabase CLI migration command:
 
-- Account
-- Scholar
-- Institution
-- InstitutionUser
-- Discipline
-- ScholarDiscipline
-- Tradition
-- ScholarTradition
-- Credential
-- Publication
-- Course
-- CourseDiscipline
-- MediaLink
-- AvailabilityProfile
-- Inquiry
-- SavedScholar
-- SavedCourse
-- ProfileReview
-- Report
+```bash
+npx supabase migration new initial_schema
+```
+
+Expected: a timestamped SQL migration file is created under `supabase/migrations/`.
+
+- [ ] **Step 3: Define schema tables**
+
+Add SQL tables for:
+
+- accounts
+- scholars
+- institutions
+- institution_users
+- disciplines
+- scholar_disciplines
+- traditions
+- scholar_traditions
+- credentials
+- publications
+- courses
+- course_disciplines
+- media_links
+- availability_profiles
+- inquiries
+- saved_scholars
+- saved_courses
+- profile_reviews
+- reports
 
 Required enum concepts:
 
@@ -216,29 +310,47 @@ Required enum concepts:
 - InquiryStatus
 - ReviewDecision
 
-- [ ] **Step 3: Generate ORM client**
+- [ ] **Step 4: Enable RLS**
+
+Enable RLS for every table in the exposed `public` schema. Initial policies must support:
+
+- Public reads for approved scholar profiles and approved public courses.
+- Scholar-owned draft writes.
+- Institution-owned saved records and inquiries.
+- Admin-only review operations.
+
+- [ ] **Step 5: Apply migration locally**
 
 ```bash
-npx prisma generate
+npx supabase start
+npx supabase db reset
 ```
 
-Expected: client generation succeeds.
+Expected: local Supabase starts and the schema applies cleanly.
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 6: Generate database types**
 
 ```bash
-git add prisma lib/db lib/profiles lib/courses lib/inquiries
-git commit -m "feat: define FaithFull Scholars domain schema"
+npx supabase gen types typescript --local > lib/db/database.types.ts
+```
+
+Expected: TypeScript database types are generated from the local Supabase schema.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add supabase lib/db lib/profiles lib/courses lib/inquiries
+git commit -m "feat: define Supabase domain schema"
 ```
 
 ### Task 1.2: Add Seed Data
 
 **Files:**
 
-- Create: `prisma/seed.ts`
+- Create: `supabase/seed.sql`
 - Modify: `package.json`
 
-- [ ] **Step 1: Add seed script**
+- [ ] **Step 1: Add SQL seed data**
 
 Seed data should include:
 
@@ -250,36 +362,81 @@ Seed data should include:
 - YouTube-style media links using clearly fake or placeholder URLs unless real permission exists.
 - One approved institution.
 
-- [ ] **Step 2: Add package seed command**
-
-```json
-{
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
-  }
-}
-```
-
-Install `tsx` if needed:
+- [ ] **Step 2: Reset local database with seed**
 
 ```bash
-npm install -D tsx
-```
-
-- [ ] **Step 3: Run seed**
-
-```bash
-npx prisma db push
-npx prisma db seed
+npx supabase db reset
 ```
 
 Expected: database schema applies and seed data loads.
 
+- [ ] **Step 3: Verify seeded data**
+
+```bash
+npx supabase status
+```
+
+Expected: local Supabase is running. Use a SQL query through the local database or Supabase Studio to confirm approved and draft scholar records exist.
+
 - [ ] **Step 4: Commit**
 
 ```bash
-git add prisma package.json package-lock.json
+git add supabase/seed.sql package.json package-lock.json
 git commit -m "chore: seed scholar network data"
+```
+
+### Task 1.3: Add Supabase Storage Buckets and Policies
+
+**Files:**
+
+- Create: `supabase/migrations/<timestamp>_storage_policies.sql`
+- Create: `lib/media/storage.ts`
+- Test: `tests/integration/storage-policies.test.ts`
+
+- [ ] **Step 1: Create storage migration**
+
+```bash
+npx supabase migration new storage_policies
+```
+
+Expected: a timestamped storage policy migration exists.
+
+- [ ] **Step 2: Define buckets**
+
+Create buckets for:
+
+- `profile-assets`
+- `cv-files`
+- `course-documents`
+
+Default behavior:
+
+- Profile assets may be public only when tied to approved public profiles.
+- CV files are private by default.
+- Course documents are private or public according to course preview settings and profile approval.
+
+- [ ] **Step 3: Define storage policies**
+
+Policies must allow:
+
+- Scholars to upload and replace their own files.
+- Admins to read files during review.
+- Public users to read only explicitly public files tied to approved profiles or courses.
+
+- [ ] **Step 4: Verify locally**
+
+```bash
+npx supabase db reset
+npm run test -- storage-policies
+```
+
+Expected: storage policy tests pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/migrations lib/media tests/integration
+git commit -m "feat: add Supabase storage policies"
 ```
 
 ## Phase 2: Public Discovery
@@ -685,6 +842,77 @@ git commit -m "feat: notify scholars about institution inquiries"
 
 ## Phase 6: Release Hardening
 
+### Task 6.0: Vercel and Supabase Deployment Setup
+
+**Files:**
+
+- Create: `docs/deployment/vercel-supabase.md`
+- Modify: `.env.example`
+- Modify: `README.md`
+
+- [ ] **Step 1: Document Vercel project linking**
+
+Create `docs/deployment/vercel-supabase.md` with:
+
+```markdown
+# Vercel and Supabase Deployment
+
+## Vercel
+
+Connect the Git repository to Vercel. Use preview deployments for pull requests and production deployments from `main`.
+
+Required Vercel environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PROJECT_ID`
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY` to client components or `NEXT_PUBLIC_` variables.
+
+## Supabase
+
+Use separate Supabase projects or clearly separated environments for local, preview, and production data. Apply migrations before production deployment.
+
+Required checks:
+
+- RLS enabled on all exposed tables.
+- Storage policies deployed.
+- Seed data is fictional or permissioned.
+- Admin account bootstrap path is documented.
+```
+
+- [ ] **Step 2: Pull Vercel env locally**
+
+```bash
+vercel pull --yes
+```
+
+Expected: `.vercel/project.json` exists locally and `.env.local` contains project environment values. Do not commit `.vercel/` or `.env.local`.
+
+- [ ] **Step 3: Verify Supabase migrations against target**
+
+```bash
+npx supabase migration list
+```
+
+Expected: local and remote migration status is visible. Apply pending migrations only after reviewing RLS and storage policies.
+
+- [ ] **Step 4: Build with Vercel settings**
+
+```bash
+vercel build
+```
+
+Expected: local Vercel build succeeds with pulled environment variables.
+
+- [ ] **Step 5: Commit docs**
+
+```bash
+git add docs/deployment/vercel-supabase.md README.md .env.example
+git commit -m "docs: add Vercel and Supabase deployment setup"
+```
+
 ### Task 6.1: End-to-End Smoke Tests
 
 **Files:**
@@ -739,6 +967,9 @@ Checklist must include:
 - Institution inquiries require authorized institution user.
 - Admin review history is preserved.
 - YouTube links are validated.
+- Supabase RLS policies are verified against public, scholar, institution, and admin roles.
+- Supabase Storage policies are verified for CV files and public profile assets.
+- Vercel preview deployment has passed smoke tests before production promotion.
 - Accessibility smoke check completed.
 - Seed data does not contain real unverifiable scholar claims.
 
@@ -769,7 +1000,7 @@ git commit -m "docs: close out MVP release readiness"
 4. Phase 3: Scholar dashboard.
 5. Phase 4: Admin review and trust.
 6. Phase 5: Institution inquiry.
-7. Phase 6: Release hardening.
+7. Phase 6: Vercel/Supabase deployment setup and release hardening.
 
 ## Post-MVP Backlog
 

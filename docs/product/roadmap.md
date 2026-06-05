@@ -2,7 +2,7 @@
 
 ## Current Position
 
-The repository contains the initial software layout, product plan, architecture review, software factory definition, ADRs, and MVP execution plan. Runtime application code has not been implemented yet.
+The repository contains the initial software layout, product plan, architecture review, software factory definition, ADRs, and MVP execution plan. Runtime application code has not been implemented yet. The selected platform baseline is Vercel-hosted Next.js backed by Supabase Auth, Supabase Postgres, RLS, and Supabase Storage.
 
 ## Phase 0: Foundation
 
@@ -11,6 +11,8 @@ Goal: Create the runnable app scaffold and quality gates.
 Deliverables:
 
 - Next.js TypeScript app.
+- Vercel project configuration.
+- Supabase local/remote configuration.
 - Lint, build, unit test, and e2e test scripts.
 - Baseline layout and homepage.
 
@@ -29,12 +31,15 @@ Deliverables:
 - Seed data.
 - Domain types.
 - Initial taxonomy.
+- Supabase SQL migrations and RLS policies.
+- Supabase Storage buckets for CV/profile assets.
 
 Exit criteria:
 
 - Database can be created from schema.
 - Seed data loads.
 - Domain types match product spec.
+- RLS blocks unauthorized direct access.
 
 ## Phase 2: Public Discovery
 

@@ -10,6 +10,14 @@ FaithFull Scholars: a professional scholar profile network for theological and b
 
 Build the Scholar Profile Network first. Add public course/content discovery early. Defer full hiring marketplace, payments, contracts, social feeds, and LMS features.
 
+## Platform Baseline
+
+- Deploy the app on Vercel.
+- Use Supabase as the backend: Auth, Postgres, Row Level Security, and Storage.
+- Use `@supabase/ssr` or the current Supabase-recommended SSR helper pattern for Next.js sessions.
+- Keep Supabase service-role credentials server-only.
+- Use SQL migrations for schema and RLS policy changes.
+
 ## Required Reading Order
 
 1. `README.md`
@@ -21,6 +29,7 @@ Build the Scholar Profile Network first. Add public course/content discovery ear
 7. `docs/adr/0001-scholar-profile-network-first.md`
 8. `docs/adr/0002-external-media-hosting.md`
 9. `docs/adr/0003-admin-reviewed-publication.md`
+10. `docs/adr/0004-vercel-supabase-platform.md`
 
 ## Non-Negotiable Product Boundaries
 
@@ -47,6 +56,8 @@ Build an MVP foundation that supports:
 ## High-Risk Areas
 
 - Authorization leaks from draft profiles.
+- Missing or permissive Supabase RLS policies.
+- Vercel preview environment pointing at production Supabase data.
 - Misrepresenting self-reported credentials as verified.
 - Scope creep into LMS or contracts.
 - Weak taxonomy causing poor discovery.

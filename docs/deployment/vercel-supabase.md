@@ -1,0 +1,70 @@
+# Vercel and Supabase Deployment
+
+## Baseline
+
+FaithFull Scholars should run as a Next.js App Router application on Vercel with Supabase as the backend for Auth, Postgres, Row Level Security, and Storage.
+
+## Vercel
+
+Use Vercel Git integration as the default deployment path:
+
+- Pull requests create preview deployments.
+- Merges to `main` create production deployments.
+- Preview deployments are the review environment for UI, workflow, and authorization checks.
+- Production deployments should happen only after tests, RLS checks, and smoke tests pass.
+
+Required Vercel environment variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_PROJECT_ID`
+
+Rules:
+
+- Never commit `.env.local`.
+- Never expose `SUPABASE_SERVICE_ROLE_KEY` in browser code.
+- Never prefix service-role credentials with `NEXT_PUBLIC_`.
+- Use separate preview and production values when possible.
+
+## Supabase
+
+Use Supabase for:
+
+- Auth.
+- Postgres.
+- Row Level Security.
+- Storage for CV files, profile images, and course documents.
+
+Required controls:
+
+- Enable RLS on every table in exposed schemas.
+- Store platform roles in app-controlled tables or app metadata, not user-editable metadata.
+- Keep profile publication status separate from credential verification status.
+- Store CV files private by default.
+- Allow public storage reads only for explicitly public files tied to approved profiles or courses.
+- Keep migrations in `supabase/migrations/`.
+
+## Local Development
+
+Expected local setup after the app scaffold exists:
+
+```bash
+npx supabase init
+npx supabase start
+npx supabase db reset
+vercel pull --yes
+npm run verify
+```
+
+## Release Checks
+
+Before production deployment:
+
+- Vercel build passes.
+- Supabase migrations are reviewed and applied.
+- RLS policies are tested for public, scholar, institution, and admin roles.
+- Storage policies are tested for CV files and public profile assets.
+- Public pages do not expose draft or hidden profiles.
+- Admin review actions are admin-only.
+- Institution inquiry routes are authenticated and rate-limited.

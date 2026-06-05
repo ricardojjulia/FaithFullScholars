@@ -49,6 +49,12 @@ Their goals:
 
 The MVP should focus on credibility, discoverability, and contact readiness.
 
+Platform baseline:
+
+- Vercel hosts the Next.js application and provides preview/production deployments from Git.
+- Supabase provides authentication, Postgres data storage, Row Level Security, and object storage for CV/profile assets.
+- YouTube and external websites remain the media hosting layer for video and public course content.
+
 In scope:
 
 - Scholar profile pages.
@@ -252,6 +258,9 @@ Trust mechanisms:
 
 The MVP is successful when:
 
+- The app can deploy to Vercel with environment-specific Supabase configuration.
+- Supabase Auth supports scholar, institution, and admin sessions.
+- Supabase RLS prevents public or cross-account access to draft/private records.
 - A scholar can create a credible profile and submit it for review.
 - An admin can approve the profile for publication.
 - A public visitor can search scholars and courses.

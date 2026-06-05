@@ -13,6 +13,8 @@ The software factory is the operating model for turning product ideas into revie
 - Architecture decisions are captured as ADRs.
 - AI-generated output must be reviewable by a human engineer.
 - Public trust, privacy, and authorization are release gates, not cleanup tasks.
+- Supabase schema, storage, and RLS changes must be migration-backed and tested.
+- Vercel preview deployments are the default review environment for UI and workflow slices.
 
 ## Artifact Stack
 
@@ -131,6 +133,7 @@ Update `docs/architecture/architecture-review.md` when the change affects:
 
 - Data boundaries.
 - Authentication or authorization.
+- Supabase RLS policies or storage policies.
 - Public/private fields.
 - Search behavior.
 - External integrations.
@@ -176,6 +179,7 @@ Before claiming completion:
 - Run integration tests for affected flows.
 - Run lint and type checks when the stack exists.
 - Verify public/private authorization boundaries.
+- Verify Supabase RLS and Storage policies for affected records.
 - Verify admin-only review actions.
 - Verify profile visibility rules.
 - Verify accessibility for major UI forms and profile pages.
@@ -223,6 +227,8 @@ AI agents must not:
 - Add payments, contracts, chat, or LMS features unless a new spec and ADR explicitly approve the scope.
 - Treat admin approval as credential verification.
 - Expose draft, private, rejected, or hidden profile data through public APIs.
+- Put Supabase service-role keys in client-visible code or `NEXT_PUBLIC_` environment variables.
+- Use user-editable Supabase metadata for authorization decisions.
 - Store or proxy YouTube videos as if the platform owns them.
 
 AI agents should:
