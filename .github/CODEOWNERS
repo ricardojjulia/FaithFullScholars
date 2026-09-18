@@ -1,0 +1,7 @@
+# Architecture-critical paths — require review from repository owner
+/supabase/migrations/  @ricardojjulia
+/.github/workflows/    @ricardojjulia
+/lib/supabase/         @ricardojjulia
+/AGENTS.md             @ricardojjulia
+/improve-software.md   @ricardojjulia
+/CHECK_IN_POLICY.md    @ricardojjulia

@@ -2,14 +2,20 @@
   "name": "faithfull-scholars",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "dev": "next dev -p 3845",
     "build": "next build",
     "start": "next start -p 3845",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "audit:rls": "tsx scripts/audit-rls.ts",
-    "verify": "npm run lint && npm run test && npm run audit:rls && npm run build"
+    "version:check": "node scripts/check-version.mjs",
+    "verify": "npm run version:check && npm run lint && npm run typecheck && npm run test && npm run audit:rls && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

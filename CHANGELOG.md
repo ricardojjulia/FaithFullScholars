@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Repository Safeguards & CI/CD Pipelines** (Parity with AdMe):
+  - GitHub Actions CI pipeline (`.github/workflows/ci.yml`) enforcing `version:check`, `lint`, `typecheck`, and `audit:rls` with PostgreSQL service container.
+  - Release deployment pipeline (`.github/workflows/release.yml`) with staging and production gates.
+  - Architectural path ownership rules in `.github/CODEOWNERS`.
+  - Comprehensive `CHECK_IN_POLICY.md` setting 8 non-negotiable security, isolation, and data protection rules.
+  - `CONTRIBUTING.md` defining branching conventions, commit standards, and testing mandates.
+  - Native Antigravity workspace skills in `.agents/skills/` (`council`, `feature-factory`, `build-with-tests`, `pr-review`).
+  - GitHub environment and secrets deployment documentation (`docs/github-setup.md`).
+  - Automated version consistency script (`scripts/check-version.mjs`).
 - **Software Factory & Council Governance System**:
   - Additive merge of project rules into `AGENTS.md`.
   - `improve-software.md` defining the 5-agent Council review and software factory lifecycle.
