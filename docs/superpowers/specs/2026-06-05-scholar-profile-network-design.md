@@ -28,26 +28,39 @@ Build a professional discovery platform for theological and biblical college pro
 
 ## Core User Journeys
 
-### Scholar Onboarding
+### Scholar Onboarding (Assisted or Manual)
 
 1. Scholar creates account.
-2. Scholar completes academic identity, affiliation, biography, disciplines, and contact preference.
-3. Scholar uploads CV or enters structured CV highlights.
-4. Scholar adds publications and courses.
-5. Scholar adds availability.
-6. Scholar previews profile.
-7. Scholar submits profile for admin review.
-8. Admin approves, requests changes, or rejects.
-9. Approved profile becomes public.
+2. Scholar has the option to upload a CV (PDF) for automated parsing:
+   - System extracts text and parses education, publications, current role, biography, and suggests disciplines.
+   - Parsed items populate draft profile fields for the scholar to review and edit.
+   - Scholar confirms, corrects, or manually enters profile fields.
+3. Scholar completes academic identity, affiliation, biography, disciplines, and contact preference.
+4. Scholar provides voluntary theological context:
+   - Selects theological tradition(s) and confessional standard(s) affirmed (e.g. Westminster, London Baptist, Lausanne, Nicene).
+   - Optionally provides a personal doctrinal statement (text or link/PDF).
+5. Scholar adds/reviews publications and courses.
+6. Scholar specifies availability and opportunity preferences.
+7. Scholar previews profile.
+8. Scholar submits initial profile revision for admin review.
+9. Admin approves, requests changes, or rejects.
+10. Approved profile becomes publicly discoverable.
+
+### Scholar Profile Updates (Revision Lifecycle)
+
+1. An approved scholar edits their bio, credentials, availability, or confessional alignment.
+2. Changes are saved to an active `draft` revision without altering or unpublishing the live public profile.
+3. Scholar previews the updated revision and submits it for review.
+4. The live profile remains publicly visible with the previously approved data while the revision is pending.
+5. Admin reviews the submitted diff; once approved, the revision is promoted to the live published profile.
 
 ### Institution Discovery
 
-1. Institution user searches by discipline, course area, language, delivery mode, availability, and tradition.
-2. User opens scholar profile.
-3. User reviews CV, courses, publications, and sample media.
-4. User saves scholar or course.
-5. User sends structured inquiry.
-6. Scholar receives inquiry according to contact preference.
+1. Institution user searches by discipline, course area, language, delivery mode, availability, theological tradition, and confessional standard.
+2. User inspects scholar profile, including CV, publications, courses, sample media, and doctrinal statement.
+3. User saves scholar or course.
+4. User sends structured inquiry.
+5. Scholar receives inquiry according to contact preference.
 
 ### Public Learning Discovery
 
@@ -89,8 +102,55 @@ Key fields:
 - location
 - timezone
 - contact_preference
+- doctrinal_statement_text: Optional personal summary of faith
+- doctrinal_statement_url: Link or uploaded PDF doctrinal statement
+- published_revision_id: References currently active approved revision
+- draft_revision_id: References in-progress or submitted revision
 - profile_status: draft, submitted, changes_requested, approved, hidden
 - verification_status: self_reported, institution_affiliated, verified
+
+### ScholarProfileRevision
+
+Represents a versioned snapshot of editable scholar profile content, decoupling live listings from in-review changes.
+
+Key fields:
+
+- id
+- scholar_id
+- revision_number
+- status: draft, submitted, changes_requested, approved, superseded
+- snapshot_data: JSONB containing versioned fields (biography, affiliations, credentials, publications, courses, availability)
+- admin_notes: Internal notes or feedback requesting changes
+- submitted_at
+- reviewed_at
+- reviewed_by
+
+### ConfessionalStandard
+
+Controlled taxonomy for historical creeds, confessions, and evangelical doctrinal statements.
+
+Examples:
+
+- Apostles' Creed
+- Nicene Creed
+- Westminster Confession of Faith
+- 1689 London Baptist Confession
+- Thirty-Nine Articles of Religion
+- Three Forms of Unity (Heidelberg / Belgic / Dort)
+- Lausanne Covenant
+- Chicago Statement on Biblical Inerrancy
+- Baptist Faith and Message (2000)
+
+### ScholarConfession
+
+Links a scholar to an affirmed confessional standard.
+
+Key fields:
+
+- scholar_id
+- confessional_standard_id
+- affirmation_type: full, with_exceptions
+- exceptions_notes: Optional scholar-provided qualification or note
 
 ### Discipline
 
@@ -221,7 +281,8 @@ Key fields:
 - No internal video hosting.
 - No synchronous chat.
 - No automatic credential verification.
-- No AI-generated public claims without scholar approval.
+- AI-assisted CV ingestion produces draft suggestions only; scholars must review, edit, and confirm all fields before submission.
+- No AI-generated public claims without explicit scholar review and admin approval.
 
 ## Error and Abuse Handling
 
@@ -234,10 +295,12 @@ Key fields:
 ## Testing Strategy
 
 - Unit tests for profile completion rules, slug generation, URL validation, and taxonomy filters.
-- Integration tests for scholar onboarding, admin approval, public search, and inquiry submission.
+- Unit and integration tests for CV PDF parsing and draft field mapping.
+- Integration tests for scholar onboarding, admin approval, revision promotion, public search, and inquiry submission.
 - Authorization tests for scholar, institution, admin, and public access boundaries.
-- Supabase RLS tests for direct table access, draft-profile isolation, scholar-owned writes, institution inquiry access, and admin-only review operations.
+- Supabase RLS tests for direct table access, draft-profile isolation, live-vs-draft revision separation, scholar-owned writes, institution inquiry access, and admin-only review operations.
 - Supabase Storage policy tests for private CV access and public profile asset access.
+- Filter tests for multi-criteria search including discipline, availability, theological tradition, and confessional standards.
 - Accessibility tests for profile pages, search results, forms, and admin review queues.
 - Seed-data smoke tests for public browsing and realistic theological taxonomy coverage.
 

@@ -30,37 +30,42 @@ Build the Scholar Profile Network first. Add public course/content discovery ear
 8. `docs/adr/0002-external-media-hosting.md`
 9. `docs/adr/0003-admin-reviewed-publication.md`
 10. `docs/adr/0004-vercel-supabase-platform.md`
+11. `docs/adr/0005-draft-published-profile-revisions.md`
 
 ## Non-Negotiable Product Boundaries
 
 - This is not a general social network.
 - This is not an LMS.
 - This is not a payment marketplace in the MVP.
-- Profiles are admin-reviewed before becoming public.
+- Profiles are admin-reviewed before initial public listing.
+- Edits to approved profiles follow the Revision Staging Model (ADR 0005); live profiles remain visible while revisions are reviewed.
 - Verification status is separate from publication status.
 - External video is linked or embedded, not hosted.
-- Scholars approve public profile claims.
+- AI-assisted CV ingestion produces draft suggestions only; scholars must review and approve before submission.
+- Scholars approve all public profile claims.
 
 ## First Build Target
 
 Build an MVP foundation that supports:
 
-- Public scholar directory.
-- Public scholar profile.
-- Scholar profile dashboard.
+- Public scholar directory with confessional and doctrinal filters.
+- Public scholar profile displaying credentials, publications, courses, and doctrinal statements.
+- Assisted CV onboarding (PDF extraction pre-filling draft profile fields).
+- Scholar profile dashboard with revision staging (ADR 0005).
 - Course showcase.
 - Availability fields.
 - Institution inquiry form.
-- Admin profile review.
+- Admin profile review and revision diff inspection.
 
 ## High-Risk Areas
 
-- Authorization leaks from draft profiles.
+- Authorization leaks from draft profiles or pending revisions.
+- Live profile disappearance when an approved scholar saves an edit (must follow ADR 0005).
 - Missing or permissive Supabase RLS policies.
 - Vercel preview environment pointing at production Supabase data.
 - Misrepresenting self-reported credentials as verified.
 - Scope creep into LMS or contracts.
-- Weak taxonomy causing poor discovery.
+- Weak taxonomy causing poor discovery across theological disciplines and traditions.
 - Spam or low-quality institution inquiries.
 
 ## Expected Engineering Behavior

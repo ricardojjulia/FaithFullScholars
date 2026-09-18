@@ -95,21 +95,25 @@ Controls:
 
 Responsibilities:
 
-- Profile editing.
+- Profile editing and personal doctrinal statement management.
+- Assisted CV ingestion (parsing uploaded PDF into editable draft fields).
 - CV and publication management.
 - Course management.
 - Availability management.
-- Preview and submit for review.
+- Theological tradition and confessional standard self-selection.
+- Preview and submit revisions for review.
 
 Risks:
 
 - Large free-form profile editors can become hard to moderate.
-- CV upload parsing could create false claims if automated too early.
+- CV upload parsing could create false claims if automated without human review.
+- Editing an approved profile could accidentally unpublish it or leak unmoderated text.
 
 Controls:
 
 - Store structured fields separately from optional uploaded files.
-- Treat any AI-assisted import as draft text requiring scholar review.
+- Assisted CV parsing creates draft suggestions only, requiring explicit scholar confirmation.
+- Decouple live published profile data from working revisions (ADR 0005).
 - Keep a profile completion checklist.
 
 ### Institution Dashboard
@@ -136,9 +140,9 @@ Controls:
 
 Responsibilities:
 
-- Review submitted scholar profiles.
+- Review submitted scholar profiles and ongoing revision diffs.
 - Approve, request changes, hide, or reject.
-- Manage taxonomy.
+- Manage taxonomy (disciplines, traditions, confessional standards).
 - Review reported profiles and content.
 - Manage institution approval.
 
@@ -146,10 +150,12 @@ Risks:
 
 - Verification decisions can create legal and reputational exposure.
 - Taxonomy drift can make search weak.
+- High review overhead when approved scholars submit minor edits.
 
 Controls:
 
 - Separate profile publication status from verification status.
+- Provide structured diff view comparing published snapshot with submitted revision.
 - Store admin notes and review history.
 - Keep taxonomy changes admin-only and auditable.
 
@@ -161,12 +167,15 @@ Primary tables:
 
 - accounts
 - scholars
+- scholar_profile_revisions
 - institutions
 - institution_users
 - disciplines
 - scholar_disciplines
 - traditions
 - scholar_traditions
+- confessional_standards
+- scholar_confessions
 - credentials
 - publications
 - courses
@@ -181,7 +190,7 @@ Primary tables:
 
 ## Search Architecture
 
-MVP search can begin with Supabase Postgres filtering and full-text indexes. A dedicated search engine can be introduced later if ranking, typo tolerance, faceting, and scale require it.
+MVP search can begin with Supabase Postgres filtering and full-text indexes. To ensure performant queries across many-to-many joins (disciplines, traditions, confessional standards), use a pre-aggregated search index view or denormalized text search columns.
 
 Searchable entities:
 
@@ -190,14 +199,25 @@ Searchable entities:
 - public media links
 - topic pages
 
+Filter dimensions:
+
+- Academic discipline
+- Availability status and opportunity types
+- Delivery mode and language
+- Theological tradition
+- Confessional standards affirmed
+- Doctrinal statement presence
+- Credential level
+
 Ranking priorities:
 
 1. Exact discipline or course match.
-2. Availability match.
-3. Language and delivery-mode match.
-4. Profile completeness.
-5. Free content availability.
-6. Recently updated profiles.
+2. Confessional / tradition match.
+3. Availability match.
+4. Language and delivery-mode match.
+5. Profile completeness.
+6. Free content availability.
+7. Recently updated profiles.
 
 ## Media Architecture
 
@@ -279,18 +299,30 @@ Use as an external embed and link provider. Do not require YouTube API integrati
 
 Needed for account verification, profile-review decisions, and inquiry notifications. Keep email content transactional and auditable.
 
-### CV Files
+### CV Files and Assisted Ingestion
 
-Support upload or external link. Uploaded files should use Supabase Storage with private-by-default buckets and policies that allow scholar-owned writes, admin review reads, and public reads only for explicitly published files tied to approved profiles.
+Support upload or external link. Uploaded files use Supabase Storage with private-by-default buckets.
 
-### Future AI
+In the MVP onboarding flow, an uploaded CV PDF can be processed via an extraction service to parse:
+- Contact and current role
+- Degrees and institutions
+- Publications and citations
+- Suggested disciplines and expertise areas
 
-Potential AI features:
+Strict constraints on CV ingestion:
+- Parsed text is populated into editable **draft** fields only.
+- Scholars must explicitly review, correct, and confirm all fields.
+- Automated extraction never directly publishes to the public directory.
+- The system preserves a link between the uploaded source CV file and the generated draft records.
 
-- Parse uploaded CV into draft profile fields.
+### Future AI Capabilities
+
+Post-MVP AI enhancements:
+
 - Suggest disciplines and course tags from syllabus text.
-- Create institution shortlist explanations.
+- Create institution shortlist explanations based on query requirements.
 - Recommend profile completion improvements.
+- Match institution inquiry criteria against scholar doctrinal statements.
 
 AI constraints:
 
@@ -303,8 +335,10 @@ AI constraints:
 | Risk | Severity | Mitigation |
 | --- | --- | --- |
 | Trust claims become legally or reputationally risky | High | Separate self-reported, affiliated, and verified status |
+| Published profile disappears when scholar edits bio/data | High | Use Revision Staging Model (ADR 0005) so live profile stays public during review |
 | MVP scope expands into LMS or hiring marketplace | High | Keep courses as showcase records and inquiries as lightweight outreach |
-| Search quality is poor because profile data is too free-form | Medium | Use controlled taxonomy for disciplines, opportunity types, languages, and delivery modes |
+| Search quality is poor because profile data is too free-form | Medium | Use controlled taxonomy for disciplines, traditions, confessional standards, and availability |
+| Scholars do not complete onboarding due to high friction | High | Provide assisted CV ingestion to pre-fill draft profile fields |
 | Scholars do not maintain availability | Medium | Make availability coarse, easy to update, and visible in completion checklist |
 | Institutions spam scholars | Medium | Require approved institution accounts and rate-limit inquiries |
 | External media links rot | Low | Add link status checks in later operations workflow |
@@ -317,3 +351,4 @@ AI constraints:
 - ADR 0002: Use external media hosting for MVP.
 - ADR 0003: Use admin-reviewed publication status before public profiles.
 - ADR 0004: Use Vercel and Supabase as the platform baseline.
+- ADR 0005: Decouple live profiles from in-review changes via Draft and Published Profile Revisions.

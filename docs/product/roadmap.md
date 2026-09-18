@@ -27,12 +27,12 @@ Goal: Model the theological scholar network domain.
 
 Deliverables:
 
-- Database schema.
-- Seed data.
+- Database schema (including `confessional_standards`, `scholar_confessions`, and `scholar_profile_revisions`).
+- Seed data for theological disciplines, traditions, and historical confessional standards.
 - Domain types.
 - Initial taxonomy.
-- Supabase SQL migrations and RLS policies.
-- Supabase Storage buckets for CV/profile assets.
+- Supabase SQL migrations and RLS policies supporting live vs. draft revisions.
+- Supabase Storage buckets for CV/profile assets and doctrinal statement files.
 
 Exit criteria:
 
@@ -48,46 +48,50 @@ Goal: Let visitors discover approved scholars and courses.
 Deliverables:
 
 - Scholar directory.
-- Scholar profile page.
+- Scholar profile page (displaying credentials, courses, publications, confessional affirmations, and doctrinal statements).
 - Course directory.
 - Course detail page.
-- Public search filters.
+- Public search filters (discipline, availability, delivery mode, tradition, confessional standard, doctrinal statement).
 
 Exit criteria:
 
-- Draft profiles are never public.
-- Approved scholars and public courses are discoverable.
+- Draft profiles and unapproved revisions are never public.
+- Approved scholars and public courses are discoverable with multi-criteria filters.
 
 ## Phase 3: Scholar Dashboard
 
-Goal: Let scholars manage profiles, courses, media, CVs, and availability.
+Goal: Let scholars onboard easily, manage profiles, courses, media, CVs, availability, and submit revisions.
 
 Deliverables:
 
-- Profile editor.
+- Assisted CV onboarding (PDF extraction to pre-fill draft profile fields).
+- Profile editor with doctrinal statement and confessional standards management.
+- Revision staging manager (ADR 0005): changes save to draft revisions without breaking live profiles.
 - Course and media manager.
 - Availability manager.
 - Profile preview.
 
 Exit criteria:
 
-- Scholars can submit complete profiles for review.
+- Scholars can onboard via CV upload or manual entry.
+- Scholars can submit complete profiles or revision diffs for review.
 - Ownership checks prevent cross-profile edits.
 
 ## Phase 4: Admin Review
 
-Goal: Protect platform trust before public listing.
+Goal: Protect platform trust before public listing and moderate profile edits.
 
 Deliverables:
 
-- Review queue.
+- Review queue for initial profile submissions and revision diffs.
+- Visual diff viewer comparing published snapshot with submitted revision.
 - Approve, request changes, reject, and hide actions.
-- Review history.
+- Review history and audit log.
 - Reported content queue.
 
 Exit criteria:
 
-- Admins control profile publication.
+- Admins control initial profile publication and revision promotions.
 - Review actions are auditable.
 
 ## Phase 5: Institution Inquiry

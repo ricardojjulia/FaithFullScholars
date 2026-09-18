@@ -281,12 +281,15 @@ Add SQL tables for:
 
 - accounts
 - scholars
+- scholar_profile_revisions
 - institutions
 - institution_users
 - disciplines
 - scholar_disciplines
 - traditions
 - scholar_traditions
+- confessional_standards
+- scholar_confessions
 - credentials
 - publications
 - courses
@@ -303,7 +306,9 @@ Required enum concepts:
 
 - AccountRole
 - ProfileStatus
+- RevisionStatus
 - VerificationStatus
+- ConfessionAffirmationType
 - AvailabilityStatus
 - OpportunityType
 - DeliveryMode
@@ -314,10 +319,11 @@ Required enum concepts:
 
 Enable RLS for every table in the exposed `public` schema. Initial policies must support:
 
-- Public reads for approved scholar profiles and approved public courses.
+- Public reads for approved scholar profiles, approved revisions, and approved public courses.
+- Draft revision isolation: in-progress edits are readable and writable only by the owning scholar.
 - Scholar-owned draft writes.
 - Institution-owned saved records and inquiries.
-- Admin-only review operations.
+- Admin-only review and revision promotion operations.
 
 - [ ] **Step 5: Apply migration locally**
 
@@ -356,7 +362,9 @@ Seed data should include:
 
 - Disciplines across biblical studies, theology, history, and ministry.
 - Traditions with neutral labels.
-- Three approved sample scholars using fictional names.
+- Historical confessional standards (Apostles' Creed, Nicene Creed, Westminster Confession, 1689 London Baptist, Lausanne Covenant, Chicago Inerrancy).
+- Three approved sample scholars using fictional names, with sample confessional affirmations and personal doctrinal statements.
+- One approved scholar with a pending draft revision to verify the revision staging model (ADR 0005).
 - One draft scholar.
 - Six sample courses.
 - YouTube-style media links using clearly fake or placeholder URLs unless real permission exists.
@@ -453,15 +461,15 @@ git commit -m "feat: add Supabase storage policies"
 
 - [ ] **Step 1: Write failing test**
 
-Test that search results only include approved scholars and filter by discipline and availability.
+Test that search results only include approved scholars and filter by discipline, availability, theological tradition, and confessional standards affirmed.
 
 - [ ] **Step 2: Implement search query**
 
-Implement `searchScholars(filters)` with approved-profile filtering built in.
+Implement `searchScholars(filters)` with approved-profile filtering, tradition/confessional filtering, and multi-criteria ranking built in.
 
 - [ ] **Step 3: Render directory**
 
-Render search controls and scholar cards.
+Render search controls (including confessional standards dropdown/toggles) and scholar cards.
 
 - [ ] **Step 4: Verify**
 
@@ -476,7 +484,7 @@ Expected: tests and build pass.
 
 ```bash
 git add app/scholars components/search components/profiles lib/search tests/unit
-git commit -m "feat: add public scholar directory"
+git commit -m "feat: add public scholar directory with confessional filters"
 ```
 
 ### Task 2.2: Scholar Profile Page
@@ -486,6 +494,7 @@ git commit -m "feat: add public scholar directory"
 - Create: `app/scholars/[slug]/page.tsx`
 - Create: `components/profiles/scholar-profile.tsx`
 - Create: `components/profiles/cv-summary.tsx`
+- Create: `components/profiles/doctrinal-statement-panel.tsx`
 - Create: `components/profiles/availability-panel.tsx`
 - Create: `components/courses/course-list.tsx`
 - Create: `lib/profiles/public-profile.ts`
@@ -493,15 +502,15 @@ git commit -m "feat: add public scholar directory"
 
 - [ ] **Step 1: Write visibility test**
 
-Test that approved profiles load and draft, hidden, rejected, or submitted profiles return not found.
+Test that approved profiles load and draft, hidden, rejected, or submitted profiles return not found. Test that when an approved scholar has a pending draft revision, only the approved snapshot data is served publicly.
 
 - [ ] **Step 2: Implement public profile loader**
 
-Implement a loader that fetches only approved scholar data and public courses/media.
+Implement a loader that fetches only approved scholar data (or promoted revision data), affirmed confessional standards, personal doctrinal statement, and public courses/media.
 
 - [ ] **Step 3: Render profile**
 
-Include identity, biography, disciplines, CV summary, publications, courses, media, and availability.
+Include identity, biography, disciplines, confessional standards, personal doctrinal statement (or PDF link), CV summary, publications, courses, media, and availability.
 
 - [ ] **Step 4: Verify**
 
@@ -561,31 +570,75 @@ git commit -m "feat: add public course discovery"
 
 ## Phase 3: Scholar Dashboard
 
-### Task 3.1: Profile Editor
+### Task 3.0: Assisted CV Ingestion and Onboarding
+
+**Files:**
+
+- Create: `app/dashboard/onboarding/page.tsx`
+- Create: `components/forms/cv-upload-parser.tsx`
+- Create: `lib/profiles/cv-parser.ts`
+- Test: `tests/unit/cv-parser.test.ts`
+- Test: `tests/integration/cv-onboarding.test.ts`
+
+- [ ] **Step 1: Write parser unit tests**
+
+Test PDF text extraction for contact info, degrees, publications, and suggested disciplines. Ensure parsing errors fail gracefully and return partial drafts.
+
+- [ ] **Step 2: Implement CV parser helper**
+
+Implement `parseCvDocument(fileBuffer)` extracting structured draft profile fields. Ensure output is strictly labeled as draft suggestions.
+
+- [ ] **Step 3: Implement onboarding wizard**
+
+Provide CV upload dropzone. When parsed, populate editable form fields and prompt the scholar to review, correct, and confirm all data.
+
+- [ ] **Step 4: Verify**
+
+```bash
+npm run test -- cv-parser
+npm run test -- cv-onboarding
+npm run build
+```
+
+Expected: tests and build pass.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/dashboard/onboarding components/forms/cv-upload-parser.tsx lib/profiles/cv-parser.ts tests
+git commit -m "feat: add assisted CV ingestion onboarding"
+```
+
+### Task 3.1: Profile Editor and Revision Staging
 
 **Files:**
 
 - Create: `app/dashboard/profile/page.tsx`
 - Create: `components/forms/scholar-profile-form.tsx`
+- Create: `components/forms/confessional-standards-selector.tsx`
+- Create: `components/forms/doctrinal-statement-form.tsx`
 - Create: `lib/profiles/profile-actions.ts`
+- Create: `lib/profiles/revision-actions.ts`
 - Test: `tests/integration/scholar-profile-edit.test.ts`
+- Test: `tests/integration/profile-revisions.test.ts`
 
-- [ ] **Step 1: Write authorization test**
+- [ ] **Step 1: Write authorization and revision tests**
 
-Test that a scholar can edit only their own profile and cannot edit another scholar profile.
+Test that a scholar can edit only their own profile. Test that saving changes to an approved profile creates an active `draft` revision without mutating the published snapshot (ADR 0005).
 
-- [ ] **Step 2: Implement profile update action**
+- [ ] **Step 2: Implement profile update and revision actions**
 
-Validate required fields and ownership before saving.
+Validate required fields, ownership, and save updates into the working draft revision.
 
 - [ ] **Step 3: Render editor**
 
-Render fields for name, title, institution, biography, location, disciplines, traditions, links, and contact preference.
+Render fields for name, title, institution, biography, location, disciplines, traditions, confessional standards affirmed, personal doctrinal statement (text or PDF link), links, and contact preference.
 
 - [ ] **Step 4: Verify**
 
 ```bash
 npm run test -- scholar-profile-edit
+npm run test -- profile-revisions
 npm run build
 ```
 
@@ -595,7 +648,7 @@ Expected: tests and build pass.
 
 ```bash
 git add app/dashboard components/forms lib/profiles tests/integration
-git commit -m "feat: add scholar profile editor"
+git commit -m "feat: add scholar profile editor and revision staging"
 ```
 
 ### Task 3.2: Course and Media Manager
@@ -682,36 +735,39 @@ git commit -m "feat: add scholar availability management"
 
 ## Phase 4: Admin Review and Trust
 
-### Task 4.1: Profile Submission and Review
+### Task 4.1: Profile Submission, Revision Diffs, and Review
 
 **Files:**
 
 - Create: `app/admin/reviews/page.tsx`
 - Create: `components/admin/profile-review-list.tsx`
 - Create: `components/admin/profile-review-detail.tsx`
+- Create: `components/admin/revision-diff-viewer.tsx`
 - Create: `lib/review/profile-review-actions.ts`
 - Test: `tests/integration/profile-review.test.ts`
+- Test: `tests/integration/revision-review.test.ts`
 
-- [ ] **Step 1: Write workflow tests**
+- [ ] **Step 1: Write workflow and diff tests**
 
-Test draft to submitted, submitted to approved, submitted to changes requested, and approved to hidden.
+Test draft to submitted, submitted to approved, submitted to changes requested, and approved to hidden. Test revision staging: an approved profile with an in-review revision remains publicly visible, and approval promotes the revision to the published snapshot (ADR 0005).
 
 - [ ] **Step 2: Implement submit action**
 
-Scholars can submit only their own profile when required fields are complete.
+Scholars can submit their initial profile or a pending revision when required fields are complete.
 
-- [ ] **Step 3: Implement admin review actions**
+- [ ] **Step 3: Implement admin review and promotion actions**
 
-Admins can approve, request changes with notes, reject, or hide profiles.
+Admins can approve, request changes with notes, reject, or hide profiles. For existing profiles with submitted revisions, approval promotes the revision data into the live snapshot.
 
-- [ ] **Step 4: Render admin queue**
+- [ ] **Step 4: Render admin queue and diff viewer**
 
-Render submitted profiles, review detail, decision controls, and review history.
+Render submitted profiles and revisions, visual diff view comparing published snapshot against submitted changes, decision controls, and review history.
 
 - [ ] **Step 5: Verify**
 
 ```bash
 npm run test -- profile-review
+npm run test -- revision-review
 npm run build
 ```
 
@@ -721,7 +777,7 @@ Expected: tests and build pass.
 
 ```bash
 git add app/admin components/admin lib/review tests/integration
-git commit -m "feat: add admin profile review workflow"
+git commit -m "feat: add admin profile review and revision diff workflow"
 ```
 
 ### Task 4.2: Reports and Moderation Notes

@@ -130,10 +130,13 @@ Goals:
 - Academic and professional links.
 - Contact preference.
 - Voluntarily disclosed denomination, confession, or tradition.
+- Affirmed confessional standards (e.g. Westminster Standards, 1689 London Baptist, Nicene Creed, Lausanne Covenant, Chicago Inerrancy).
+- Personal doctrinal statement (text summary or uploaded PDF link).
 
 ### Academic Portfolio
 
 - Degrees and awarding institutions.
+- Assisted CV ingestion: automated PDF text extraction populating editable draft profile fields to eliminate onboarding friction.
 - Structured CV highlights.
 - Optional downloadable CV.
 - Publications.
@@ -202,6 +205,8 @@ Filters:
 - Language.
 - Institution.
 - Tradition or denomination.
+- Confessional standards affirmed.
+- Doctrinal statement presence.
 - Region.
 - Credential level.
 - Free content.
@@ -209,11 +214,12 @@ Filters:
 Ranking:
 
 1. Exact subject or course match.
-2. Availability match.
-3. Language and delivery match.
-4. Profile completeness.
-5. Free content availability.
-6. Recently updated profile.
+2. Confessional / tradition match.
+3. Availability match.
+4. Language and delivery match.
+5. Profile completeness.
+6. Free content availability.
+7. Recently updated profile.
 
 ### Institution Tools
 
@@ -236,11 +242,12 @@ Inquiry fields:
 ### Admin Tools
 
 - Scholar review queue.
+- Revision diff review: side-by-side visual diff of submitted revisions against published snapshots.
 - Institution review.
 - Approve, request changes, reject, or hide.
 - Verification state.
 - Review notes and history.
-- Taxonomy management.
+- Taxonomy management (disciplines, traditions, confessional standards).
 - Reported-content queue.
 
 ## 7. Trust Model
@@ -253,6 +260,12 @@ Publication status:
 - Approved.
 - Hidden.
 - Rejected.
+
+Revision Staging Model (ADR 0005):
+
+- Edits to an approved profile do not unpublish the active listing or interrupt public discovery.
+- Modifications are saved to a versioned draft revision that is submitted for admin review.
+- Admins review changes as structured diffs; approval promotes the revision to the published snapshot.
 
 Verification status:
 
@@ -362,12 +375,15 @@ Core tables:
 
 - `accounts`
 - `scholars`
+- `scholar_profile_revisions`
 - `institutions`
 - `institution_users`
 - `disciplines`
 - `scholar_disciplines`
 - `traditions`
 - `scholar_traditions`
+- `confessional_standards`
+- `scholar_confessions`
 - `credentials`
 - `publications`
 - `courses`
@@ -393,8 +409,22 @@ Key scholar fields:
 - `location`
 - `timezone`
 - `contact_preference`
+- `doctrinal_statement_text`
+- `doctrinal_statement_path`
+- `published_revision_id`
+- `draft_revision_id`
 - `profile_status`
 - `verification_status`
+
+Key revision fields:
+
+- `scholar_id`
+- `revision_number`
+- `status` (draft, submitted, changes_requested, approved, superseded)
+- `snapshot_data` (JSONB of versioned fields)
+- `admin_notes`
+- `submitted_at`
+- `reviewed_at`
 
 Key course fields:
 
@@ -803,11 +833,11 @@ Agents must verify current official CLI documentation before using commands that
 - [ ] Accessibility checks pass.
 - [ ] Vercel preview is approved.
 - [ ] Seed data is fictional or permissioned.
+- [ ] Published profiles remain visible when new revisions are submitted (ADR 0005).
 - [ ] Documentation matches behavior.
 
 ## 21. Post-MVP Backlog
 
-- AI-assisted CV import into draft fields.
 - AI-assisted syllabus tagging.
 - Scholar analytics.
 - Institution subscriptions.
@@ -830,10 +860,11 @@ Agents must verify current official CLI documentation before using commands that
 4. Use Supabase for Auth, Postgres, RLS, and Storage.
 5. Use external video hosting.
 6. Require admin review before publication.
-7. Keep publication and verification separate.
-8. Use structured taxonomy for search.
-9. Defer payments, contracts, LMS, and social feeds.
-10. Require human approval for AI-assisted public claims.
+7. Decouple live profiles from in-review changes via Draft and Published Profile Revisions (ADR 0005).
+8. Keep publication and verification separate.
+9. Use structured taxonomy for search, traditions, and confessional standards.
+10. Defer payments, contracts, LMS, and social feeds.
+11. Require human approval for AI-assisted public claims and CV draft imports.
 
 ## 23. AI Handoff
 

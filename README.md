@@ -23,15 +23,19 @@ Initial ADRs:
 - [ADR 0002: External Media Hosting](docs/adr/0002-external-media-hosting.md)
 - [ADR 0003: Admin-Reviewed Public Profiles](docs/adr/0003-admin-reviewed-publication.md)
 - [ADR 0004: Vercel and Supabase Platform Baseline](docs/adr/0004-vercel-supabase-platform.md)
+- [ADR 0005: Draft and Published Profile Revisions](docs/adr/0005-draft-published-profile-revisions.md)
+- [ADR 0006: Pilot Feedback & Automatic Error Triage System](docs/adr/0006-pilot-feedback-error-triage.md)
 
 ## Product Shape
 
 The recommended MVP is a Scholar Profile Network:
 
-- Public scholar profiles with academic identity, biography, disciplines, affiliations, and theological tradition tags.
+- Public scholar profiles with academic identity, biography, disciplines, affiliations, theological tradition, affirmed confessional standards, and personal doctrinal statements.
+- Assisted CV onboarding with automated PDF extraction pre-filling draft profile fields to eliminate onboarding friction.
 - CV and publication showcase, including downloadable CV files when the scholar chooses to publish them.
+- Revision staging model keeping approved profiles live and searchable while ongoing edits are reviewed.
 - Course showcase with syllabi, sample content, YouTube lecture links, reading lists, and free course previews.
 - Availability signals for adjunct instruction, online courses, guest lectures, intensive modules, curriculum consulting, doctoral supervision, and conference speaking.
-- Institutional discovery tools for colleges looking for qualified professors by discipline, availability, language, delivery format, and doctrinal or denominational fit.
+- Institutional discovery tools for colleges looking for qualified professors by discipline, availability, language, delivery format, and doctrinal or confessional fit.
 
 Marketplace workflows such as formal booking, contracts, payments, and institution-to-scholar hiring pipelines are intentionally deferred until the directory and availability signals prove demand.

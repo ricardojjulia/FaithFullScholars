@@ -57,15 +57,16 @@ Platform baseline:
 
 In scope:
 
-- Scholar profile pages.
-- Scholar onboarding and profile editing.
+- Scholar profile pages with live/draft revision management (ADR 0005).
+- Scholar onboarding, assisted CV PDF ingestion (pre-filling draft profile data), and manual editing.
+- Personal doctrinal statements and affirmed confessional standards taxonomy.
 - Structured CV and publication records.
 - Course showcase pages.
 - Free content embeds and links, especially YouTube.
 - Availability status and opportunity types.
-- Search and browse by discipline, institution, tradition, language, delivery mode, and availability.
+- Search and browse by discipline, institution, tradition, confessional standard, language, delivery mode, and availability.
 - Institution inquiry flow.
-- Admin review and verification workflow.
+- Admin review queue for new profiles and revision diffs.
 - Basic analytics for profile views and inquiry counts.
 
 Out of scope for the MVP:
@@ -92,7 +93,9 @@ Core fields:
 - Full name, preferred title, profile photo.
 - Current institution and role.
 - Academic credentials and awarding institutions.
-- Denominational, confessional, or tradition affiliations when the scholar chooses to disclose them.
+- Denominational or theological tradition affiliations (self-disclosed).
+- Affirmed confessional standards (e.g. Westminster Standards, 1689 London Baptist, Lausanne Covenant, Nicene Creed, Chicago Inerrancy).
+- Personal doctrinal statement (direct text summary or linked/uploaded PDF).
 - Areas of expertise.
 - Biography.
 - Languages.
@@ -106,7 +109,7 @@ The portfolio should make a scholar inspectable without forcing institutions to 
 
 Core records:
 
-- CV file and structured CV highlights.
+- CV file and structured CV highlights (with automated text extraction to jumpstart profile setup).
 - Publications.
 - Conference papers.
 - Books and chapters.
@@ -172,6 +175,8 @@ Filters:
 - Language.
 - Institution.
 - Tradition or denomination.
+- Confessional standards affirmed.
+- Doctrinal statement available.
 - Region.
 - Credential level.
 - Free content available.
@@ -182,7 +187,13 @@ The product must avoid becoming an uncurated directory of unverifiable claims.
 
 Trust mechanisms:
 
-- Admin-reviewed scholar profiles before public listing.
+- Admin-reviewed scholar profiles before initial public listing.
+- Revision Staging Model: edits to approved profiles are reviewed as diffs without unpublishing the live profile (ADR 0005).
+- Visible profile status: self-reported, institution-affiliated, or verified.
+- Clear disclosure that theological tradition and confessional affirmations are self-disclosed.
+- Report profile issue flow.
+- Institution accounts for formal inquiries.
+- Content moderation for public descriptions and links.
 - Visible profile status: self-reported, institution-affiliated, or verified.
 - Clear disclosure that theological tradition fields are self-disclosed unless verified.
 - Report profile issue flow.
@@ -283,6 +294,5 @@ These should be considered after MVP evidence:
 - Theological society partnerships.
 - Seminary consortium accounts.
 - Public lecture playlists by doctrine, book of the Bible, or ministry topic.
-- AI-assisted profile import from CV PDFs with scholar review before publishing.
 - AI-assisted course tagging from syllabi.
-- AI search assistant for institutions with strict citation back to profile fields.
+- AI search assistant for institutions with strict citation back to profile fields and doctrinal statements.
