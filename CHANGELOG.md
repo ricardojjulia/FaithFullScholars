@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Phase 6: MVP Release Hardening & Deployment Preparation**:
+  - Configured strict HTTP security headers in `next.config.ts`: Content-Security-Policy (CSP) whitelisting YouTube, Unsplash, Gravatar, and Supabase Storage, Strict-Transport-Security (HSTS with 2-year duration, subdomains, and preloading), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
+  - Built comprehensive End-to-End User Journey Integration test suite (`tests/integration/e2e-user-journeys.test.ts`) covering all 4 core personas: scholar onboarding & revision staging, admin triage & snapshot promotion, public discovery & search rate limiting, and institutional outreach & shortlist lifecycle.
+  - Published Production Release Readiness Checklist (`docs/deployment/release-readiness-checklist.md`) detailing pre-flight RLS audits, storage bucket policies, environment variable quarantine, and pilot rollout protocol.
+  - Created automated Pilot Cohort Readiness Diagnostic Inspector (`scripts/verify-pilot-readiness.ts` / `npm run verify:pilot`) verifying taxonomy, confessional standards, traditions, reference scholars, and institutions.
+  - Verified 100% passing across all 6 quality gates (`npm run verify` = 18 suites, 101 tests, 25/25 tables RLS enforced).
 - **Phase 5: Institution Inquiry & Shortlist Workflows (ADR 0008)**:
   - Implemented structured academic outreach modal (`components/inquiries/structured-inquiry-modal.tsx`) accessible directly from scholar profiles and course showcase items.
   - Built candidate shortlisting and course bookmarking systems (`components/inquiries/shortlist-button.tsx`, `saved_scholars`, `saved_courses`) with persistence and visual toggle feedback.

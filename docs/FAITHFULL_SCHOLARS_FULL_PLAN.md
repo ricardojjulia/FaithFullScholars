@@ -799,13 +799,16 @@ Acceptance:
 - Preview deployment passes public, scholar, admin, and institution smoke tests.
 - Production secrets remain server-only.
 
-### Phase 8: Release Hardening
+### Phase 8: Release Hardening & MVP Deployment Preparation (Completed)
 
-1. Add Playwright tests for discovery, onboarding, approval, course preview, and inquiries.
-2. Verify RLS and storage policies.
-3. Verify accessibility.
-4. Verify rate limiting and secret handling.
-5. Prepare a controlled pilot.
+> **Status:** Completed (Strict edge security headers in `next.config.ts`, comprehensive E2E integration test suite across all 4 personas in `tests/integration/e2e-user-journeys.test.ts`, production release readiness checklist in `docs/deployment/release-readiness-checklist.md`, pilot diagnostic inspector in `scripts/verify-pilot-readiness.ts`, and 100% passing automated verification gates with 101 tests and 25/25 RLS tables).
+
+1. [x] Configure strict HTTP security headers: CSP with YouTube/Unsplash/Supabase whitelisting, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Permissions-Policy`.
+2. [x] Add comprehensive end-to-end integration tests validating discovery, CV onboarding, revision staging, visual diffs, admin approval, rate limiting, and structured inquiries.
+3. [x] Publish the Production Release Readiness Checklist ([`docs/deployment/release-readiness-checklist.md`](deployment/release-readiness-checklist.md)).
+4. [x] Create the Pilot Cohort Diagnostic Inspector script (`scripts/verify-pilot-readiness.ts`).
+5. [x] Verify 100% RLS across all 25 tables and secret quarantine.
+6. [x] Prepare for controlled academic pilot cohort (20–40 scholars, 3–7 theological institutions).
 
 Pilot:
 

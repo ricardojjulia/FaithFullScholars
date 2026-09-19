@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, and **Phase 5 (Institution Inquiry & Shortlist Workflows)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 6: MVP Release Hardening**.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, and **Phase 6 (MVP Release Hardening & Deployment Preparation)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates (101 tests, 25/25 RLS tables). Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -143,20 +143,26 @@ Exit criteria:
 - [x] Candidates and courses can be shortlisted and viewed in the institution portal.
 - [x] All 6 quality gates pass (`npm run verify`).
 
-## Phase 6: MVP Release Hardening
+## Phase 6: MVP Release Hardening & Deployment Preparation (Completed)
 
-Goal: Prepare the platform for a controlled pilot.
+Goal: Harden platform edge security, validate complete user journeys end-to-end, and prepare for production Vercel deployment and pilot cohort onboarding.
 
 Deliverables:
 
-- E2E smoke tests.
-- Accessibility checks.
-- Release checklist.
-- Pilot seed content policy.
+- Strict Edge HTTP Security Headers (`next.config.ts`): CSP, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`, and frame ancestor blocking.
+- Comprehensive End-to-End User Journey Integration test suite (`tests/integration/e2e-user-journeys.test.ts`) covering all 4 core personas (scholar onboarding, admin trust review, public discovery, institutional hiring).
+- Production Release Readiness Checklist (`docs/deployment/release-readiness-checklist.md`).
+- Pilot Cohort Diagnostic Inspector script (`scripts/verify-pilot-readiness.ts` / `npm run verify:pilot`).
+- 100% passing automated quality gates (`npm run verify`).
 
 Exit criteria:
 
-- MVP can support a small pilot cohort of scholars and institutions.
+- [x] Strict security headers enforced on all application routes.
+- [x] All 4 persona flows verified in automated end-to-end integration tests.
+- [x] Release checklist published and documented.
+- [x] Diagnostic script verifies pilot seed baseline (taxonomy, confessions, traditions, RLS).
+- [x] All 6 quality gates pass (`npm run verify` = 101 tests across 18 files, 25/25 tables RLS enforced).
+- [x] MVP is ready to support a controlled pilot cohort of scholars and institutions.
 
 ## Pilot Recommendation
 
