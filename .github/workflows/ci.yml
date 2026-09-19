@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - name: Version consistency check
@@ -29,7 +29,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - name: TypeScript type check
@@ -54,15 +54,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
+      - name: Bootstrap PostgreSQL auth environment & roles
+        run: |
+          psql "$DATABASE_URL" -f scripts/ci-bootstrap-db.sql
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+          PGPASSWORD: postgres
       - name: Apply schema migrations
         run: |
           for migration in supabase/migrations/*.sql; do
             echo "Applying $migration..."
             psql "$DATABASE_URL" -f "$migration"
           done
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+          PGPASSWORD: postgres
+      - name: Seed test database
+        run: |
+          psql "$DATABASE_URL" -f supabase/seed.sql
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
           PGPASSWORD: postgres
@@ -87,7 +99,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - name: Next.js production build

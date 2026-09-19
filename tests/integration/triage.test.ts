@@ -5,9 +5,9 @@ import { upsertFeedbackRecord, updateTriageRecord, fetchTriageRecords } from '@/
 import { computeFeedbackFingerprint } from '@/lib/feedback/fingerprint';
 
 describe('PostgreSQL Pilot Feedback & Rate Limit Live Integration Tests', () => {
-  const testSessionId = 'd0000000-0000-4000-8000-000000000001';
+  const testSessionId = crypto.randomUUID();
   const testFingerprint = computeFeedbackFingerprint({
-    route: '/test/route',
+    route: `/test/route-${Date.now()}`,
     category: 'BUG',
     note: 'Integration test bug report',
   });

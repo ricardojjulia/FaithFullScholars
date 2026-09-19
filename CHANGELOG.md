@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **CI / PostgreSQL Test Environment Bootstrap**:
+  - Created `scripts/ci-bootstrap-db.sql` to initialize standard Supabase roles (`anon`, `authenticated`, `service_role`), `auth` schema, mock `auth.users` table, and `auth.uid()`, `auth.role()`, `auth.jwt()` helper functions in vanilla PostgreSQL test containers.
+  - Added PostgreSQL bootstrap and test database seeding steps to `.github/workflows/ci.yml` before running the RLS security audit and test suites.
+  - Upgraded GitHub Actions runners to Node.js 24 (`node-version: '24'`) across lint, typecheck, unit-tests, and build jobs to resolve deprecation warnings and package engine requirements.
+  - Isolated test session IDs and fingerprints dynamically in `tests/integration/triage.test.ts` to prevent rate-limit collisions across consecutive test executions.
+
 ### Added
 - **Phase 3: Scholar Dashboard & Revision Staging (ADR 0005)**:
   - Implemented scholar workspace shell (`app/dashboard/layout.tsx`) and overview dashboard (`app/dashboard/page.tsx`) with staged revision indicator banner and key portfolio metrics.
