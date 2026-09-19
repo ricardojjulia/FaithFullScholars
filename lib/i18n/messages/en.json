@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "brand_sub": "Theological Network",
+    "home": "Home",
+    "directory": "Directory",
+    "courses": "Courses",
+    "teaching": "Teaching",
+    "me": "Me",
+    "dashboard": "Scholar Dashboard",
+    "profile_settings": "Profile & Settings",
+    "institution_portal": "Institution Portal",
+    "admin_triage": "Admin Triage",
+    "sign_out": "Sign Out",
+    "sign_in": "Sign In"
+  },
+  "search": {
+    "placeholder": "Search scholars, courses, confessions...",
+    "shortcut_hint": "Press / to search",
+    "faculty_tab": "Faculty",
+    "courses_tab": "Courses",
+    "quick_terms": "Popular Searches",
+    "clear": "Clear"
+  },
+  "directory": {
+    "title": "Theological Faculty Network",
+    "subtitle": "Discover verified professors and scholars in biblical and theological higher education.",
+    "filters_title": "Filter Scholars",
+    "clear_filters": "Clear All",
+    "discipline": "Theological Discipline",
+    "tradition": "Theological Tradition",
+    "confession": "Historic Confession",
+    "availability_label": "Only available for teaching appointments",
+    "showing_results": "Showing {{count}} scholar profile(s)",
+    "no_results": "No scholars found matching your selected criteria.",
+    "anonymous_cap_title": "Continue Exploring the Faculty Directory",
+    "anonymous_cap_desc": "You have reached the free anonymous preview limit (Page 3). Create a free account or sign in as an institution to browse the full faculty network, view syllabi, and contact professors directly.",
+    "sign_in_button": "Sign In to Continue",
+    "register_institution": "Register as an Institution"
+  },
+  "profile": {
+    "inquire": "Inquire",
+    "shortlist": "Shortlist",
+    "share": "Share",
+    "verified": "Verified Scholar",
+    "available_badge": "Available for Teaching",
+    "limited_badge": "Limited Availability",
+    "sabbatical_badge": "On Sabbatical",
+    "about_title": "About & Biography",
+    "credentials_title": "Education & Credentials",
+    "publications_title": "Selected Scholarly Publications",
+    "syllabi_title": "Courses & Syllabi Showcase",
+    "doctrinal_title": "Doctrinal Convictions & Historic Confessions",
+    "faith_statement_title": "Personal Statement of Faith",
+    "affirmed_confessions": "Affirmed Historic Standards",
+    "full_subscription": "Full Subscription",
+    "with_exceptions": "With Stated Exceptions",
+    "general_agreement": "General Agreement"
+  },
+  "dashboard": {
+    "title": "Faculty Workspace",
+    "overview": "Overview",
+    "profile_editor": "Profile & Doctrinal",
+    "courses": "Courses & Syllabi",
+    "availability": "Availability",
+    "preview": "Draft Preview",
+    "save_draft": "Save Draft",
+    "submit_review": "Submit for Review",
+    "draft_status": "Draft Revision Workspace",
+    "staging_notice": "Changes stay in staging until submitted and approved. Your live public profile is untouched."
+  },
+  "onboarding": {
+    "wizard_title": "Set Up Your Academic Profile",
+    "wizard_subtitle": "Upload your CV for automated field extraction, or verify and customize your credentials manually.",
+    "step_upload": "CV Ingestion",
+    "step_review": "Review & Refine Draft",
+    "step_success": "Dashboard Ready"
+  }
+}

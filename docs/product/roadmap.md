@@ -1,8 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), and **Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating** (ADR 0007, ADR 0008) are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 3: Scholar Dashboard & CV Onboarding**.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, and **Phase 3 (Scholar Dashboard & Revision Staging)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 4: Admin Review & Verification**.
 
 ## Phase 0: Foundation
 
@@ -78,24 +77,26 @@ Exit criteria:
 - Anonymous pagination beyond page 3 triggers authentication prompt.
 - All quality gates (`npm run verify`) pass.
 
-## Phase 3: Scholar Dashboard
+## Phase 3: Scholar Dashboard & Revision Staging (Completed)
 
 Goal: Let scholars onboard easily, manage profiles, courses, media, CVs, availability, and submit revisions.
 
 Deliverables:
 
-- Assisted CV onboarding (PDF extraction to pre-fill draft profile fields).
+- Assisted CV onboarding (PDF extraction, text paste, heuristic extraction of degrees, institutions, publications, disciplines).
 - Profile editor with doctrinal statement and confessional standards management.
-- Revision staging manager (ADR 0005): changes save to draft revisions without breaking live profiles.
-- Course and media manager.
-- Availability manager.
-- Profile preview.
+- Revision staging manager (ADR 0005): changes save to draft revisions without breaking live profiles, with real-time diff preview.
+- Course and syllabi manager with modal creation and delivery mode tags.
+- Availability manager for teaching formats, opportunity types, and academic terms.
+- LinkedIn-grade profile preview matching public discovery look and feel.
+- Complete platform i18n translation framework with Spanish (`es`) catalog and language switcher.
 
 Exit criteria:
 
-- Scholars can onboard via CV upload or manual entry.
-- Scholars can submit complete profiles or revision diffs for review.
-- Ownership checks prevent cross-profile edits.
+- [x] Scholars can onboard via CV upload or manual entry.
+- [x] Scholars can submit complete profiles or revision diffs for review.
+- [x] Ownership checks prevent cross-profile edits.
+- [x] All 6 quality gates pass (`npm run verify`).
 
 ## Phase 4: Admin Review
 

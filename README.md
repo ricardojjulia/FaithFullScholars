@@ -30,15 +30,18 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), and **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)** are fully implemented, audited, and verified.
-- **Data Isolation & Row Level Security:** 100% RLS compliance across all 25 PostgreSQL tables in the public schema (`search_rate_limits`, `scholars`, `courses`, `inquiries`, etc.).
+- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, and **Phase 3 (Scholar Dashboard & Revision Staging)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified. Next milestone is Phase 4 (Admin Review & Governance).
+- **Data Isolation & Row Level Security:** 100% RLS compliance across all 25 PostgreSQL tables in the public schema (`search_rate_limits`, `scholars`, `courses`, `inquiries`, `scholar_profile_revisions`, etc.).
+- **Revision Staging Model (ADR 0005):** Scholars stage profile edits, credentials, publications, and confessional changes in isolated draft revisions without modifying live published snapshots until admin review.
+- **Assisted CV Onboarding:** Automated CV heuristic parser extracting degrees, awarding institutions, publications, and inferring theological disciplines and traditions.
+- **Internationalization (i18n):** Complete platform translation framework with high-precision Spanish (`es`) theological message catalogs and universal switcher.
 - **Search Abuse & Anti-Scraping Defenses:** Token-bucket rate limiting (15 req/min anonymous, 120 req/min authenticated), 3-page anonymous search cap with sign-in wall, and input sanitization stripping SQL `LIKE` wildcards.
 - **LinkedIn Academic Design System:** Persistent universal app bar with `/` keyboard shortcut, "Me" dropdown menu, 3-column discovery layout, academic cover banners, 120px circular overlapping avatars, verified badges, and modular profile cards.
 - **Verification Pipeline:**
   ```bash
   npm run verify
   ```
-  Runs all 6 quality gates: `version:check`, `lint`, `typecheck`, `test` (10 suites, 58 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
+  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (13 suites, 68 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
 
 ## Product Shape
 
