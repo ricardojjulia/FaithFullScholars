@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
+import { LanguageSwitcher } from './language-switcher';
 
 export function PublicNav() {
   return (
@@ -68,6 +69,9 @@ export function PublicNav() {
           </Link>
 
           <div className="h-7 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block" />
+
+          {/* Language Switcher (EN / ES) */}
+          <LanguageSwitcher />
 
           {/* Me Dropdown */}
           <UserMenu />

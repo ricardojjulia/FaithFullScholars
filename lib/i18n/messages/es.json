@@ -1,0 +1,78 @@
+{
+  "nav": {
+    "brand_sub": "Red Académica Teológica",
+    "home": "Inicio",
+    "directory": "Directorio",
+    "courses": "Cursos",
+    "teaching": "Docencia",
+    "me": "Mi Cuenta",
+    "dashboard": "Panel del Académico",
+    "profile_settings": "Perfil y Configuración",
+    "institution_portal": "Portal Institucional",
+    "admin_triage": "Triaje de Soporte",
+    "sign_out": "Cerrar Sesión",
+    "sign_in": "Iniciar Sesión"
+  },
+  "search": {
+    "placeholder": "Buscar académicos, cursos, confesiones...",
+    "shortcut_hint": "Presione / para buscar",
+    "faculty_tab": "Cuerpo Docente",
+    "courses_tab": "Cursos",
+    "quick_terms": "Búsquedas Populares",
+    "clear": "Limpiar"
+  },
+  "directory": {
+    "title": "Red de Profesores Teológicos",
+    "subtitle": "Descubra profesores e investigadores verificados en educación superior bíblica y teológica.",
+    "filters_title": "Filtrar Académicos",
+    "clear_filters": "Restablecer Filtros",
+    "discipline": "Disciplina Teológica",
+    "tradition": "Tradición Teológica",
+    "confession": "Confesión Histórica",
+    "availability_label": "Solo disponibles para asignaciones docentes",
+    "showing_results": "Mostrando {{count}} perfil(es) académico(s)",
+    "no_results": "No se encontraron académicos que coincidan con los criterios seleccionados.",
+    "anonymous_cap_title": "Continúe Explorando el Directorio Docente",
+    "anonymous_cap_desc": "Ha alcanzado el límite de vista previa anónima gratuita (Página 3). Cree una cuenta gratuita o inicie sesión como institución para explorar toda la red docente, ver programas de estudio y contactar a los profesores directamente.",
+    "sign_in_button": "Iniciar Sesión para Continuar",
+    "register_institution": "Registrarse como Institución"
+  },
+  "profile": {
+    "inquire": "Contactar",
+    "shortlist": "Guardar",
+    "share": "Compartir",
+    "verified": "Académico Verificado",
+    "available_badge": "Disponible para Docencia",
+    "limited_badge": "Disponibilidad Limitada",
+    "sabbatical_badge": "En Año Sabático",
+    "about_title": "Biografía y Trayectoria",
+    "credentials_title": "Titulaciones y Credenciales",
+    "publications_title": "Publicaciones Académicas Destacadas",
+    "syllabi_title": "Cursos y Programas de Estudio",
+    "doctrinal_title": "Convicciones Doctrinales y Confesiones Históricas",
+    "faith_statement_title": "Declaración Personal de Fe",
+    "affirmed_confessions": "Estándares Históricos Afirmados",
+    "full_subscription": "Suscripción Plena",
+    "with_exceptions": "Con Excepciones Declaradas",
+    "general_agreement": "Acuerdo General"
+  },
+  "dashboard": {
+    "title": "Espacio de Trabajo del Académico",
+    "overview": "Resumen",
+    "profile_editor": "Perfil y Doctrina",
+    "courses": "Cursos y Sílabos",
+    "availability": "Disponibilidad",
+    "preview": "Vista Previa del Borrador",
+    "save_draft": "Guardar Borrador",
+    "submit_review": "Enviar para Revisión",
+    "draft_status": "Espacio de Revisión en Borrador",
+    "staging_notice": "Los cambios permanecen en preparación hasta ser enviados y aprobados. Su perfil público activo permanece sin alteraciones."
+  },
+  "onboarding": {
+    "wizard_title": "Configure su Perfil Académico",
+    "wizard_subtitle": "Suba su CV para la extracción automatizada de campos o verifique y personalice sus credenciales manualmente.",
+    "step_upload": "Ingesta de CV",
+    "step_review": "Revisar y Perfeccionar Borrador",
+    "step_success": "Panel Listo"
+  }
+}
