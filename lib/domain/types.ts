@@ -312,3 +312,60 @@ export interface ContentReport {
   updated_at: string;
 }
 
+export interface SavedScholar {
+  id: string;
+  institution_id: string;
+  scholar_id: string;
+  notes?: string | null;
+  created_at: string;
+  scholar?: {
+    id: string;
+    slug: string;
+    full_name: string;
+    primary_institution?: string | null;
+    avatar_url?: string | null;
+    primary_discipline?: string | null;
+  } | null;
+}
+
+export interface SavedCourse {
+  id: string;
+  institution_id: string;
+  course_id: string;
+  notes?: string | null;
+  created_at: string;
+  course?: {
+    id: string;
+    slug: string;
+    title: string;
+    course_number?: string | null;
+    delivery_mode?: string | null;
+    scholar_id?: string;
+  } | null;
+}
+
+export interface CreateInquiryInput {
+  institution_id: string;
+  scholar_id: string;
+  course_id?: string | null;
+  opportunity_type: OpportunityType;
+  proposed_term?: string | null;
+  delivery_mode?: DeliveryMode | null;
+  message: string;
+  contact_email: string;
+}
+
+export interface UpdateInquiryStatusInput {
+  inquiry_id: string;
+  status: InquiryStatus;
+  response_notes?: string | null;
+}
+
+export interface InquiryNotificationPayload {
+  recipient_email: string;
+  recipient_name: string;
+  sender_name: string;
+  subject: string;
+  message_preview: string;
+  action_url: string;
+}

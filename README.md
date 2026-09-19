@@ -30,8 +30,9 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, and **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified. Next milestone is Phase 5 (Institution Inquiry).
-- **Data Isolation & Row Level Security:** 100% RLS compliance across all 25 PostgreSQL tables in the public schema (`search_rate_limits`, `scholars`, `courses`, `inquiries`, `scholar_profile_revisions`, `profile_reviews`, etc.).
+- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, and **Phase 5 (Institution Inquiry & Shortlist Workflows)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified.
+- **Data Isolation & Row Level Security:** 100% RLS compliance across all 25 PostgreSQL tables in the public schema (`search_rate_limits`, `scholars`, `courses`, `inquiries`, `saved_scholars`, `saved_courses`, `scholar_profile_revisions`, `profile_reviews`, etc.).
+- **Institution Inquiry & Shortlist Workflows (Phase 5):** Structured outreach modal on public profiles, scholar inquiry inbox (`/dashboard/inquiries`), institution portal (`/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`), bookmarked candidate shortlists and saved courses, 10 inquiries/hr rate limiting, and transactional notification email abstraction.
 - **Admin Review & Trust Governance (ADR 0003, ADR 0005):** Administrative review queue (`/admin/reviews`) with side-by-side visual diff inspector comparing live published snapshots with submitted revision proposals, decision panel supporting Approve (promoting revisions to published snapshots), Request Changes, Reject, and Hide actions, immutable review audit trail in `profile_reviews`, institution verification queue (`/admin/institutions`), and reported content moderation (`/admin/reports`).
 - **Revision Staging Model (ADR 0005):** Scholars stage profile edits, credentials, publications, and confessional changes in isolated draft revisions without modifying live published snapshots until admin review.
 - **Assisted CV Onboarding:** Automated CV heuristic parser extracting degrees, awarding institutions, publications, and inferring theological disciplines and traditions.
@@ -42,7 +43,7 @@ Initial ADRs:
   ```bash
   npm run verify
   ```
-  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (15 suites, 76 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
+  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (17 suites, 89 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
 
 ## Product Shape
 

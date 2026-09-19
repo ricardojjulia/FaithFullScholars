@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Phase 5: Institution Inquiry & Shortlist Workflows (ADR 0008)**:
+  - Implemented structured academic outreach modal (`components/inquiries/structured-inquiry-modal.tsx`) accessible directly from scholar profiles and course showcase items.
+  - Built candidate shortlisting and course bookmarking systems (`components/inquiries/shortlist-button.tsx`, `saved_scholars`, `saved_courses`) with persistence and visual toggle feedback.
+  - Implemented Scholar Inquiry Inbox (`app/dashboard/inquiries/page.tsx`, `components/inquiries/scholar-inquiry-inbox.tsx`) supporting inquiry review, acceptance, declining, and archiving.
+  - Built comprehensive Institution Portal shell and pages: Overview Dashboard (`app/(institution)/institution/page.tsx`), Sent Inquiries Outbox (`app/(institution)/institution/inquiries/page.tsx`), Saved Scholars & Courses (`app/(institution)/institution/saved/page.tsx`), and Institution Profile & Accreditation (`app/(institution)/institution/profile/page.tsx`).
+  - Added anti-spam rate limiting (`lib/inquiries/rate-limiter.ts`) enforcing maximum 10 inquiries/hr per institution.
+  - Created transactional email notification service abstraction (`lib/notifications/email-service.ts`) dispatching structured outreach alerts to scholars and decision responses back to institutions.
+  - Implemented REST API endpoints (`/api/inquiries`, `/api/inquiries/[id]`, `/api/institution/saved-scholars`, `/api/institution/saved-courses`).
+  - Added full Spanish translation keys (`inquiry.*` and `institution.*`) with 100% key parity.
+  - Added unit test suite (`tests/unit/inquiry-validation.test.ts`) and database integration test suite (`tests/integration/institution-inquiry.test.ts`) covering outreach, anti-spam, status transitions, shortlists, and dashboard metrics (17 suites, 89/89 tests passing).
 - **Phase 4: Admin Review, Visual Diff Inspector & Trust Governance (ADR 0003 & ADR 0005)**:
   - Built unified administrative workspace layout (`app/(admin)/admin/layout.tsx`) and persistent navigation (`components/admin/admin-nav.tsx`) with staff authentication enforcement.
   - Implemented Profile Review Queue (`app/(admin)/admin/reviews/page.tsx`) triaging submitted profile revisions with status filters (`all`, `submitted`, `changes_requested`, `approved`).

@@ -97,7 +97,15 @@ export function UserMenu() {
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Scholar Workspace</span>
-              <span className="text-[10px] text-indigo-600 font-semibold">Dashboard</span>
+              <span className="text-[10px] text-indigo-600 font-semibold">Faculty</span>
+            </Link>
+            <Link
+              href="/institution"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>Institution Portal</span>
+              <span className="text-[10px] text-emerald-600 font-semibold">Seminary</span>
             </Link>
             <Link
               href="/admin/reviews"
