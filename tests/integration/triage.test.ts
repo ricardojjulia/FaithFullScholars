@@ -7,7 +7,7 @@ import { computeFeedbackFingerprint } from '@/lib/feedback/fingerprint';
 describe('PostgreSQL Pilot Feedback & Rate Limit Live Integration Tests', () => {
   const testSessionId = crypto.randomUUID();
   const testFingerprint = computeFeedbackFingerprint({
-    route: `/test/route-${Date.now()}`,
+    route: `/test/route-${testSessionId}`,
     category: 'BUG',
     note: 'Integration test bug report',
   });
