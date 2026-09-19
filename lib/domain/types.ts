@@ -296,3 +296,19 @@ export interface ProfileReview {
   feedback_notes?: string | null;
   created_at: string;
 }
+
+export type ReportTargetType = 'scholar_profile' | 'course' | 'media_link';
+export type ReportStatus = 'pending' | 'investigating' | 'resolved' | 'dismissed';
+
+export interface ContentReport {
+  id: string;
+  reporter_account_id?: string | null;
+  target_type: ReportTargetType;
+  target_id: string;
+  reason: string;
+  status: ReportStatus;
+  admin_notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+

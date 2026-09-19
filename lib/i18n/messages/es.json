@@ -74,5 +74,17 @@
     "step_upload": "Ingesta de CV",
     "step_review": "Revisar y Perfeccionar Borrador",
     "step_success": "Panel Listo"
+  },
+  "admin": {
+    "title": "Centro de Confianza y Moderación",
+    "profile_reviews": "Revisiones de Perfil",
+    "institutions": "Verificación Institucional",
+    "reports": "Contenido Reportado",
+    "error_triage": "Triaje de Errores",
+    "approve_and_publish": "Aprobar y Publicar en Vivo",
+    "request_changes": "Solicitar Cambios",
+    "reject": "Rechazar Envío",
+    "hide_profile": "Ocultar de la Lista Pública",
+    "diff_inspector": "Inspector de Cambios de Revisión"
   }
 }

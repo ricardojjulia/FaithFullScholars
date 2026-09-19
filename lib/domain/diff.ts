@@ -93,6 +93,32 @@ export function computeRevisionDiff(
     });
   }
 
+  // Compare credentials
+  const oldCred = published?.credentials ?? [];
+  const newCred = draft.credentials ?? [];
+  if (JSON.stringify(oldCred) !== JSON.stringify(newCred)) {
+    changes.push({
+      field: 'credentials',
+      label: 'Academic Credentials',
+      oldValue: oldCred,
+      newValue: newCred,
+      kind: oldCred.length === 0 ? 'added' : newCred.length === 0 ? 'removed' : 'modified',
+    });
+  }
+
+  // Compare publications
+  const oldPub = published?.publications ?? [];
+  const newPub = draft.publications ?? [];
+  if (JSON.stringify(oldPub) !== JSON.stringify(newPub)) {
+    changes.push({
+      field: 'publications',
+      label: 'Scholarly Publications',
+      oldValue: oldPub,
+      newValue: newPub,
+      kind: oldPub.length === 0 ? 'added' : newPub.length === 0 ? 'removed' : 'modified',
+    });
+  }
+
   return {
     hasChanges: changes.length > 0,
     totalChanges: changes.length,

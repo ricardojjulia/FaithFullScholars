@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Phase 4: Admin Review, Visual Diff Inspector & Trust Governance (ADR 0003 & ADR 0005)**:
+  - Built unified administrative workspace layout (`app/(admin)/admin/layout.tsx`) and persistent navigation (`components/admin/admin-nav.tsx`) with staff authentication enforcement.
+  - Implemented Profile Review Queue (`app/(admin)/admin/reviews/page.tsx`) triaging submitted profile revisions with status filters (`all`, `submitted`, `changes_requested`, `approved`).
+  - Created side-by-side Visual Diff Inspector (`components/admin/revision-diff-viewer.tsx`) comparing published live baseline against submitted revisions across academic identity, bio, personal doctrinal statement, historic confessional adherence, disciplines, traditions, credentials, and scholarly publications.
+  - Built Editorial Decision Action Panel (`components/admin/review-action-panel.tsx`) with *Approve & Publish Live*, *Request Changes*, *Reject*, and *Hide from Public Listing* actions, structured feedback notes, and chronological audit history from `profile_reviews`.
+  - Implemented revision detail review page (`app/(admin)/admin/reviews/[id]/page.tsx`).
+  - Implemented Institution Verification Queue (`app/(admin)/admin/institutions/page.tsx`) and action controls for accredited seminaries and colleges.
+  - Implemented Community Content Report Queue (`app/(admin)/admin/reports/page.tsx`) with investigation and resolution workflows.
+  - Built secure Admin REST API routes (`/api/admin/reviews`, `/api/admin/reviews/[id]`, `/api/admin/institutions/[id]`, `/api/admin/reports/[id]`).
+  - Created unit test suite (`tests/unit/admin-diff.test.ts`) and database integration test suite (`tests/integration/admin-review.test.ts`) covering review decisions, audit logging, and live published snapshot promotion (76/76 tests passing).
 - **Phase 3: Scholar Dashboard & Revision Staging (ADR 0005)**:
   - Implemented scholar workspace shell (`app/dashboard/layout.tsx`) and overview dashboard (`app/dashboard/page.tsx`) with staged revision indicator banner and key portfolio metrics.
   - Built comprehensive profile editor (`app/dashboard/profile/page.tsx`, `components/forms/scholar-profile-form.tsx`) calculating live diffs against published baseline snapshot.
