@@ -710,7 +710,9 @@ Acceptance:
 - Anonymous access to dashboards fails.
 - Role boundaries are tested.
 
-### Phase 3: Public Discovery
+### Phase 3: Public Discovery (Roadmap Phase 2)
+
+> **Status:** Completed (Public scholar directory, multi-criteria filtering by discipline/tradition/confession/availability, canonical scholar profile displaying credentials and doctrinal statements, course showcase catalog, syllabus inspection, strict draft isolation, unit & integration tests)
 
 1. Build scholar directory and filters.
 2. Build scholar profile pages.

@@ -2,7 +2,7 @@
 
 ## Current Position
 
-Phase 0 (Application Foundation & Governance) and Phase 1 (Domain Foundation & Schema) are fully implemented and verified. The theological scholar network domain model, Row Level Security (RLS) policies, historic confessional standards taxonomy, seed data, and TypeScript domain types are live in the codebase and pass all CI verification gates. The immediate next phase is **Phase 2: Public Discovery**.
+Phase 0 (Application Foundation & Governance), Phase 1 (Domain Foundation & Schema), and Phase 2 (Public Discovery) are fully implemented and verified. The theological scholar directory, public profiles with full academic portfolios, course showcase catalog, syllabus details, and multi-criteria filters are live and enforce strict draft isolation. The immediate next phase is **Phase 3: Scholar Dashboard & CV Onboarding**.
 
 ## Phase 0: Foundation
 

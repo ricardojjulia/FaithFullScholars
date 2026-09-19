@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 2: Public Discovery (Theological Scholar Directory & Course Showcase)**:
+  - Public Faculty Directory (`/scholars`) featuring responsive multi-criteria filtering by keyword search, theological discipline, tradition, historic confessional affirmation, and adjunct availability.
+  - Canonical Public Scholar Profile (`/scholars/[slug]`) rendering complete academic portfolio: terminal credentials, scholarly publications, syllabi showcases, personal doctrinal statement, affirmed confessional standards with adherence levels/exceptions, and institutional inquiry action.
+  - Public Course Showcase Catalog (`/courses`) and detailed syllabus view (`/courses/[slug]`) displaying modular structure, available delivery formats (online synchronous, async, modular intensives), and instructor links.
+  - Shared public shell header (`components/shell/public-nav.tsx`) and footer (`components/shell/public-footer.tsx`) unified across the homepage, faculty directory, and course catalog.
+  - Server-side public domain loaders (`lib/domain/queries.ts`) enforcing strict draft isolation (only `profile_status = 'approved'` and `visibility = 'public'` exposed).
+  - Test suites: Unit test suite (`tests/unit/public-queries.test.ts`) and full integration test suite (`tests/integration/public-discovery.test.ts`) verifying search filters, taxonomy formatting, and draft privacy against PostgreSQL and Supabase.
 - **Phase 1: Domain Foundation (Theological Scholar Network Schema & Data Layer)**:
   - 22 core domain tables in PostgreSQL (`supabase/migrations/20260919100000_domain_foundation.sql`) for scholars, credentials, publications, courses, availability, institutions, and inquiries.
   - Decoupled draft and published revision staging model ([ADR 0005](docs/adr/0005-draft-published-profile-revisions.md)) via `scholar_profile_revisions`.

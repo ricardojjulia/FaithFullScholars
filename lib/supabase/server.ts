@@ -8,7 +8,12 @@ interface CookieToSet {
 }
 
 export async function createClient() {
-  const cookieStore = await cookies()
+  let cookieStore: Awaited<ReturnType<typeof cookies>> | null = null
+  try {
+    cookieStore = await cookies()
+  } catch {
+    // Non-request context (unit/integration tests, build scripts, background tasks)
+  }
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,9 +21,10 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll()
+          return cookieStore ? cookieStore.getAll() : []
         },
         setAll(cookiesToSet: CookieToSet[]) {
+          if (!cookieStore) return
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options as Parameters<typeof cookieStore.set>[2])
