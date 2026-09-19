@@ -714,20 +714,26 @@ Acceptance:
 - Anonymous access to dashboards fails.
 - Role boundaries are tested.
 
-### Phase 3: Public Discovery (Roadmap Phase 2)
+### Phase 3: Public Discovery (Roadmap Phase 2 & Milestone 2.5)
 
-> **Status:** Completed (Public scholar directory, multi-criteria filtering by discipline/tradition/confession/availability, canonical scholar profile displaying credentials and doctrinal statements, course showcase catalog, syllabus inspection, strict draft isolation, unit & integration tests)
+> **Status:** Completed (Public scholar directory, multi-criteria filtering by discipline/tradition/confession/availability, canonical scholar profile displaying credentials and doctrinal statements, course showcase catalog, syllabus inspection, strict draft isolation, unit & integration tests).
+> **Milestone 2.5 Enhancement Completed:** Modern LinkedIn-grade design system (ADR 0007), universal persistent top bar with shortcut `/` and quick academic queries, 3-column desktop layout (sticky filters, feed, recommendations rail), cover banners, overlapping avatars, token-bucket search rate limiter (`search_rate_limits`), input sanitization, and 3-page anonymous search cap to prevent candidate scraping (ADR 0008). 100% RLS compliance on all 25 public tables.
 
 1. Build scholar directory and filters.
 2. Build scholar profile pages.
 3. Build course directory and course pages.
 4. Add media previews and public topic pages.
+5. Implement LinkedIn-grade navigation shell, profile cards, and 3-column discovery feed.
+6. Implement search abuse gating, rate-limiting, and deep pagination access wall.
 
 Acceptance:
 
 - Only approved records are public.
 - Draft and hidden records return not found.
 - Private contact data is not exposed.
+- Search rate limits block scraping attempts with HTTP 429.
+- Anonymous discovery is capped at 3 pages before prompting sign-in.
+- 100% RLS enforced at PostgreSQL layer.
 
 ### Phase 4: Scholar Dashboard
 

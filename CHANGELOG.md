@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Milestone 2.5: LinkedIn-Grade UI/UX, Universal App Bar, 3-Column Directory & Search Rate Limiting**:
+  - Implemented persistent LinkedIn-style universal top bar (`components/shell/public-nav.tsx`) with embedded universal search bar (`components/shell/universal-search-bar.tsx`), keyboard shortcut `/`, quick academic terms, and "Me" user menu (`components/shell/user-menu.tsx`).
+  - Implemented LinkedIn-style scholar profile hero (`components/scholars/scholar-profile-hero.tsx`) with academic banner, overlapping 120px avatar, verified badge, headline, and action toolbar (*Inquire*, *Shortlist*, *Share*).
+  - Implemented LinkedIn 3-column desktop layout (`app/scholars/page.tsx`) with Left Rail (sticky facet filters), Center Feed (search cards & anonymous pagination wall at page > 3), and Right Rail (`components/scholars/scholar-recommendations-rail.tsx`).
+  - Added doctrinal card component (`components/scholars/scholar-doctrinal-card.tsx`) highlighting faith statement and affirmed confessional standards.
+  - Implemented token-bucket search rate limiting (`lib/search/rate-limiter.ts`) backed by PostgreSQL table `search_rate_limits` with atomic RPC `check_search_rate_limit` (migration `20260919110000_search_rate_limits.sql`).
+  - Added search query input sanitization (`lib/search/sanitize.ts`) protecting against SQL LIKE wildcard injection, regex abuse, and oversized payloads.
+  - Verified 100% RLS enforcement across all 25 public tables (`scripts/audit-rls.ts`) and 10 test suites (58/58 tests passing).
 - **Council Review Round 2: LinkedIn-Grade UI/UX, Data Protection & Search Abuse Gating**:
   - Enacted [ADR 0007](docs/adr/0007-linkedin-ux-and-academic-network-design-system.md) defining the LinkedIn-grade academic network design system: persistent universal top app bar, 3-column desktop layout, cover banners, overlapping avatars, headline credentials, and modular profile cards.
   - Enacted [ADR 0008](docs/adr/0008-search-abuse-gating-anti-scraping-and-pii-protection.md) establishing search abuse defense: distributed token-bucket rate limiter, 3-page anonymous discovery cap, input sanitization, PII segregation, and signed storage URLs.
