@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:ci": "vitest run",
     "audit:rls": "tsx scripts/audit-rls.ts",
+    "verify:pilot": "tsx scripts/verify-pilot-readiness.ts",
     "version:check": "node scripts/check-version.mjs",
     "verify": "npm run version:check && npm run lint && npm run typecheck && npm run test && npm run audit:rls && npm run build"
   },

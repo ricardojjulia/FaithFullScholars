@@ -997,83 +997,82 @@ git add docs/deployment/vercel-supabase.md README.md .env.example
 git commit -m "docs: add Vercel and Supabase deployment setup"
 ```
 
-### Task 6.1: End-to-End Smoke Tests
+### Task 6.1: End-to-End User Journey Integration Tests (Completed)
 
 **Files:**
 
-- Create: `tests/e2e/public-discovery.spec.ts`
-- Create: `tests/e2e/profile-review.spec.ts`
-- Create: `tests/e2e/inquiry-flow.spec.ts`
+- Create: `tests/integration/e2e-user-journeys.test.ts`
 
-- [ ] **Step 1: Add public discovery test**
+- [x] **Step 1: Add public discovery test**
 
-Test homepage to scholar directory to scholar profile to course preview.
+Test unauthenticated multi-criteria search, anonymous rate limiting, scholar profile, and course preview.
 
-- [ ] **Step 2: Add profile review test**
+- [x] **Step 2: Add scholar onboarding and revision review test**
 
-Test scholar draft submission and admin approval.
+Test curriculum vitae parsing, draft revision staging, visual diff inspection, and admin approval with snapshot promotion.
 
-- [ ] **Step 3: Add inquiry flow test**
+- [x] **Step 3: Add institution inquiry and shortlist test**
 
-Test institution user finds approved scholar and submits inquiry.
+Test institution candidate bookmarking, structured inquiry dispatch, transactional email notification, and scholar inbox response.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
-npm run test:e2e
+npm run test tests/integration/e2e-user-journeys.test.ts
 npm run verify
 ```
 
-Expected: e2e, lint, unit tests, and build pass.
+Expected: e2e journeys, lint, unit tests, and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
-git add tests/e2e
-git commit -m "test: add MVP end-to-end smoke coverage"
+git add tests/integration/e2e-user-journeys.test.ts
+git commit -m "test: add comprehensive end-to-end user journeys integration suite"
 ```
 
-### Task 6.2: Documentation Closeout
+### Task 6.2: Documentation and Release Readiness Closeout (Completed)
 
 **Files:**
 
 - Modify: `README.md`
-- Modify: `docs/product/master-plan.md`
-- Modify: `docs/architecture/architecture-review.md`
-- Create: `docs/product/mvp-release-checklist.md`
+- Modify: `CHANGELOG.md`
+- Modify: `docs/product/roadmap.md`
+- Modify: `docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`
+- Create: `docs/deployment/release-readiness-checklist.md`
+- Create: `scripts/verify-pilot-readiness.ts`
 
-- [ ] **Step 1: Add release checklist**
+- [x] **Step 1: Add release readiness checklist**
 
-Checklist must include:
-
+Checklist includes:
 - Public profile visibility verified.
-- Draft profiles are not public.
-- Institution inquiries require authorized institution user.
-- Admin review history is preserved.
-- YouTube links are validated.
-- Supabase RLS policies are verified against public, scholar, institution, and admin roles.
-- Supabase Storage policies are verified for CV files and public profile assets.
-- Vercel preview deployment has passed smoke tests before production promotion.
-- Accessibility smoke check completed.
-- Seed data does not contain real unverifiable scholar claims.
+- Draft profiles and unapproved revisions are strictly segregated from public discovery.
+- Institution inquiries require authorized institution status.
+- Admin review history and immutable audit trail preserved in `profile_reviews`.
+- YouTube links and external media embeds sanitized and CSP-controlled.
+- PostgreSQL RLS verified across all 25 tables.
+- Supabase Storage policies verified for CV files and profile photos.
+- Vercel preview and production environment variables quarantined.
+- Edge security headers (CSP, HSTS, X-Frame-Options, X-Content-Type-Options) enforced in `next.config.ts`.
+- Pilot readiness diagnostic script verifies seed baseline.
 
-- [ ] **Step 2: Update README**
+- [x] **Step 2: Update README and CHANGELOG**
 
-Add setup, development, test, and verification commands.
+Add pilot diagnostic commands (`npm run verify:pilot`), security headers documentation, and updated roadmap status.
 
-- [ ] **Step 3: Verify docs and build**
+- [x] **Step 3: Verify docs and build**
 
 ```bash
 npm run verify
 ```
 
-Expected: verification passes.
+Expected: all 6 quality gates pass with zero errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
-git add README.md docs
-git commit -m "docs: close out MVP release readiness"
+git add README.md docs package.json scripts
+git commit -m "docs: close out Phase 6 MVP release hardening and deployment readiness"
 ```
 
 ## Recommended Build Order

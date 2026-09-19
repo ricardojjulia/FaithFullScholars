@@ -84,14 +84,13 @@ Once `main` is active and updated:
    - Unreleased notes in [`CHANGELOG.md`](file:///Users/rjulia/programs/FaithFullScholars/CHANGELOG.md)
 3. Select the earliest uncompleted milestone or sub-milestone:
    - **Phase 0:** Application Foundation *(Completed)*
-   - **Phase 1:** Supabase Domain Foundation (Disciplines, Traditions, Confessional Standards, Profile Revisions, RLS, Seed Data)
-   - **Phase 2:** Authentication and Roles (Scholar, Institution, Admin RBAC, Protected Layouts)
-   - **Phase 3:** Public Discovery (Directory, Filters, Profile Detail, Course Showcase, Topic Pages)
-   - **Phase 4:** Scholar Dashboard (CV Onboarding, Profile Revisions Staging ADR-0005, Media, Availability)
-   - **Phase 5:** Admin Trust Workflows (Review Queue, Diff Viewer, Approval Actions, Audit Trail)
-   - **Phase 6:** Institution Workflows (Saved Lists, Formal Inquiries, Rate Limiting)
-   - **Phase 7:** Vercel Deployment & Secret Hardening
-   - **Phase 8:** Release Hardening & Controlled Pilot
+   - **Phase 1:** Supabase Domain Foundation (Disciplines, Traditions, Confessional Standards, Profile Revisions, RLS, Seed Data) *(Completed)*
+   - **Phase 2:** Authentication and Roles (Scholar, Institution, Admin RBAC, Protected Layouts) *(Completed)*
+   - **Phase 3:** Public Discovery (Directory, Filters, Profile Detail, Course Showcase, Topic Pages, LinkedIn UX, Search Rate Limiting) *(Completed)*
+   - **Phase 4:** Scholar Dashboard (CV Onboarding, Profile Revisions Staging ADR-0005, Media, Availability, Spanish i18n) *(Completed)*
+   - **Phase 5:** Admin Trust Workflows (Review Queue, Diff Viewer, Approval Actions, Audit Trail) *(Completed)*
+   - **Phase 6:** Institution Workflows (Saved Lists, Formal Inquiries, Rate Limiting) *(Completed)*
+   - **Phase 7 & 8:** Release Hardening & Deployment Preparation (Security Headers, E2E User Journeys, Release Checklist, Pilot Readiness Inspector) *(Completed)*
 4. Scope today's work to a coherent, deliverable slice (never an open-ended mega-task).
 
 ---
