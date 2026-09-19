@@ -11,7 +11,9 @@
 
 FaithFull Scholars is a professional discovery and academic showcase network for professors serving theological colleges, seminaries, Bible colleges, Christian universities, ministry institutes, churches, and related organizations.
 
-The platform is LinkedIn-like in that scholars maintain professional profiles and institutions discover people. It is intentionally narrower and more structured than LinkedIn. Profiles emphasize academic credentials, theological and biblical disciplines, institutional affiliations, curriculum vitae, publications, courses, sample teaching content, languages, delivery formats, and availability for institutional opportunities.
+The platform embodies the **modern look, feel, and user experience of contemporary LinkedIn**, adapted specifically for the rigor, dignity, and confessional integrity of theological academia (ADR 0007). Profiles emphasize academic credentials, theological and biblical disciplines, institutional affiliations, curriculum vitae, publications, courses, sample teaching content, languages, delivery formats, confessional standards affirmations (ADR 0001), and verified availability for institutional opportunities.
+
+At the core of the platform is an uncompromising **Data Protection, RLS & Anti-Scraping Gating Architecture** (ADR 0008): personal user PII (emails, phone numbers) is strictly isolated from public search surfaces, all 24 database tables enforce 100% Row Level Security, private assets require cryptographically signed URLs, and the public search bar is defended by distributed token-bucket rate limiting, input sanitization, and deep-pagination walls to prevent predatory scraping or candidate harvesting.
 
 The first product is a **Scholar Profile Network** with public course and content discovery. It is not initially a full hiring marketplace.
 
@@ -35,18 +37,20 @@ FaithFull Scholars creates a trusted, searchable academic directory where:
 - Courses and teaching content are attached to the scholar who offers them.
 - Public visitors discover trustworthy theological learning content.
 - Admin review protects the credibility of public listings.
+- User data is secured by full PostgreSQL RLS, storage encryption, and search abuse gating.
 
 ## 3. Platform Baseline
 
-- **Application:** Next.js App Router with TypeScript.
+- **Application:** Next.js App Router with TypeScript (Turbopack).
+- **Design System:** LinkedIn-Grade Academic Network Design System (ADR 0007) with 3-column desktop layout, persistent universal app bar, and card-based profile architecture.
 - **Hosting:** Vercel.
-- **Authentication:** Supabase Auth.
-- **Database:** Supabase Postgres.
-- **Authorization:** Supabase Row Level Security plus server-side application checks.
-- **File storage:** Supabase Storage for CVs, profile images, and scholar-owned documents.
+- **Authentication:** Supabase Auth with cookie-based SSR sessions.
+- **Database:** Supabase Postgres with 100% Row Level Security (RLS) enforcement.
+- **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, token-bucket search rate limiting, deep-pagination walls, and signed storage URLs (ADR 0008).
+- **File storage:** Supabase Storage with private encrypted buckets for CVs, full syllabi, and administrative review assets.
 - **External media:** YouTube and other external platforms for video, podcasts, and public course content.
-- **Styling:** Tailwind CSS with accessible components such as shadcn/ui.
-- **Testing:** Vitest or Jest plus Playwright.
+- **Styling:** Tailwind CSS with accessible semantic tokens and dignified academic typography.
+- **Testing & Quality Gates:** Vitest, PostgreSQL RLS audit (`npm run audit:rls`), ESLint, and Next.js production builds.
 - **Deployment:** Vercel preview deployments for pull requests and production deployment from `main`.
 
 ## 4. Product Boundaries

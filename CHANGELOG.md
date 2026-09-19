@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Council Review Round 2: LinkedIn-Grade UI/UX, Data Protection & Search Abuse Gating**:
+  - Enacted [ADR 0007](docs/adr/0007-linkedin-ux-and-academic-network-design-system.md) defining the LinkedIn-grade academic network design system: persistent universal top app bar, 3-column desktop layout, cover banners, overlapping avatars, headline credentials, and modular profile cards.
+  - Enacted [ADR 0008](docs/adr/0008-search-abuse-gating-anti-scraping-and-pii-protection.md) establishing search abuse defense: distributed token-bucket rate limiter, 3-page anonymous discovery cap, input sanitization, PII segregation, and signed storage URLs.
+  - Published Council Review 2 reports and synthesis (`docs/reviews/2026-09-19-council-review-2-*.md`).
+  - Sequenced implementation prompts in `docs/reviews/2026-09-19-council-review-2-synthesis.md` for Prompt A (Search Gating & Rate Limiting), Prompt B (Universal App Bar & Shell), and Prompt C (LinkedIn-Style Profile & 3-Column Directory).
 - **Phase 2: Public Discovery (Theological Scholar Directory & Course Showcase)**:
   - Public Faculty Directory (`/scholars`) featuring responsive multi-criteria filtering by keyword search, theological discipline, tradition, historic confessional affirmation, and adjunct availability.
   - Canonical Public Scholar Profile (`/scholars/[slug]`) rendering complete academic portfolio: terminal credentials, scholarly publications, syllabi showcases, personal doctrinal statement, affirmed confessional standards with adherence levels/exceptions, and institutional inquiry action.

@@ -2,7 +2,7 @@
 
 ## Current Position
 
-Phase 0 (Application Foundation & Governance), Phase 1 (Domain Foundation & Schema), and Phase 2 (Public Discovery) are fully implemented and verified. The theological scholar directory, public profiles with full academic portfolios, course showcase catalog, syllabus details, and multi-criteria filters are live and enforce strict draft isolation. The immediate next phase is **Phase 3: Scholar Dashboard & CV Onboarding**.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), and Phase 2 (Public Discovery) are fully implemented and verified. Per Council Review Round 2 consensus and user mandate, we are executing **Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating** (ADR 0007, ADR 0008) to deliver a modern LinkedIn-style application experience with robust anti-scraping and PII defenses before advancing to Phase 3 (Scholar Dashboard & CV Onboarding).
 
 ## Phase 0: Foundation
 
@@ -57,6 +57,26 @@ Exit criteria:
 
 - Draft profiles and unapproved revisions are never public.
 - Approved scholars and public courses are discoverable with multi-criteria filters.
+
+## Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating
+
+Goal: Elevate the public discovery experience to modern LinkedIn standards while implementing robust search rate-limiting, anti-scraping defenses, and PII protection (ADR 0007, ADR 0008).
+
+Deliverables:
+
+- Persistent universal top application bar with integrated search typeahead and scope selectors.
+- Modern 3-column desktop layout for directory and discovery feeds (mini-profile & filters on left, main directory in center, recommendations & trust rail on right).
+- Canonical LinkedIn-style profile card hierarchy: cover banner, 120px overlapping avatar, credential headline, action bar, and modular cards for degrees, publications, syllabi, and doctrinal affirmations.
+- Distributed token-bucket search rate limiter (`search_rate_limits` table) with 15 req/min for anonymous callers and 120 req/min for verified institutions.
+- 3-page anonymous discovery cap (max 18 results) with sign-in wall preventing automated candidate harvesting.
+- Search input sanitization and PII segregation.
+
+Exit criteria:
+
+- Directory and profile pages look and feel like modern LinkedIn tailored for theological academia.
+- Automated rate limiter blocks search abuse with HTTP 429.
+- Anonymous pagination beyond page 3 triggers authentication prompt.
+- All quality gates (`npm run verify`) pass.
 
 ## Phase 3: Scholar Dashboard
 

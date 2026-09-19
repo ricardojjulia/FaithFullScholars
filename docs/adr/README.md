@@ -18,6 +18,9 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0003-admin-reviewed-publication.md`: Admin-reviewed public profiles prior to listing.
 - `0004-vercel-supabase-platform.md`: Next.js on Vercel backed by Supabase platform baseline.
 - `0005-draft-published-profile-revisions.md`: Decouple live profiles from in-review changes via Draft & Published Revisions.
+- `0006-pilot-feedback-error-triage.md`: Distributed telemetry, rate limiting, and staff error-triage workspace.
+- `0007-linkedin-ux-and-academic-network-design-system.md`: Modern LinkedIn UI/UX paradigm, universal app bar, 3-column layout, and canonical profile card hierarchy.
+- `0008-search-abuse-gating-anti-scraping-and-pii-protection.md`: Token-bucket search rate limiting, 3-page anonymous discovery cap, input sanitization, and PII segregation.
 
 Each ADR must define:
 - **Status:** Proposed / Accepted / Superseded
