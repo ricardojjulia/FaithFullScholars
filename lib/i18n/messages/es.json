@@ -86,5 +86,37 @@
     "reject": "Rechazar Envío",
     "hide_profile": "Ocultar de la Lista Pública",
     "diff_inspector": "Inspector de Cambios de Revisión"
+  },
+  "inquiry": {
+    "title": "Consulta Institucional",
+    "send_inquiry": "Enviar Consulta Institucional",
+    "opportunity_type": "Tipo de Oportunidad",
+    "proposed_term": "Período Académico Objetivo",
+    "delivery_mode": "Modalidad de Enseñanza",
+    "contact_email": "Correo Institucional de Contacto",
+    "email_note": "Las respuestas se enviarán a esta dirección una vez que el académico acepte la consulta.",
+    "message": "Mensaje Estructurado de Consulta",
+    "submit": "Enviar Consulta",
+    "cancel": "Cancelar",
+    "done": "Listo",
+    "success_title": "¡Consulta Enviada Exitosamente!",
+    "success_desc": "Su solicitud de oportunidad estructurada ha sido enviada al académico.",
+    "privacy_notice": "Las consultas se canalizan mediante comunicación estructurada de la plataforma. Los datos de contacto personal se revelan tras la aceptación.",
+    "error_too_short": "Por favor proporcione un mensaje detallado (al menos 20 caracteres).",
+    "stat_total": "Total de Consultas Recibidas",
+    "stat_pending": "Pendientes de Revisión",
+    "stat_accepted": "Oportunidades Aceptadas",
+    "empty_title": "No se encontraron consultas",
+    "empty_desc": "Cuando instituciones teológicas acreditadas envíen solicitudes de docencia o conferencias, aparecerán aquí.",
+    "search_placeholder": "Filtrar por seminario o tema..."
+  },
+  "institution": {
+    "portal_title": "Portal Institucional",
+    "nav_overview": "Resumen General",
+    "nav_inquiries": "Alcance y Consultas",
+    "nav_saved": "Académicos Preseleccionados",
+    "nav_profile": "Perfil Institucional",
+    "shortlist": "Preseleccionar",
+    "shortlisted": "Preseleccionado"
   }
 }

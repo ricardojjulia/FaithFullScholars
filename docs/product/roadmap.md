@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, and **Phase 3 (Scholar Dashboard & Revision Staging)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 4: Admin Review & Verification**.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, and **Phase 5 (Institution Inquiry & Shortlist Workflows)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 6: MVP Release Hardening**.
 
 ## Phase 0: Foundation
 
@@ -120,21 +120,28 @@ Exit criteria:
 - [x] Reported content items can be reviewed and moderated.
 - [x] All 6 quality gates pass (`npm run verify`).
 
-## Phase 5: Institution Inquiry
+## Phase 5: Institution Inquiry & Shortlist Workflows (Completed)
 
-Goal: Let approved institutions contact scholars through structured opportunity requests.
+Goal: Let approved institutions contact scholars through structured opportunity requests and manage recruitment shortlists (ADR 0008).
 
 Deliverables:
 
-- Institution user flow.
-- Inquiry form.
-- Inquiry dashboard.
-- Email notification abstraction.
+- Structured faculty outreach inquiry modal (`StructuredInquiryModal`) for adjunct teaching, modular courses, guest lectures, etc.
+- Candidate shortlisting and course bookmarking systems (`saved_scholars`, `saved_courses`) with persistence.
+- Scholar Inquiry Inbox (`/dashboard/inquiries`) with status transitions (pending, accepted, declined, archived) and decision feedback.
+- Institution Portal workspace (`/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`).
+- Anti-spam rate limiting (10 inquiries/hr per institution) and input validation.
+- Transactional email notification service abstraction (`email-service.ts`) with event logging.
+- Unit and database integration tests verifying end-to-end communication workflows.
 
 Exit criteria:
 
-- Approved institution users can send inquiries.
-- Spam-prone routes are rate-limited.
+- [x] Approved institution users can send inquiries.
+- [x] Unapproved institutions are blocked at API and RLS layers.
+- [x] Spam-prone routes are rate-limited.
+- [x] Scholar inbox displays incoming inquiries and allows accept/decline responses.
+- [x] Candidates and courses can be shortlisted and viewed in the institution portal.
+- [x] All 6 quality gates pass (`npm run verify`).
 
 ## Phase 6: MVP Release Hardening
 

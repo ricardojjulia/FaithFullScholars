@@ -86,5 +86,37 @@
     "reject": "Reject Submission",
     "hide_profile": "Hide from Public Listing",
     "diff_inspector": "Revision Staging Diff Inspector"
+  },
+  "inquiry": {
+    "title": "Institutional Inquiry",
+    "send_inquiry": "Send Institutional Inquiry",
+    "opportunity_type": "Opportunity Type",
+    "proposed_term": "Target Academic Term",
+    "delivery_mode": "Delivery Format",
+    "contact_email": "Institutional Contact Email",
+    "email_note": "Responses will be sent to this email address once the scholar accepts your inquiry.",
+    "message": "Structured Inquiry Message",
+    "submit": "Send Inquiry",
+    "cancel": "Cancel",
+    "done": "Done",
+    "success_title": "Inquiry Dispatched Successfully!",
+    "success_desc": "Your structured opportunity request has been sent to the scholar.",
+    "privacy_notice": "Inquiries are routed through structured platform communication. Scholar personal contact details are released upon inquiry acceptance.",
+    "error_too_short": "Please provide a detailed inquiry message (at least 20 characters).",
+    "stat_total": "Total Outreach Received",
+    "stat_pending": "Pending Review",
+    "stat_accepted": "Accepted Opportunities",
+    "empty_title": "No Inquiries Found",
+    "empty_desc": "When accredited theological institutions send teaching or speaking inquiries, they will appear here.",
+    "search_placeholder": "Filter by seminary or topic..."
+  },
+  "institution": {
+    "portal_title": "Institution Portal",
+    "nav_overview": "Overview",
+    "nav_inquiries": "Outreach & Inquiries",
+    "nav_saved": "Shortlisted Scholars",
+    "nav_profile": "Institution Profile",
+    "shortlist": "Shortlist",
+    "shortlisted": "Shortlisted"
   }
 }

@@ -769,7 +769,9 @@ Acceptance:
 - [x] Verification remains separate.
 - [x] 100% RLS compliance on all 25 tables.
 
-### Phase 6: Institution Workflows
+### Phase 6: Institution Workflows (Completed)
+
+> **Status:** Completed (Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
 
 1. Build institution profiles and membership.
 2. Build saved scholars and courses.
@@ -779,9 +781,10 @@ Acceptance:
 
 Acceptance:
 
-- Only approved institutions send formal inquiries.
-- Institutions cannot access each other's records.
-- Inquiries are visible only to authorized parties.
+- [x] Only approved institutions send formal inquiries.
+- [x] Institutions cannot access each other's records.
+- [x] Inquiries are visible only to authorized parties.
+- [x] 100% RLS compliance on all 25 tables.
 
 ### Phase 7: Vercel Deployment
 

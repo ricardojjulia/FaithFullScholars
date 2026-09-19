@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
+import { StructuredInquiryModal } from '@/lib/../components/inquiries/structured-inquiry-modal';
+import { ShortlistButton } from '@/lib/../components/inquiries/shortlist-button';
 
 interface ScholarProfileHeroProps {
   scholar: FullPublicScholarProfile;
@@ -9,7 +11,7 @@ interface ScholarProfileHeroProps {
 
 export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
   const [copied, setCopied] = useState(false);
-  const [isShortlisted, setIsShortlisted] = useState(false);
+  const [showInquiryModal, setShowInquiryModal] = useState(false);
 
   const initials = scholar.full_name
     .replace(/^Dr\.\s*/i, '')
@@ -119,25 +121,17 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
         <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
           <button
             type="button"
-            onClick={() => alert(`Institutional outreach initiated for ${scholar.full_name}. Inquiries are routed through structured platform review.`)}
+            onClick={() => setShowInquiryModal(true)}
             className="px-5 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
           >
             <span>✉️</span>
             <span>Send Institutional Inquiry</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setIsShortlisted(!isShortlisted)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-semibold border transition-colors flex items-center gap-1.5 cursor-pointer ${
-              isShortlisted
-                ? 'bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
-                : 'border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200'
-            }`}
-          >
-            <span>{isShortlisted ? '★' : '☆'}</span>
-            <span>{isShortlisted ? 'Shortlisted' : 'Save to Shortlist'}</span>
-          </button>
+          <ShortlistButton
+            scholarId={scholar.id}
+            scholarName={scholar.full_name}
+          />
 
           <button
             type="button"
@@ -149,6 +143,18 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
           </button>
         </div>
       </div>
+
+      {/* Structured Opportunity Inquiry Modal */}
+      <StructuredInquiryModal
+        isOpen={showInquiryModal}
+        onClose={() => setShowInquiryModal(false)}
+        scholar={{
+          id: scholar.id,
+          fullName: scholar.full_name,
+          primaryInstitution: scholar.current_institution,
+          avatarUrl: scholar.profile_photo_path,
+        }}
+      />
     </div>
   );
 }
