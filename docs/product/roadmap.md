@@ -2,7 +2,7 @@
 
 ## Current Position
 
-Phase 0 (Foundation), Phase 1 (Domain Foundation), and Phase 2 (Public Discovery) are fully implemented and verified. Per Council Review Round 2 consensus and user mandate, we are executing **Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating** (ADR 0007, ADR 0008) to deliver a modern LinkedIn-style application experience with robust anti-scraping and PII defenses before advancing to Phase 3 (Scholar Dashboard & CV Onboarding).
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), and **Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating** (ADR 0007, ADR 0008) are fully implemented, audited, and verified across all 6 gates. Next up is **Phase 3: Scholar Dashboard & CV Onboarding**.
 
 ## Phase 0: Foundation
 

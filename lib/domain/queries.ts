@@ -7,6 +7,7 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import { sanitizeSearchQuery } from '@/lib/search/sanitize';
 import {
   AcademicCredential,
   AcademicPublication,
@@ -19,6 +20,9 @@ import {
   ConfessionalStandard,
 } from './types';
 
+export const MAX_ANONYMOUS_SEARCH_PAGES = 3;
+export const DEFAULT_PAGE_SIZE = 6;
+
 export interface ScholarFilters {
   search?: string;
   discipline?: string;
@@ -26,6 +30,9 @@ export interface ScholarFilters {
   confession?: string;
   availableForHire?: boolean;
   deliveryMode?: string;
+  page?: number;
+  pageSize?: number;
+  isAuthenticated?: boolean;
 }
 
 export interface PublicScholarCard {
@@ -155,11 +162,14 @@ export async function getPublicScholars(
     `)
     .eq('profile_status', 'approved');
 
-  if (filters.search && filters.search.trim() !== '') {
-    const term = `%${filters.search.trim()}%`;
-    query = query.or(
-      `full_name.ilike.${term},title.ilike.${term},biography.ilike.${term},current_institution.ilike.${term}`
-    );
+  if (filters.search) {
+    const { sanitized, isValid } = sanitizeSearchQuery(filters.search);
+    if (isValid) {
+      const term = `%${sanitized}%`;
+      query = query.or(
+        `full_name.ilike.${term},title.ilike.${term},biography.ilike.${term},current_institution.ilike.${term}`
+      );
+    }
   }
 
   const { data, error } = await query;
@@ -413,14 +423,17 @@ export async function getPublicCourses(
     discipline: row.disciplines ?? null,
   }));
 
-  if (filters.search && filters.search.trim() !== '') {
-    const term = filters.search.trim().toLowerCase();
-    results = results.filter(
-      (c) =>
-        c.title.toLowerCase().includes(term) ||
-        (c.description && c.description.toLowerCase().includes(term)) ||
-        c.scholar.full_name.toLowerCase().includes(term)
-    );
+  if (filters.search) {
+    const { sanitized, isValid } = sanitizeSearchQuery(filters.search);
+    if (isValid) {
+      const term = sanitized.toLowerCase();
+      results = results.filter(
+        (c) =>
+          c.title.toLowerCase().includes(term) ||
+          (c.description && c.description.toLowerCase().includes(term)) ||
+          c.scholar.full_name.toLowerCase().includes(term)
+      );
+    }
   }
 
   if (filters.discipline) {

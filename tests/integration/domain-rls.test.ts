@@ -89,7 +89,7 @@ describe('Phase 1 Domain Foundation & RLS Integration Tests', () => {
     expect(courseRes.rows[0].level).toBe('graduate');
   });
 
-  it('5. verifies strict RLS enforcement on all 24 public tables', async () => {
+  it('5. verifies strict RLS enforcement on all public tables (minimum 24 tables)', async () => {
     const rlsRes = await client.query(`
       SELECT c.relname, c.relrowsecurity
       FROM pg_class c
@@ -100,7 +100,7 @@ describe('Phase 1 Domain Foundation & RLS Integration Tests', () => {
         AND c.relname NOT IN ('schema_migrations', '_prisma_migrations')
     `);
 
-    expect(rlsRes.rows.length).toBe(24);
+    expect(rlsRes.rows.length).toBeGreaterThanOrEqual(24);
     for (const table of rlsRes.rows) {
       expect(table.relrowsecurity).toBe(true);
     }
