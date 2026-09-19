@@ -98,22 +98,27 @@ Exit criteria:
 - [x] Ownership checks prevent cross-profile edits.
 - [x] All 6 quality gates pass (`npm run verify`).
 
-## Phase 4: Admin Review
+## Phase 4: Admin Review, Visual Diff Inspector & Trust Governance (Completed)
 
-Goal: Protect platform trust before public listing and moderate profile edits.
+Goal: Protect platform trust before public listing and moderate profile edits (ADR 0003, ADR 0005).
 
 Deliverables:
 
-- Review queue for initial profile submissions and revision diffs.
-- Visual diff viewer comparing published snapshot with submitted revision.
-- Approve, request changes, reject, and hide actions.
-- Review history and audit log.
-- Reported content queue.
+- Review queue for initial profile submissions and revision diffs (`/admin/reviews`).
+- Visual diff viewer (`RevisionDiffViewer`) comparing published baseline snapshot with submitted revision.
+- Approve, request changes, reject, and hide actions with reviewer notes and publication promotion.
+- Review history and audit log (`profile_reviews` table).
+- Institution verification queue (`/admin/institutions`) with verify and reject workflows.
+- Reported content moderation queue (`/admin/reports`) with dismiss, warn, hide, and remove actions.
+- Persistent admin sub-navigation bar across reviews, institutions, reports, and error triage.
 
 Exit criteria:
 
-- Admins control initial profile publication and revision promotions.
-- Review actions are auditable.
+- [x] Admins control initial profile publication and revision promotions.
+- [x] Review actions are auditable in `profile_reviews` table.
+- [x] Institutions can be verified or rejected with audit trails.
+- [x] Reported content items can be reviewed and moderated.
+- [x] All 6 quality gates pass (`npm run verify`).
 
 ## Phase 5: Institution Inquiry
 

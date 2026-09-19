@@ -74,5 +74,17 @@
     "step_upload": "CV Ingestion",
     "step_review": "Review & Refine Draft",
     "step_success": "Dashboard Ready"
+  },
+  "admin": {
+    "title": "Trust & Moderation Hub",
+    "profile_reviews": "Profile Reviews",
+    "institutions": "Institution Verification",
+    "reports": "Reported Content",
+    "error_triage": "Error Triage",
+    "approve_and_publish": "Approve & Publish Live",
+    "request_changes": "Request Changes",
+    "reject": "Reject Submission",
+    "hide_profile": "Hide from Public Listing",
+    "diff_inspector": "Revision Staging Diff Inspector"
   }
 }

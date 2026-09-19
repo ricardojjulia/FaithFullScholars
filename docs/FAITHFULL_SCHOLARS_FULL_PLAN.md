@@ -735,7 +735,9 @@ Acceptance:
 - Anonymous discovery is capped at 3 pages before prompting sign-in.
 - 100% RLS enforced at PostgreSQL layer.
 
-### Phase 4: Scholar Dashboard
+### Phase 4: Scholar Dashboard (Completed)
+
+> **Status:** Completed (Assisted CV onboarding with heuristic parsing, revision staging manager preserving published profiles, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
 
 1. Build profile editor.
 2. Build CV and publication manager.
@@ -745,12 +747,14 @@ Acceptance:
 
 Acceptance:
 
-- Scholars edit only their own records.
-- CV privacy works.
-- Unsafe media URLs fail.
-- RLS mirrors application authorization.
+- [x] Scholars edit only their own records.
+- [x] CV privacy works.
+- [x] Unsafe media URLs fail.
+- [x] RLS mirrors application authorization.
 
-### Phase 5: Admin Trust Workflows
+### Phase 5: Admin Trust Workflows (Completed)
+
+> **Status:** Completed (Admin review queue at `/admin/reviews`, side-by-side visual diff inspector comparing published baseline vs submitted revision, approve/request-changes/reject/hide actions with published snapshot promotion, review audit log in `profile_reviews`, institution verification queue at `/admin/institutions`, reported content moderation queue at `/admin/reports`).
 
 1. Build profile review queue.
 2. Add approve, request changes, reject, and hide actions.
@@ -760,9 +764,10 @@ Acceptance:
 
 Acceptance:
 
-- Review is admin-only.
-- Approval controls publication.
-- Verification remains separate.
+- [x] Review is admin-only.
+- [x] Approval controls publication and snapshot promotion.
+- [x] Verification remains separate.
+- [x] 100% RLS compliance on all 25 tables.
 
 ### Phase 6: Institution Workflows
 
