@@ -82,7 +82,7 @@ If a different framework is selected, preserve the same module boundaries.
 - Create: `app/page.tsx`
 - Create: `README.md` updates as needed
 
-- [ ] **Step 1: Scaffold the app**
+- [x] **Step 1: Scaffold the app**
 
 Run the selected framework scaffold command. For the recommended stack:
 
@@ -92,7 +92,7 @@ npx create-next-app@latest . --ts --eslint --tailwind --app --src-dir false --im
 
 Expected: project files are created in the repository root without overwriting the existing docs.
 
-- [ ] **Step 2: Add Vercel project defaults**
+- [x] **Step 2: Add Vercel project defaults**
 
 Create `vercel.json`:
 
@@ -105,7 +105,7 @@ Create `vercel.json`:
 
 Expected: Vercel recognizes the project as a Next.js app and deploys server routes in the selected region unless project settings override it.
 
-- [ ] **Step 3: Verify scaffold**
+- [x] **Step 3: Verify scaffold**
 
 ```bash
 npm run lint
@@ -114,7 +114,7 @@ npm run build
 
 Expected: both commands pass.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .
@@ -129,7 +129,7 @@ git commit -m "chore: initialize FaithFull Scholars app"
 - Create: `tests/README.md`
 - Create: `playwright.config.ts`
 
-- [ ] **Step 1: Add test dependencies**
+- [x] **Step 1: Add test dependencies**
 
 ```bash
 npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom playwright @playwright/test
@@ -137,7 +137,7 @@ npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom pla
 
 Expected: dependencies install successfully.
 
-- [ ] **Step 2: Add scripts**
+- [x] **Step 2: Add scripts**
 
 Add scripts:
 
@@ -150,7 +150,7 @@ Add scripts:
 }
 ```
 
-- [ ] **Step 3: Add test documentation**
+- [x] **Step 3: Add test documentation**
 
 Create `tests/README.md`:
 
@@ -160,7 +160,7 @@ Create `tests/README.md`:
 Use unit tests for pure business rules, integration tests for server actions and data access, and Playwright tests for public discovery, scholar onboarding, admin review, and institution inquiry flows.
 ```
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run verify
@@ -168,7 +168,7 @@ npm run verify
 
 Expected: lint, tests, and build pass. If there are no tests yet, the test runner should exit successfully with the configured empty-suite behavior.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add package.json package-lock.json playwright.config.ts tests/README.md
@@ -186,7 +186,7 @@ git commit -m "chore: add verification gates"
 - Create: `middleware.ts`
 - Modify: `package.json`
 
-- [ ] **Step 1: Add Supabase dependencies**
+- [x] **Step 1: Add Supabase dependencies**
 
 ```bash
 npm install @supabase/supabase-js @supabase/ssr
@@ -194,7 +194,7 @@ npm install @supabase/supabase-js @supabase/ssr
 
 Expected: Supabase client libraries install successfully.
 
-- [ ] **Step 2: Add environment contract**
+- [x] **Step 2: Add environment contract**
 
 Create `.env.example`:
 
@@ -207,19 +207,19 @@ SUPABASE_PROJECT_ID=
 
 Expected: public variables contain only URL and publishable key. `SUPABASE_SERVICE_ROLE_KEY` is server-only and must never be referenced by browser code.
 
-- [ ] **Step 3: Add Supabase browser client**
+- [x] **Step 3: Add Supabase browser client**
 
 Create `lib/supabase/client.ts` with a browser-safe client factory that uses only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
 
-- [ ] **Step 4: Add Supabase server client**
+- [x] **Step 4: Add Supabase server client**
 
 Create `lib/supabase/server.ts` with a cookie-backed server client using the current Supabase SSR helper pattern for Next.js.
 
-- [ ] **Step 5: Add middleware session refresh**
+- [x] **Step 5: Add middleware session refresh**
 
 Create `middleware.ts` and `lib/supabase/middleware.ts` to refresh Supabase sessions for authenticated routes.
 
-- [ ] **Step 6: Add Vercel environment setup notes**
+- [x] **Step 6: Add Vercel environment setup notes**
 
 Update README setup instructions to require these Vercel environment variables in Preview and Production:
 
@@ -228,7 +228,7 @@ Update README setup instructions to require these Vercel environment variables i
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_PROJECT_ID`
 
-- [ ] **Step 7: Verify**
+- [x] **Step 7: Verify**
 
 ```bash
 npm run verify
@@ -236,7 +236,7 @@ npm run verify
 
 Expected: lint, tests, and build pass.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add .env.example lib/supabase middleware.ts package.json package-lock.json README.md
@@ -256,7 +256,7 @@ git commit -m "chore: configure Supabase and Vercel environment contracts"
 - Create: `lib/courses/types.ts`
 - Create: `lib/inquiries/types.ts`
 
-- [ ] **Step 1: Initialize Supabase**
+- [x] **Step 1: Initialize Supabase**
 
 ```bash
 npx supabase --help
@@ -265,7 +265,7 @@ npx supabase init
 
 Expected: Supabase config files are created. Use the CLI help output to verify command syntax before running project-specific commands.
 
-- [ ] **Step 2: Create initial migration**
+- [x] **Step 2: Create initial migration**
 
 Use the Supabase CLI migration command:
 
@@ -275,7 +275,7 @@ npx supabase migration new initial_schema
 
 Expected: a timestamped SQL migration file is created under `supabase/migrations/`.
 
-- [ ] **Step 3: Define schema tables**
+- [x] **Step 3: Define schema tables**
 
 Add SQL tables for:
 
@@ -315,7 +315,7 @@ Required enum concepts:
 - InquiryStatus
 - ReviewDecision
 
-- [ ] **Step 4: Enable RLS**
+- [x] **Step 4: Enable RLS**
 
 Enable RLS for every table in the exposed `public` schema. Initial policies must support:
 
@@ -325,7 +325,7 @@ Enable RLS for every table in the exposed `public` schema. Initial policies must
 - Institution-owned saved records and inquiries.
 - Admin-only review and revision promotion operations.
 
-- [ ] **Step 5: Apply migration locally**
+- [x] **Step 5: Apply migration locally**
 
 ```bash
 npx supabase start
@@ -334,7 +334,7 @@ npx supabase db reset
 
 Expected: local Supabase starts and the schema applies cleanly.
 
-- [ ] **Step 6: Generate database types**
+- [x] **Step 6: Generate database types**
 
 ```bash
 npx supabase gen types typescript --local > lib/db/database.types.ts
@@ -342,7 +342,7 @@ npx supabase gen types typescript --local > lib/db/database.types.ts
 
 Expected: TypeScript database types are generated from the local Supabase schema.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add supabase lib/db lib/profiles lib/courses lib/inquiries
@@ -356,7 +356,7 @@ git commit -m "feat: define Supabase domain schema"
 - Create: `supabase/seed.sql`
 - Modify: `package.json`
 
-- [ ] **Step 1: Add SQL seed data**
+- [x] **Step 1: Add SQL seed data**
 
 Seed data should include:
 
@@ -370,7 +370,7 @@ Seed data should include:
 - YouTube-style media links using clearly fake or placeholder URLs unless real permission exists.
 - One approved institution.
 
-- [ ] **Step 2: Reset local database with seed**
+- [x] **Step 2: Reset local database with seed**
 
 ```bash
 npx supabase db reset
@@ -378,7 +378,7 @@ npx supabase db reset
 
 Expected: database schema applies and seed data loads.
 
-- [ ] **Step 3: Verify seeded data**
+- [x] **Step 3: Verify seeded data**
 
 ```bash
 npx supabase status
@@ -386,7 +386,7 @@ npx supabase status
 
 Expected: local Supabase is running. Use a SQL query through the local database or Supabase Studio to confirm approved and draft scholar records exist.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add supabase/seed.sql package.json package-lock.json
@@ -401,7 +401,7 @@ git commit -m "chore: seed scholar network data"
 - Create: `lib/media/storage.ts`
 - Test: `tests/integration/storage-policies.test.ts`
 
-- [ ] **Step 1: Create storage migration**
+- [x] **Step 1: Create storage migration**
 
 ```bash
 npx supabase migration new storage_policies
@@ -409,7 +409,7 @@ npx supabase migration new storage_policies
 
 Expected: a timestamped storage policy migration exists.
 
-- [ ] **Step 2: Define buckets**
+- [x] **Step 2: Define buckets**
 
 Create buckets for:
 
@@ -423,7 +423,7 @@ Default behavior:
 - CV files are private by default.
 - Course documents are private or public according to course preview settings and profile approval.
 
-- [ ] **Step 3: Define storage policies**
+- [x] **Step 3: Define storage policies**
 
 Policies must allow:
 
@@ -431,7 +431,7 @@ Policies must allow:
 - Admins to read files during review.
 - Public users to read only explicitly public files tied to approved profiles or courses.
 
-- [ ] **Step 4: Verify locally**
+- [x] **Step 4: Verify locally**
 
 ```bash
 npx supabase db reset
@@ -440,7 +440,7 @@ npm run test -- storage-policies
 
 Expected: storage policy tests pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/migrations lib/media tests/integration
@@ -459,19 +459,19 @@ git commit -m "feat: add Supabase storage policies"
 - Create: `lib/search/scholars.ts`
 - Test: `tests/unit/search-scholars.test.ts`
 
-- [ ] **Step 1: Write failing test**
+- [x] **Step 1: Write failing test**
 
 Test that search results only include approved scholars and filter by discipline, availability, theological tradition, and confessional standards affirmed.
 
-- [ ] **Step 2: Implement search query**
+- [x] **Step 2: Implement search query**
 
 Implement `searchScholars(filters)` with approved-profile filtering, tradition/confessional filtering, and multi-criteria ranking built in.
 
-- [ ] **Step 3: Render directory**
+- [x] **Step 3: Render directory**
 
 Render search controls (including confessional standards dropdown/toggles) and scholar cards.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- search-scholars
@@ -480,7 +480,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/scholars components/search components/profiles lib/search tests/unit
@@ -500,19 +500,19 @@ git commit -m "feat: add public scholar directory with confessional filters"
 - Create: `lib/profiles/public-profile.ts`
 - Test: `tests/integration/public-profile-visibility.test.ts`
 
-- [ ] **Step 1: Write visibility test**
+- [x] **Step 1: Write visibility test**
 
 Test that approved profiles load and draft, hidden, rejected, or submitted profiles return not found. Test that when an approved scholar has a pending draft revision, only the approved snapshot data is served publicly.
 
-- [ ] **Step 2: Implement public profile loader**
+- [x] **Step 2: Implement public profile loader**
 
 Implement a loader that fetches only approved scholar data (or promoted revision data), affirmed confessional standards, personal doctrinal statement, and public courses/media.
 
-- [ ] **Step 3: Render profile**
+- [x] **Step 3: Render profile**
 
 Include identity, biography, disciplines, confessional standards, personal doctrinal statement (or PDF link), CV summary, publications, courses, media, and availability.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- public-profile-visibility
@@ -521,7 +521,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/scholars components/profiles components/courses lib/profiles tests/integration
@@ -540,19 +540,19 @@ git commit -m "feat: add public scholar profiles"
 - Create: `lib/courses/public-courses.ts`
 - Test: `tests/unit/public-courses.test.ts`
 
-- [ ] **Step 1: Write tests**
+- [x] **Step 1: Write tests**
 
 Test that public course queries exclude courses owned by unapproved scholars and include courses with free preview content.
 
-- [ ] **Step 2: Implement loaders**
+- [x] **Step 2: Implement loaders**
 
 Add course list and course detail loaders.
 
-- [ ] **Step 3: Render pages**
+- [x] **Step 3: Render pages**
 
 Render course details, scholar link, delivery mode, syllabus link, reading list, and media previews.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- public-courses
@@ -561,12 +561,40 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/courses components/courses lib/courses tests/unit
 git commit -m "feat: add public course discovery"
 ```
+
+### Milestone 2.5: LinkedIn-Grade UI/UX & Search Abuse Gating (ADR 0007, ADR 0008)
+
+**Files:**
+
+- Create: `supabase/migrations/20260919110000_search_rate_limits.sql`
+- Create: `lib/search/rate-limiter.ts`
+- Create: `lib/search/sanitize.ts`
+- Create: `components/shell/universal-search-bar.tsx`
+- Create: `components/shell/user-menu.tsx`
+- Modify: `components/shell/public-nav.tsx`
+- Create: `components/scholars/scholar-profile-hero.tsx`
+- Create: `components/scholars/scholar-doctrinal-card.tsx`
+- Create: `components/scholars/scholar-recommendations-rail.tsx`
+- Modify: `app/scholars/page.tsx`
+- Modify: `app/scholars/[slug]/page.tsx`
+- Test: `tests/unit/search-gating.test.ts`
+- Test: `tests/unit/universal-nav.test.ts`
+- Test: `tests/integration/search-rate-limits.test.ts`
+
+- [x] **Step 1: Enact ADRs & Council Concurrence**
+- [x] **Step 2: Implement database rate limiting & 100% RLS on table 25**
+- [x] **Step 3: Implement input sanitization and token-bucket search defense**
+- [x] **Step 4: Build persistent universal top navigation bar & "Me" dropdown**
+- [x] **Step 5: Build 3-column discovery layout & 3-page anonymous search cap**
+- [x] **Step 6: Build academic profile cards & hero banner**
+- [x] **Step 7: Verify all 6 quality gates pass (`npm run verify`)**
+- [x] **Step 8: Commit & push**
 
 ## Phase 3: Scholar Dashboard
 

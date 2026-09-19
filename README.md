@@ -25,6 +25,20 @@ Initial ADRs:
 - [ADR 0004: Vercel and Supabase Platform Baseline](docs/adr/0004-vercel-supabase-platform.md)
 - [ADR 0005: Draft and Published Profile Revisions](docs/adr/0005-draft-published-profile-revisions.md)
 - [ADR 0006: Pilot Feedback & Automatic Error Triage System](docs/adr/0006-pilot-feedback-error-triage.md)
+- [ADR 0007: LinkedIn-Grade UI/UX and Academic Network Design System](docs/adr/0007-linkedin-ux-and-academic-network-design-system.md)
+- [ADR 0008: Search Abuse Gating, Anti-Scraping Defenses & PII Protection](docs/adr/0008-search-abuse-gating-anti-scraping-and-pii-protection.md)
+
+## Current Status & Verification
+
+- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), and **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)** are fully implemented, audited, and verified.
+- **Data Isolation & Row Level Security:** 100% RLS compliance across all 25 PostgreSQL tables in the public schema (`search_rate_limits`, `scholars`, `courses`, `inquiries`, etc.).
+- **Search Abuse & Anti-Scraping Defenses:** Token-bucket rate limiting (15 req/min anonymous, 120 req/min authenticated), 3-page anonymous search cap with sign-in wall, and input sanitization stripping SQL `LIKE` wildcards.
+- **LinkedIn Academic Design System:** Persistent universal app bar with `/` keyboard shortcut, "Me" dropdown menu, 3-column discovery layout, academic cover banners, 120px circular overlapping avatars, verified badges, and modular profile cards.
+- **Verification Pipeline:**
+  ```bash
+  npm run verify
+  ```
+  Runs all 6 quality gates: `version:check`, `lint`, `typecheck`, `test` (10 suites, 58 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
 
 ## Product Shape
 
