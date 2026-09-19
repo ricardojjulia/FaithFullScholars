@@ -2,7 +2,7 @@
 
 ## Current Position
 
-The repository contains the initial software layout, product plan, architecture review, software factory definition, ADRs, and MVP execution plan. Runtime application code has not been implemented yet. The selected platform baseline is Vercel-hosted Next.js backed by Supabase Auth, Supabase Postgres, RLS, and Supabase Storage.
+Phase 0 (Application Foundation & Governance) and Phase 1 (Domain Foundation & Schema) are fully implemented and verified. The theological scholar network domain model, Row Level Security (RLS) policies, historic confessional standards taxonomy, seed data, and TypeScript domain types are live in the codebase and pass all CI verification gates. The immediate next phase is **Phase 2: Public Discovery**.
 
 ## Phase 0: Foundation
 

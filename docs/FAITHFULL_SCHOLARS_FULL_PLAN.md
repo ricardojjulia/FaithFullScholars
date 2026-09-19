@@ -662,6 +662,8 @@ Rules:
 
 ### Phase 0: Application Foundation
 
+> **Status:** Completed (Next.js 16 App Router, Tailwind CSS, Supabase SSR helpers, Vitest, and CI pipeline)
+
 1. Initialize Next.js App Router with TypeScript, Tailwind, ESLint, and Vercel configuration.
 2. Add Vitest/Jest, Testing Library, Playwright, and `npm run verify`.
 3. Install `@supabase/supabase-js` and `@supabase/ssr`.
@@ -675,6 +677,8 @@ Acceptance:
 - `npm run build` passes.
 
 ### Phase 1: Supabase Foundation
+
+> **Status:** Completed (22 domain tables, RLS policies on all 24 public tables, ADR 0005 revision model, theological taxonomy and confessional standards seed data, TypeScript domain layer)
 
 1. Run `npx supabase --help`.
 2. Run `npx supabase init`.

@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 1: Domain Foundation (Theological Scholar Network Schema & Data Layer)**:
+  - 22 core domain tables in PostgreSQL (`supabase/migrations/20260919100000_domain_foundation.sql`) for scholars, credentials, publications, courses, availability, institutions, and inquiries.
+  - Decoupled draft and published revision staging model ([ADR 0005](docs/adr/0005-draft-published-profile-revisions.md)) via `scholar_profile_revisions`.
+  - Historic theological confessional standards taxonomy (`confessional_standards`, `scholar_confessions`) covering Westminster, 1689 London Baptist, Nicene, Heidelberg, Augsburg, and 39 Articles.
+  - 100% Row Level Security (RLS) enforcement on all 24 public tables (`supabase/migrations/20260919100100_domain_rls_policies.sql`).
+  - Comprehensive theological seed data (`supabase/seed.sql`) with real disciplines, traditions, institutions, and scholars.
+  - TypeScript domain types (`lib/domain/types.ts`), revision diff engine (`lib/domain/diff.ts`), and taxonomy helpers (`lib/domain/taxonomies.ts`).
+  - Unit tests (`tests/unit/domain-models.test.ts`) and integration tests (`tests/integration/domain-rls.test.ts`).
 - **Repository Safeguards & CI/CD Pipelines** (Parity with AdMe):
   - GitHub Actions CI pipeline (`.github/workflows/ci.yml`) enforcing `version:check`, `lint`, `typecheck`, and `audit:rls` with PostgreSQL service container.
   - Release deployment pipeline (`.github/workflows/release.yml`) with staging and production gates.
