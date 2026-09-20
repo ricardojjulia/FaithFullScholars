@@ -85,7 +85,7 @@ export default function OnboardingPage() {
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-300 text-xs font-semibold">
             <span>✨ Scholar Onboarding Wizard</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
             Set Up Your Academic & Theological Profile
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-lg mx-auto">
@@ -149,8 +149,8 @@ export default function OnboardingPage() {
         {/* Step 2: Review Draft */}
         {step === 'review' && (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-              <h2 className="text-sm font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                 1. Identity & Institutional Affiliation
               </h2>
 
@@ -218,8 +218,8 @@ export default function OnboardingPage() {
             </div>
 
             {/* Confessional Standards & Historic Creeds */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h2 className="text-sm font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
                 2. Confessional Standards & Historic Creeds
               </h2>
               <ConfessionalStandardsSelector
@@ -229,8 +229,8 @@ export default function OnboardingPage() {
             </div>
 
             {/* Doctrinal Statement */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h2 className="text-sm font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2 mb-4">
                 3. Personal Doctrinal Statement
               </h2>
               <DoctrinalStatementForm
@@ -263,12 +263,12 @@ export default function OnboardingPage() {
 
         {/* Step 3: Success */}
         {step === 'success' && (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-center space-y-4 max-w-md mx-auto">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp text-center space-y-4 max-w-md mx-auto">
             <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
               ✓
             </div>
 
-            <h2 className="text-xl font-serif font-bold text-slate-900 dark:text-white">
+            <h2 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Profile Revision Staged!
             </h2>
 

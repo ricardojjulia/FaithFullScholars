@@ -4,9 +4,9 @@ export function ScholarRecommendationsRail() {
   return (
     <div className="space-y-6">
       {/* 1. Open Teaching Calls & Institutional Needs */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+      <div className="card-crisp p-5">
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
-          <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+          <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <span>💼</span> Open Teaching Calls
           </h3>
           <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
@@ -69,8 +69,8 @@ export function ScholarRecommendationsRail() {
       </div>
 
       {/* 2. Trending Theological Fields */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-        <h3 className="font-serif font-bold text-sm text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="card-crisp p-5">
+        <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white mb-3 flex items-center gap-2">
           <span>📈</span> Trending Disciplines
         </h3>
         <div className="flex flex-wrap gap-1.5 text-xs">
@@ -95,7 +95,7 @@ export function ScholarRecommendationsRail() {
 
       {/* 3. Platform Trust & Governance Card */}
       <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 text-xs text-slate-500 space-y-2">
-        <div className="font-serif font-bold text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
+        <div className="font-display font-bold tracking-tight text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
           <span>🛡️</span> Academic Trust & RLS Security
         </div>
         <p className="text-[11px] leading-relaxed">

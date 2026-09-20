@@ -4,12 +4,12 @@ import { formatDeliveryMode } from '@/lib/domain/taxonomies';
 
 export function CourseCard({ course }: { course: PublicCourseCard }) {
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900 transition-all flex flex-col justify-between">
+    <div className="card-crisp p-6 flex flex-col justify-between">
       <div>
         {/* Top Badges: Discipline & Level */}
         <div className="flex items-center justify-between gap-2 mb-3">
           {course.discipline ? (
-            <span className="text-[10px] font-semibold tracking-wider uppercase px-2 py-0.5 rounded bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300">
+            <span className="text-[10px] font-semibold tracking-wider uppercase px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900">
               {course.discipline.name}
             </span>
           ) : (
@@ -23,7 +23,7 @@ export function CourseCard({ course }: { course: PublicCourseCard }) {
         {/* Title */}
         <Link
           href={`/courses/${course.slug}`}
-          className="font-serif font-bold text-lg text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2 mb-2"
+          className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-2 mb-2"
         >
           {course.title}
         </Link>

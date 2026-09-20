@@ -79,9 +79,9 @@ export function ScholarFilters({
     Boolean(search) || Boolean(discipline) || Boolean(tradition) || Boolean(confession) || available;
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-5">
+    <div className="card-crisp p-5 space-y-5">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-        <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+        <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
           <span>🔍</span> Filter Faculty
         </h3>
         {hasActiveFilters && (

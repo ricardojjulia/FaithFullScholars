@@ -58,7 +58,7 @@ export default function ScholarAnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Profile & Discovery Analytics
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
@@ -107,7 +107,7 @@ export default function ScholarAnalyticsPage() {
         {/* Search Impressions */}
         <div
           onClick={() => setActiveMetric('impressions')}
-          className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+          className={`cursor-pointer p-5 rounded-2xl border card-crisp transition-all ${
             activeMetric === 'impressions'
               ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20'
               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
@@ -121,7 +121,7 @@ export default function ScholarAnalyticsPage() {
               +{overview.searchImpressionsTrend}%
             </span>
           </div>
-          <div className="mt-2 text-2xl font-bold font-serif text-slate-900 dark:text-white">
+          <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
             {overview.searchImpressions.toLocaleString()}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -132,7 +132,7 @@ export default function ScholarAnalyticsPage() {
         {/* Profile Views */}
         <div
           onClick={() => setActiveMetric('views')}
-          className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+          className={`cursor-pointer p-5 rounded-2xl border card-crisp transition-all ${
             activeMetric === 'views'
               ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20'
               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
@@ -146,7 +146,7 @@ export default function ScholarAnalyticsPage() {
               +{overview.profileViewsTrend}%
             </span>
           </div>
-          <div className="mt-2 text-2xl font-bold font-serif text-slate-900 dark:text-white">
+          <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
             {overview.profileViews.toLocaleString()}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -157,7 +157,7 @@ export default function ScholarAnalyticsPage() {
         {/* Syllabus Downloads */}
         <div
           onClick={() => setActiveMetric('downloads')}
-          className={`cursor-pointer p-5 rounded-2xl border transition-all ${
+          className={`cursor-pointer p-5 rounded-2xl border card-crisp transition-all ${
             activeMetric === 'downloads'
               ? 'border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/40 dark:bg-indigo-950/20'
               : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
@@ -171,7 +171,7 @@ export default function ScholarAnalyticsPage() {
               +{overview.syllabusDownloadsTrend}%
             </span>
           </div>
-          <div className="mt-2 text-2xl font-bold font-serif text-slate-900 dark:text-white">
+          <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
             {overview.syllabusDownloads.toLocaleString()}
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -182,7 +182,7 @@ export default function ScholarAnalyticsPage() {
         {/* Inquiries */}
         <Link
           href="/dashboard/inquiries"
-          className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all group"
+          className="p-5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 card-crisp hover:border-indigo-300 dark:hover:border-indigo-700 transition-all group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -193,7 +193,7 @@ export default function ScholarAnalyticsPage() {
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-serif text-slate-900 dark:text-white">
+            <span className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
               {overview.inquiriesCount}
             </span>
             <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-hover:underline">
@@ -207,10 +207,10 @@ export default function ScholarAnalyticsPage() {
       </div>
 
       {/* SVG Engagement Chart Section */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
               8-Week Institutional Discovery Velocity
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -321,10 +321,10 @@ export default function ScholarAnalyticsPage() {
       {/* Two-Column Middle Grid: Top Search Keywords & Tradition Demographics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Keywords */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+              <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
                 Institutional Search Keywords
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -354,7 +354,7 @@ export default function ScholarAnalyticsPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-serif font-bold text-slate-700 dark:text-slate-300">
+                  <span className="text-xs font-display font-bold tracking-tight text-slate-700 dark:text-slate-300">
                     {kw.impressions} queries
                   </span>
                   <span
@@ -373,9 +373,9 @@ export default function ScholarAnalyticsPage() {
         </div>
 
         {/* Tradition & Institutional Demographics */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
           <div>
-            <h2 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+            <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Institutional Tradition Affinity
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -427,9 +427,9 @@ export default function ScholarAnalyticsPage() {
       </div>
 
       {/* Actionable Profile Optimization Recommendations */}
-      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+      <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
         <div>
-          <h2 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+          <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
             Algorithmic Visibility Recommendations
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

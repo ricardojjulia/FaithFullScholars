@@ -17,22 +17,22 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
     .toUpperCase();
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-900 transition-all flex flex-col justify-between">
+    <div className="card-crisp p-6 flex flex-col justify-between">
       <div>
         {/* Top bar: Avatar & Availability */}
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-950 dark:bg-indigo-950 dark:border-indigo-800 dark:text-amber-300 font-serif font-bold text-lg flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100/80 text-indigo-950 dark:bg-indigo-950 dark:border-indigo-800 dark:text-amber-300 font-display font-bold text-sm flex items-center justify-center shrink-0 tracking-tight shadow-3xs">
               {initials}
             </div>
             <div>
               <Link
                 href={`/scholars/${scholar.slug}`}
-                className="font-serif font-bold text-lg text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-1"
+                className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-1"
               >
                 {scholar.full_name}
               </Link>
-              <p className="text-xs text-slate-500 line-clamp-1">
+              <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                 {scholar.title || scholar.institutional_role || 'Theological Scholar'}
               </p>
             </div>

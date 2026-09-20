@@ -37,7 +37,7 @@ export function InstitutionNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
         <div className="flex items-center space-x-2">
           <span className="text-base">🏛️</span>
-          <span className="text-xs font-serif font-bold text-slate-900 dark:text-white">
+          <span className="text-xs font-display font-bold tracking-tight text-slate-900 dark:text-white">
             {t('institution.portal_title') || 'Institution Portal'}
           </span>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">

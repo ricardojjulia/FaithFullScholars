@@ -10,15 +10,15 @@ export function PublicNav() {
         {/* Left: Brand & Universal Search */}
         <div className="flex items-center gap-3 sm:gap-5 flex-1 max-w-xl">
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-9 h-9 rounded-xl bg-indigo-950 text-amber-300 font-serif font-bold text-lg flex items-center justify-center shadow-xs group-hover:bg-indigo-900 transition-colors border border-indigo-900">
+            <div className="w-9 h-9 rounded-xl bg-indigo-950 text-amber-300 font-display font-bold text-base flex items-center justify-center shadow-xs group-hover:bg-indigo-900 transition-all border border-indigo-900/80 tracking-tight">
               FS
             </div>
             <div className="hidden lg:flex flex-col">
-              <span className="font-serif font-bold text-base tracking-tight text-slate-900 dark:text-white leading-tight">
-                FaithFull Scholars
+              <span className="font-display font-bold text-[15px] tracking-tight text-slate-900 dark:text-white leading-tight">
+                FaithFull <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Scholars</span>
               </span>
-              <span className="text-[9px] text-slate-500 uppercase tracking-wider font-semibold">
-                Theological Network
+              <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">
+                Theological Faculty Network
               </span>
             </div>
           </Link>

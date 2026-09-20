@@ -38,7 +38,7 @@ export function UserMenu() {
         <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
           <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full bg-indigo-900 text-amber-300 font-serif font-bold text-sm flex items-center justify-center shadow-sm">
+              <div className="w-10 h-10 rounded-full bg-indigo-900 text-amber-300 font-display font-bold text-xs flex items-center justify-center shadow-xs tracking-tight">
                 FS
               </div>
               <div>

@@ -91,7 +91,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
               <span>✨</span>
               <span>Citation-Grounded AI Faculty Matcher</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-serif font-bold text-white">
+            <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight text-white">
               Search Committee Candidate Matcher
             </h2>
             <p className="text-xs text-indigo-200 max-w-xl leading-relaxed">
@@ -184,7 +184,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
             <div className="py-16 text-center space-y-4">
               <div className="w-12 h-12 rounded-full border-3 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin mx-auto" />
               <div className="space-y-1">
-                <h3 className="font-serif font-bold text-slate-900 dark:text-white text-base">
+                <h3 className="font-display font-bold text-slate-900 dark:text-white text-base tracking-tight">
                   Evaluating Faculty Portfolios & Doctrinal Formularies...
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
@@ -199,7 +199,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
               <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-2xl flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900">
                 🔎
               </div>
-              <h3 className="font-serif font-bold text-slate-900 dark:text-white text-base">
+              <h3 className="font-display font-bold text-slate-900 dark:text-white text-base tracking-tight">
                 Ready for Academic Search Matching
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
@@ -232,7 +232,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                           <Link
                             href={`/scholars/${match.slug}`}
                             onClick={onClose}
-                            className="text-base font-serif font-bold text-slate-900 dark:text-white hover:text-indigo-600 transition-colors"
+                            className="text-base font-display font-bold text-slate-900 dark:text-white hover:text-indigo-600 transition-colors tracking-tight"
                           >
                             {match.fullName}
                           </Link>
@@ -253,7 +253,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
 
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <span className="text-lg font-serif font-bold text-indigo-950 dark:text-indigo-300">
+                          <span className="text-lg font-display font-bold text-indigo-950 dark:text-indigo-300 tracking-tight">
                             {match.fitScore}%
                           </span>
                           <span className="text-[10px] uppercase font-bold text-slate-400 block -mt-1">

@@ -226,8 +226,8 @@ export default function DraftPreviewPage() {
           {/* Left / Center 2 Columns: Credentials & Publications */}
           <div className="lg:col-span-2 space-y-6">
             {/* Academic Credentials Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
-              <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm card-crisp space-y-4">
+              <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                 Education & Credentials
               </h3>
               <div className="space-y-3">
@@ -250,8 +250,8 @@ export default function DraftPreviewPage() {
             </div>
 
             {/* Scholarly Publications Card */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
-              <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm card-crisp space-y-4">
+              <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                 Selected Scholarly Publications
               </h3>
               <div className="space-y-3">

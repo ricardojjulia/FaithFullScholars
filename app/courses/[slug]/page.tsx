@@ -63,7 +63,7 @@ export default async function CourseDetailPage({
         </nav>
 
         {/* Course Header Card */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm mb-8">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl card-crisp p-6 sm:p-8 shadow-sm mb-8">
           <div className="flex flex-wrap items-center gap-2 mb-3">
             {course.discipline && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-900 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900">
@@ -75,20 +75,20 @@ export default async function CourseDetailPage({
             </span>
           </div>
 
-          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
             {course.title}
           </h1>
 
           {/* Instructor Box */}
           <div className="flex items-center gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-800 mb-6">
-            <div className="w-10 h-10 rounded-xl bg-indigo-900 text-amber-300 font-serif font-bold text-base flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-indigo-900 text-amber-300 font-display font-bold text-base flex items-center justify-center">
               {course.scholar.full_name.charAt(3) || 'S'}
             </div>
             <div>
               <div className="text-xs text-slate-500">Prepared & Taught by</div>
               <Link
                 href={`/scholars/${course.scholar.slug}`}
-                className="font-serif font-bold text-sm text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
+                className="font-display font-bold tracking-tight text-sm text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400"
               >
                 {course.scholar.full_name}
               </Link>
@@ -132,8 +132,8 @@ export default async function CourseDetailPage({
 
         {/* Syllabus & Reading List */}
         <div className="space-y-6">
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
-            <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl card-crisp p-6 shadow-sm">
+            <h2 className="font-display font-bold tracking-tight text-lg text-slate-900 dark:text-white mb-3 flex items-center gap-2">
               <span>📄</span> Syllabus & Modular Structure
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">

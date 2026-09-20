@@ -40,7 +40,7 @@ export function AdminNav() {
                 🛡️
               </span>
               <div>
-                <span className="block font-serif text-sm font-bold text-slate-900 dark:text-white">
+                <span className="block font-display text-sm font-bold tracking-tight text-slate-900 dark:text-white">
                   FaithFull Scholars
                 </span>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">

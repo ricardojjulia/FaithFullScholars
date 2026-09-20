@@ -75,7 +75,7 @@ export default function CoursesManagerPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
             Courses & Syllabus Showcases
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -98,7 +98,7 @@ export default function CoursesManagerPage() {
         {courses.map((course) => (
           <div
             key={course.id}
-            className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between space-y-4"
+            className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp flex flex-col justify-between space-y-4"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -117,7 +117,7 @@ export default function CoursesManagerPage() {
                 </span>
               </div>
 
-              <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
                 {course.title}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -162,9 +162,9 @@ export default function CoursesManagerPage() {
       {/* Add Course Modal */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 max-w-lg w-full shadow-xl space-y-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 max-w-lg w-full shadow-xl card-crisp space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-              <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+              <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
                 Add Course Syllabus
               </h3>
               <button

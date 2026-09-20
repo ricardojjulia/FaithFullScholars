@@ -2,25 +2,73 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Aptos', 'Aptos Display', var(--font-sans-fallback), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Charter', 'Palatino Linotype', 'Cambria', Georgia, serif;
+  --font-display: 'Aptos Display', 'Aptos', var(--font-sans-fallback), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #020617;
+    --foreground: #f8fafc;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Aptos', 'Aptos Display', var(--font-sans-fallback), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+}
+
+/* Crisp Modern Display Typography & Utilities */
+.font-display {
+  font-family: 'Aptos Display', 'Aptos', var(--font-sans-fallback), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  letter-spacing: -0.022em;
+}
+
+.font-literary {
+  font-family: 'Iowan Old Style', 'Charter', 'Palatino Linotype', 'Cambria', Georgia, serif;
+}
+
+.tracking-crisp {
+  letter-spacing: -0.015em;
+}
+
+/* Subtle micro-elevation and crisp border treatments */
+.card-crisp {
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  background-color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card-crisp {
+    border-color: rgba(30, 41, 59, 0.9);
+    background-color: #0f172a;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  }
+}
+
+.card-crisp:hover {
+  border-color: rgba(203, 213, 225, 1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card-crisp:hover {
+    border-color: rgba(51, 65, 85, 1);
+  }
 }

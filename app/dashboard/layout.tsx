@@ -8,7 +8,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-serif font-bold text-slate-900 dark:text-white">
+            <span className="text-xs font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Scholar Workspace
             </span>
           </div>
