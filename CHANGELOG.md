@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Next.js 16 Proxy File Convention Migration**:
+  - Migrated from deprecated `middleware.ts` to canonical Next.js 16 `proxy.ts`, exporting `proxy(request: NextRequest)` and preserving Supabase SSR cookie session refresh logic and asset exclusion matchers.
+  - Eliminated Turbopack build deprecation warnings (`middleware-to-proxy`).
+
 ### Fixed
 - **SSR Hydration Mismatch in `LanguageSwitcher` / `I18nProvider`**:
   - Replaced client-branching `useState(() => if (typeof window !== 'undefined'))` with React 19 idiomatic `useSyncExternalStore` in `lib/i18n/i18n-context.tsx` to eliminate hydration mismatch errors when `fs_locale` differs from server defaults.
