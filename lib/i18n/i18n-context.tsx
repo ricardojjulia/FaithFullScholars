@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useSyncExternalStore } from 'react';
 import enMessages from './messages/en.json';
 import esMessages from './messages/es.json';
 
@@ -25,29 +25,53 @@ const I18nContext = createContext<I18nContextType>({
   t: (key) => key
 });
 
-export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
+const listeners = new Set<() => void>();
+
+function subscribeLocale(callback: () => void) {
+  listeners.add(callback);
+  if (typeof window !== 'undefined') {
+    window.addEventListener('storage', callback);
+  }
+  return () => {
+    listeners.delete(callback);
     if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('fs_locale') as Locale;
-        if (saved && (saved === 'en' || saved === 'es')) {
-          return saved;
-        }
-      } catch {
-        // fallback
-      }
+      window.removeEventListener('storage', callback);
     }
-    return 'en';
-  });
+  };
+}
+
+function getLocaleSnapshot(): Locale {
+  if (typeof window === 'undefined') return 'en';
+  try {
+    const saved = localStorage.getItem('fs_locale') as Locale;
+    if (saved === 'en' || saved === 'es') {
+      return saved;
+    }
+  } catch {
+    // fallback
+  }
+  return 'en';
+}
+
+function getServerLocaleSnapshot(): Locale {
+  return 'en';
+}
+
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const locale = useSyncExternalStore(
+    subscribeLocale,
+    getLocaleSnapshot,
+    getServerLocaleSnapshot
+  );
 
   function setLocale(newLocale: Locale) {
-    setLocaleState(newLocale);
     try {
       localStorage.setItem('fs_locale', newLocale);
       document.cookie = `fs_locale=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
     } catch {
       // non-blocking
     }
+    listeners.forEach((listener) => listener());
   }
 
   function t(key: string, variables?: Record<string, string | number>): string {
