@@ -33,9 +33,13 @@ export function LanguageSwitcher() {
         className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg border border-slate-200/80 dark:border-slate-700 transition-colors shadow-2xs"
         aria-label="Select Language"
         aria-expanded={isOpen}
+        suppressHydrationWarning
       >
-        <span>{currentLang.flag}</span>
-        <span className="uppercase tracking-wider text-[11px] hidden sm:inline">
+        <span suppressHydrationWarning>{currentLang.flag}</span>
+        <span
+          suppressHydrationWarning
+          className="uppercase tracking-wider text-[11px] hidden sm:inline"
+        >
           {currentLang.code}
         </span>
         <svg

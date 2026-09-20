@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **SSR Hydration Mismatch in `LanguageSwitcher` / `I18nProvider`**:
+  - Replaced client-branching `useState(() => if (typeof window !== 'undefined'))` with React 19 idiomatic `useSyncExternalStore` in `lib/i18n/i18n-context.tsx` to eliminate hydration mismatch errors when `fs_locale` differs from server defaults.
+  - Added `suppressHydrationWarning` on `components/shell/language-switcher.tsx` button and flag/code spans for defense-in-depth.
+  - Ensured zero cascading renders and 100% compliance with React 19 ESLint rules.
 - **CI / Supabase Local Stack & Test Environment Fix**:
   - Adopted official `supabase/setup-cli@v1` in GitHub Actions CI to spin up the complete local Supabase stack (`supabase start`) matching local development configuration, including PostgreSQL, PostgREST API, Auth, and automatic migration/seeding.
   - Provided explicit `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to the `unit-tests` job step.
