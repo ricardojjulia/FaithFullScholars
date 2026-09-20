@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check } from 'lucide-react';
 
 const OPPORTUNITY_OPTIONS = [
   { id: 'adjunct_teaching', label: 'Adjunct Faculty Appointments', desc: 'Semester or term-based teaching contracts' },
@@ -49,8 +50,9 @@ export default function AvailabilityManagerPage() {
       </div>
 
       {saved && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 text-xs font-medium">
-          ✓ Availability preferences saved to your draft revision.
+        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 text-xs font-medium flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          <span>Availability preferences saved to your draft revision.</span>
         </div>
       )}
 

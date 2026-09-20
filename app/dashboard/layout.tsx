@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Inbox, BarChart3, Eye } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -42,21 +43,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href="/dashboard/inquiries"
               className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
             >
-              <span>✉️</span>
+              <Inbox className="w-3.5 h-3.5 stroke-[2]" />
               <span>Inquiries</span>
             </Link>
             <Link
               href="/dashboard/analytics"
               className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors flex items-center gap-1.5"
             >
-              <span>📊</span>
+              <BarChart3 className="w-3.5 h-3.5 stroke-[2]" />
               <span>Analytics</span>
             </Link>
             <Link
               href="/dashboard/preview"
-              className="px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors flex items-center gap-1"
+              className="px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition-colors flex items-center gap-1.5"
             >
-              <span>👁️</span>
+              <Eye className="w-3.5 h-3.5 stroke-[2]" />
               <span>Draft Preview</span>
             </Link>
           </nav>

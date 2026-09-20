@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Check, Plus } from 'lucide-react';
 import { RevisionSnapshotData } from '@/lib/domain/types';
 import { ConfessionalStandardsSelector } from './confessional-standards-selector';
 import { DoctrinalStatementForm } from './doctrinal-statement-form';
@@ -270,14 +271,14 @@ export function ScholarProfileForm({
                 key={disc}
                 type="button"
                 onClick={() => toggleDiscipline(disc)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 ${
                   active
                     ? 'bg-indigo-900 text-white shadow-xs'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
-                {active ? '✓ ' : '+ '}
-                {disc}
+                {active ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                <span>{disc}</span>
               </button>
             );
           })}

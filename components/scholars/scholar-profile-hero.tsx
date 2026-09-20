@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Building2, MapPin, ScrollText, Send, Share2, Check } from 'lucide-react';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { StructuredInquiryModal } from '@/lib/../components/inquiries/structured-inquiry-modal';
 import { ShortlistButton } from '@/lib/../components/inquiries/shortlist-button';
@@ -66,9 +67,10 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
                 {scholar.verification_status === 'verified' && (
                   <span
                     title="Platform Verified Theological Faculty"
-                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900"
                   >
-                    ✓ Verified Faculty
+                    <Check className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Verified Faculty</span>
                   </span>
                 )}
               </div>
@@ -94,7 +96,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
           <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-600 dark:text-slate-400">
             {scholar.current_institution && (
               <span className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200">
-                <span>🏛️</span>
+                <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[1.75]" />
                 <span>{scholar.current_institution}</span>
                 {scholar.institutional_role && (
                   <span className="font-normal text-slate-500">({scholar.institutional_role})</span>
@@ -103,15 +105,15 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             )}
 
             {scholar.location && (
-              <span className="flex items-center gap-1 text-slate-500">
-                <span>📍</span>
+              <span className="flex items-center gap-1.5 text-slate-500">
+                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[1.75]" />
                 <span>{scholar.location}</span>
                 {scholar.timezone && <span>({scholar.timezone})</span>}
               </span>
             )}
 
-            <span className="flex items-center gap-1 text-indigo-700 dark:text-indigo-400 font-medium">
-              <span>📜</span>
+            <span className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 font-medium">
+              <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 stroke-[1.75]" />
               <span>{scholar.confessions.length} Confessional Affirmation{scholar.confessions.length === 1 ? '' : 's'}</span>
             </span>
           </div>
@@ -124,7 +126,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             onClick={() => setShowInquiryModal(true)}
             className="px-5 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
           >
-            <span>✉️</span>
+            <Send className="w-3.5 h-3.5 stroke-[2]" />
             <span>Send Institutional Inquiry</span>
           </button>
 
@@ -138,7 +140,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             onClick={handleShare}
             className="px-4 py-2.5 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
-            <span>🔗</span>
+            <Share2 className="w-3.5 h-3.5 stroke-[1.75]" />
             <span>{copied ? 'Link Copied!' : 'Share Profile'}</span>
           </button>
         </div>

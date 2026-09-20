@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Home, Users, BookOpen, Briefcase } from 'lucide-react';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
 import { LanguageSwitcher } from './language-switcher';
@@ -36,7 +37,7 @@ export function PublicNav() {
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
             title="Home Feed"
           >
-            <span className="text-base sm:text-lg">🏠</span>
+            <Home className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Home</span>
           </Link>
 
@@ -45,7 +46,7 @@ export function PublicNav() {
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
             title="Faculty Network Directory"
           >
-            <span className="text-base sm:text-lg">👥</span>
+            <Users className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Directory</span>
           </Link>
 
@@ -54,7 +55,7 @@ export function PublicNav() {
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
             title="Course Syllabi & Lecture Showcase"
           >
-            <span className="text-base sm:text-lg">📖</span>
+            <BookOpen className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Courses</span>
           </Link>
 
@@ -63,7 +64,7 @@ export function PublicNav() {
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group relative"
             title="Scholars Available for Adjunct Teaching"
           >
-            <span className="text-base sm:text-lg">💼</span>
+            <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Teaching</span>
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse md:hidden" />
           </Link>

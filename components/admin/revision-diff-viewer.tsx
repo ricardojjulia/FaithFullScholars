@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Scale, Check, Sparkles, MapPin, GraduationCap } from 'lucide-react';
 import { RevisionSnapshotData } from '@/lib/domain/types';
 import { ProfileRevisionDiff } from '@/lib/domain/diff';
 import { formatAdherenceLevel } from '@/lib/domain/taxonomies';
@@ -24,7 +25,7 @@ export function RevisionDiffViewer({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg shrink-0">
-            ⚖️
+            <Scale className="w-5 h-5" />
           </div>
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -40,12 +41,14 @@ export function RevisionDiffViewer({
 
         <div className="flex items-center gap-2">
           {diff.hasChanges ? (
-            <span className="px-3 py-1 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full text-xs font-semibold">
-              ● {diff.totalChanges} Pending Change{diff.totalChanges === 1 ? '' : 's'}
+            <span className="px-3 py-1 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full text-xs font-semibold inline-flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>{diff.totalChanges} Pending Change{diff.totalChanges === 1 ? '' : 's'}</span>
             </span>
           ) : (
-            <span className="px-3 py-1 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-semibold">
-              ✓ Unaltered Snapshot
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-semibold inline-flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" />
+              <span>Unaltered Snapshot</span>
             </span>
           )}
         </div>
@@ -66,7 +69,9 @@ export function RevisionDiffViewer({
 
           {isInitialSubmission ? (
             <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-              <span className="text-2xl block mb-2">🌱</span>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                <Sparkles className="w-5 h-5" />
+              </div>
               <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 New Profile Submission
               </p>
@@ -124,8 +129,9 @@ function SnapshotCardDisplay({
           {snapshot.title || 'No Title'} • {snapshot.current_institution || 'Independent Scholar'}
         </div>
         {snapshot.location && (
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
-            📍 {snapshot.location} {snapshot.timezone ? `(${snapshot.timezone})` : ''}
+          <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-slate-400" />
+            <span>{snapshot.location} {snapshot.timezone ? `(${snapshot.timezone})` : ''}</span>
           </div>
         )}
       </div>
@@ -219,7 +225,12 @@ function SnapshotCardDisplay({
           <div className="space-y-1.5">
             {snapshot.credentials.map((cred, i) => (
               <div key={i} className="text-xs text-slate-800 dark:text-slate-200">
-                <span className="font-semibold">{cred.degree}</span> {cred.field_of_study ? `in ${cred.field_of_study}` : ''} • {cred.institution_name} {cred.year_awarded ? `(${cred.year_awarded})` : ''} {cred.is_terminal ? '🎓 [Terminal]' : ''}
+                <span className="font-semibold">{cred.degree}</span> {cred.field_of_study ? `in ${cred.field_of_study}` : ''} • {cred.institution_name} {cred.year_awarded ? `(${cred.year_awarded})` : ''} {cred.is_terminal && (
+                  <span className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-semibold ml-1">
+                    <GraduationCap className="w-3.5 h-3.5" />
+                    <span>[Terminal]</span>
+                  </span>
+                )}
               </div>
             ))}
           </div>

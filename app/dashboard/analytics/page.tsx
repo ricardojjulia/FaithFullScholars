@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ArrowRight, TrendingUp, Minus } from 'lucide-react';
 import { generateScholarAnalytics, WeeklyActivityPoint } from '@/lib/analytics/scholar-analytics';
 
 export default function ScholarAnalyticsPage() {
@@ -196,8 +197,9 @@ export default function ScholarAnalyticsPage() {
             <span className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
               {overview.inquiriesCount}
             </span>
-            <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-hover:underline">
-              View Inbox →
+            <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold group-hover:underline inline-flex items-center gap-1">
+              <span>View Inbox</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
@@ -357,14 +359,12 @@ export default function ScholarAnalyticsPage() {
                   <span className="text-xs font-display font-bold tracking-tight text-slate-700 dark:text-slate-300">
                     {kw.impressions} queries
                   </span>
-                  <span
-                    className={`text-xs ${
-                      kw.trend === 'up'
-                        ? 'text-emerald-600 dark:text-emerald-400 font-bold'
-                        : 'text-slate-400'
-                    }`}
-                  >
-                    {kw.trend === 'up' ? '↑' : '→'}
+                  <span className="flex items-center">
+                    {kw.trend === 'up' ? (
+                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Minus className="w-3.5 h-3.5 text-slate-400" />
+                    )}
                   </span>
                 </div>
               </div>
@@ -461,9 +461,10 @@ export default function ScholarAnalyticsPage() {
 
               <Link
                 href={tip.actionHref}
-                className="w-full text-center py-2 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
+                className="w-full text-center py-2 px-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5"
               >
-                {tip.actionLabel} →
+                <span>{tip.actionLabel}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           ))}

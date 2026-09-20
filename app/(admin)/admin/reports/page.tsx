@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { fetchContentReports } from '@/lib/admin/queries';
 import { ReportStatus } from '@/lib/domain/types';
-import { Flag } from 'lucide-react';
+import { Flag, ShieldCheck } from 'lucide-react';
 import { ReportActionButtons } from './report-action-buttons';
 
 export const dynamic = 'force-dynamic';
@@ -65,7 +65,9 @@ export default async function AdminReportsPage(props: {
       {/* Reports List */}
       {reports.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <span className="text-3xl block mb-2">🛡️</span>
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto mb-3">
+            <ShieldCheck className="h-6 w-6" />
+          </div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             No active reports
           </h3>

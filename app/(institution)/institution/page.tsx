@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { Building2, Check, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Institution Dashboard | Faculty Recruitment & Outreach',
@@ -15,8 +16,8 @@ export default function InstitutionOverviewPage() {
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-2xl">
-                🏛️
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <Building2 className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
@@ -27,8 +28,9 @@ export default function InstitutionOverviewPage() {
                   <span>•</span>
                   <span>ATS & MSCHE Accredited</span>
                   <span>•</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                    ✓ Verified Academic Partner
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Verified Academic Partner</span>
                   </span>
                 </div>
               </div>
@@ -95,7 +97,7 @@ export default function InstitutionOverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-xs">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <span>🛡️</span>
+            <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
             <span>Structured Outreach Standards</span>
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -104,15 +106,15 @@ export default function InstitutionOverviewPage() {
           </p>
           <ul className="space-y-2 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
             <li className="flex items-start space-x-2">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span><strong>Explicit Opportunity Types:</strong> Categorized by adjunct course, modular intensive, keynote address, or committee supervision.</span>
             </li>
             <li className="flex items-start space-x-2">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span><strong>Confessional Matching:</strong> Inquiries are compared against scholar-affirmed historic standards (Westminster, London Baptist, 39 Articles).</span>
             </li>
             <li className="flex items-start space-x-2">
-              <span className="text-emerald-600 font-bold">✓</span>
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span><strong>PII Protection:</strong> Scholar direct emails are only revealed upon inquiry acceptance.</span>
             </li>
           </ul>
@@ -120,7 +122,7 @@ export default function InstitutionOverviewPage() {
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-xs">
           <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center space-x-2">
-            <span>⚡</span>
+            <Zap className="w-5 h-5 text-amber-500" />
             <span>Quick Recruitment Actions</span>
           </h2>
           <div className="space-y-3">
@@ -134,7 +136,7 @@ export default function InstitutionOverviewPage() {
                 </span>
                 <p className="text-xs text-slate-500 mt-0.5">Filter by Greek syntax, Pauline studies, and Gospels</p>
               </div>
-              <span className="text-slate-400 group-hover:text-indigo-600 transition">→</span>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition" />
             </Link>
 
             <Link
@@ -147,7 +149,7 @@ export default function InstitutionOverviewPage() {
                 </span>
                 <p className="text-xs text-slate-500 mt-0.5">Filter by historic Reformed and Evangelical confessions</p>
               </div>
-              <span className="text-slate-400 group-hover:text-indigo-600 transition">→</span>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition" />
             </Link>
 
             <Link
@@ -160,7 +162,7 @@ export default function InstitutionOverviewPage() {
                 </span>
                 <p className="text-xs text-slate-500 mt-0.5">Manage notes and send batch opportunities</p>
               </div>
-              <span className="text-slate-400 group-hover:text-indigo-600 transition">→</span>
+              <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition" />
             </Link>
           </div>
         </div>

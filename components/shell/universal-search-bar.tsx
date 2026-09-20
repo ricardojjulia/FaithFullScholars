@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Search, X } from 'lucide-react';
 
 export function UniversalSearchBar() {
   return (
@@ -79,19 +80,7 @@ function UniversalSearchBarContent() {
       }`}
     >
       <div className="pl-3 pr-1 text-slate-400 flex items-center pointer-events-none">
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-          />
-        </svg>
+        <Search className="w-4 h-4 text-slate-400" />
       </div>
 
       <input
@@ -109,10 +98,10 @@ function UniversalSearchBarContent() {
         <button
           type="button"
           onClick={handleClear}
-          className="pr-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+          className="pr-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs flex items-center justify-center"
           title="Clear search"
         >
-          ✕
+          <X className="w-3.5 h-3.5" />
         </button>
       ) : (
         <div className="hidden sm:flex pr-2.5 pointer-events-none">

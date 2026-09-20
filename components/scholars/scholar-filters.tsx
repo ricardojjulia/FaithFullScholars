@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import { SlidersHorizontal } from 'lucide-react';
 
 interface TaxonomyOption {
   id: string;
@@ -82,7 +83,8 @@ export function ScholarFilters({
     <div className="card-crisp p-5 space-y-5">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <span>🔍</span> Filter Faculty
+          <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+          <span>Filter Faculty</span>
         </h3>
         {hasActiveFilters && (
           <button

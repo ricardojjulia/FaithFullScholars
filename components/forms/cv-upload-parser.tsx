@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { FileUp, FileText, Zap, UploadCloud, Check, Sparkles } from 'lucide-react';
 import { parseCvText, ParsedCvDraft } from '@/lib/profiles/cv-parser';
 
 interface CvUploadParserProps {
@@ -95,33 +96,36 @@ export function CvUploadParser({ onParsed, isProcessing }: CvUploadParserProps) 
         <button
           type="button"
           onClick={() => setActiveTab('upload')}
-          className={`px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
+          className={`px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 inline-flex items-center gap-2 ${
             activeTab === 'upload'
               ? 'border-indigo-600 text-indigo-900 dark:text-indigo-300 bg-white dark:bg-slate-900 shadow-xs'
               : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          📄 Upload Document (PDF/TXT)
+          <FileUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span>Upload Document (PDF/TXT)</span>
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('paste')}
-          className={`px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 ${
+          className={`px-4 py-2 text-sm font-semibold rounded-t-xl transition-all border-b-2 inline-flex items-center gap-2 ${
             activeTab === 'paste'
               ? 'border-indigo-600 text-indigo-900 dark:text-indigo-300 bg-white dark:bg-slate-900 shadow-xs'
               : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          ✍️ Paste CV Text
+          <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span>Paste CV Text</span>
         </button>
 
         <div className="ml-auto flex items-center">
           <button
             type="button"
             onClick={handleLoadSample}
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium flex items-center gap-1 py-1 px-2"
+            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium flex items-center gap-1.5 py-1 px-2"
           >
-            <span>⚡ Load Sample CV</span>
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span>Load Sample CV</span>
           </button>
         </div>
       </div>
@@ -141,8 +145,8 @@ export function CvUploadParser({ onParsed, isProcessing }: CvUploadParserProps) 
                 : 'border-slate-300 dark:border-slate-700 hover:border-indigo-400 bg-slate-50/40 dark:bg-slate-800/40'
             }`}
           >
-            <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl mb-3 shadow-inner">
-              📥
+            <div className="w-14 h-14 rounded-2xl bg-indigo-100/80 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-3 shadow-inner">
+              <UploadCloud className="w-7 h-7" />
             </div>
             <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Drag and drop your academic CV or syllabus
@@ -164,7 +168,8 @@ export function CvUploadParser({ onParsed, isProcessing }: CvUploadParserProps) 
 
             {fileName && (
               <div className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <span>✓ Loaded file:</span>
+                <Check className="w-3.5 h-3.5" />
+                <span>Loaded file:</span>
                 <span className="font-semibold">{fileName}</span>
               </div>
             )}
@@ -199,7 +204,7 @@ export function CvUploadParser({ onParsed, isProcessing }: CvUploadParserProps) 
           <div className="mt-6 p-4 rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/40 dark:bg-emerald-950/20">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-emerald-600 dark:text-emerald-400 text-base">✨</span>
+                <Sparkles className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">
                   Extraction Complete ({parsedPreview.confidence.toUpperCase()} Confidence)
                 </span>

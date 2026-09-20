@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ArrowLeft, Download, Printer, ExternalLink, GraduationCap, ScrollText, BookOpen } from 'lucide-react';
 import { ShortlistDossier } from '@/lib/inquiries/export-dossier';
 
 export default function SearchCommitteeDossierPage() {
@@ -53,7 +54,7 @@ export default function SearchCommitteeDossierPage() {
             href="/institution/saved"
             className="p-2 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 transition"
           >
-            <span>←</span>
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Shortlist</span>
           </Link>
           <span className="text-slate-300 dark:text-slate-700">|</span>
@@ -66,15 +67,16 @@ export default function SearchCommitteeDossierPage() {
           <a
             href="/api/institution/saved-scholars/export?format=csv"
             download
-            className="flex-1 sm:flex-initial px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold shadow-2xs transition text-center"
+            className="flex-1 sm:flex-initial px-3.5 py-2 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold shadow-2xs transition text-center inline-flex items-center justify-center gap-1.5"
           >
-            📥 Download CSV
+            <Download className="w-3.5 h-3.5" />
+            <span>Download CSV</span>
           </a>
           <button
             onClick={handlePrint}
             className="flex-1 sm:flex-initial px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition flex items-center justify-center gap-1.5"
           >
-            <span>🖨️</span>
+            <Printer className="w-3.5 h-3.5" />
             <span>Print / Save as PDF</span>
           </button>
         </div>
@@ -186,9 +188,10 @@ export default function SearchCommitteeDossierPage() {
                 <Link
                   href={`/scholars/${c.slug}`}
                   target="_blank"
-                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline inline-flex items-center gap-1"
                 >
-                  View Live Profile ↗
+                  <span>View Live Profile</span>
+                  <ExternalLink className="w-3 h-3" />
                 </Link>
               </div>
             </div>
@@ -197,8 +200,9 @@ export default function SearchCommitteeDossierPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               {/* Credentials & Education */}
               <div className="space-y-1.5 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider block">
-                  🎓 Academic Credentials
+                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Academic Credentials</span>
                 </span>
                 <p className="text-slate-800 dark:text-slate-200">
                   <strong className="font-semibold">Terminal Degree: </strong>
@@ -210,8 +214,9 @@ export default function SearchCommitteeDossierPage() {
 
               {/* Confessional Standard Affirmations */}
               <div className="space-y-1.5 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800/80">
-                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider block">
-                  📜 Confessional Standards & Creedal Subscription
+                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Confessional Standards & Creedal Subscription</span>
                 </span>
                 {c.confessions.length > 0 ? (
                   <ul className="list-disc list-inside space-y-0.5 text-slate-700 dark:text-slate-300">
@@ -228,8 +233,9 @@ export default function SearchCommitteeDossierPage() {
             {/* Key Publications */}
             {c.key_publications.length > 0 && (
               <div className="space-y-2 text-xs">
-                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider block">
-                  📖 Representative Scholarly Publications
+                <span className="font-bold text-slate-700 dark:text-slate-300 font-mono text-[11px] uppercase tracking-wider flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>Representative Scholarly Publications</span>
                 </span>
                 <ul className="list-disc list-inside space-y-1 text-slate-600 dark:text-slate-400 pl-1">
                   {c.key_publications.map((pub, pi) => (

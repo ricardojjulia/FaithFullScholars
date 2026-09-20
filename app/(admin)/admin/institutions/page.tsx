@@ -1,6 +1,6 @@
 import React from 'react';
 import { fetchPendingInstitutions } from '@/lib/admin/queries';
-import { Building2, Globe, Mail } from 'lucide-react';
+import { Building2, Globe, Mail, MapPin } from 'lucide-react';
 import { InstitutionActionButtons } from './institution-action-buttons';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +30,9 @@ export default async function AdminInstitutionsPage() {
       {/* Institution List */}
       {institutions.length === 0 ? (
         <div className="p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-          <span className="text-3xl block mb-2">🏛️</span>
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
+            <Building2 className="h-6 w-6" />
+          </div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">
             No institutions registered
           </h3>
@@ -72,7 +74,12 @@ export default async function AdminInstitutionsPage() {
                       <span>{inst.website.replace(/^https?:\/\//, '')}</span>
                     </a>
                   )}
-                  {inst.location && <span>📍 {inst.location}</span>}
+                  {inst.location && (
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                      <span>{inst.location}</span>
+                    </span>
+                  )}
                 </div>
               </div>
 

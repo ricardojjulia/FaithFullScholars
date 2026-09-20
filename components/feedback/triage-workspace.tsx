@@ -6,6 +6,7 @@ import {
   Bug,
   Lightbulb,
   CheckCircle2,
+  Check,
   Clock,
   Search,
   Filter,
@@ -365,7 +366,14 @@ export function TriageWorkspace({ initialRecords }: TriageWorkspaceProps) {
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300'
                         }`}
                       >
-                        {item.processed ? 'Processed ✓' : 'Mark Done'}
+                        {item.processed ? (
+                          <span className="inline-flex items-center gap-1">
+                            <span>Processed</span>
+                            <Check className="w-2.5 h-2.5" />
+                          </span>
+                        ) : (
+                          'Mark Done'
+                        )}
                       </button>
                     </div>
                   </div>

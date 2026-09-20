@@ -49,8 +49,8 @@ FaithFull Scholars creates a trusted, searchable academic directory where:
 - **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, token-bucket search rate limiting, deep-pagination walls, and signed storage URLs (ADR 0008).
 - **File storage:** Supabase Storage with private encrypted buckets for CVs, full syllabi, and administrative review assets.
 - **External media:** YouTube and other external platforms for video, podcasts, and public course content.
-- **Styling:** Tailwind CSS with accessible semantic tokens and dignified academic typography.
-- **Testing & Quality Gates:** Vitest, PostgreSQL RLS audit (`npm run audit:rls`), ESLint, and Next.js production builds.
+- **Styling & Iconography:** Tailwind CSS with accessible semantic tokens, modern Aptos / clean sans geometric typography, and edge-grade Lucide vector iconography.
+- **Testing & Quality Gates:** Vitest, PostgreSQL RLS audit (`npm run audit:rls`), ESLint, TypeScript check, and Next.js Turbopack production builds.
 - **Deployment:** Vercel preview deployments for pull requests and production deployment from `main`.
 
 ## 4. Product Boundaries

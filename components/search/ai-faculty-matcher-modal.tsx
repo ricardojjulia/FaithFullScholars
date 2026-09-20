@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { Sparkles, X, GraduationCap, ScrollText, BookOpen, FileSpreadsheet, Briefcase, Building2, Search, Check, ArrowRight } from 'lucide-react';
 import { FacultyMatchResult } from '@/lib/ai/gemini-faculty-matcher';
 
 interface AiFacultyMatcherModalProps {
@@ -87,8 +88,8 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-800/80 border border-indigo-700/60 text-amber-300 text-xs font-semibold">
-              <span>✨</span>
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-800/80 border border-indigo-700/60 text-amber-300 text-xs font-semibold shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 stroke-[2]" />
               <span>Citation-Grounded AI Faculty Matcher</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight text-white">
@@ -101,10 +102,10 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
 
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors text-lg"
+            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
             aria-label="Close modal"
           >
-            ✕
+            <X className="w-4 h-4 stroke-[2]" />
           </button>
         </div>
 
@@ -149,7 +150,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                 </>
               ) : (
                 <>
-                  <span>✨</span>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300 stroke-[2]" />
                   <span>Match Candidates</span>
                 </>
               )}
@@ -196,8 +197,8 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
 
           {!isLoading && results.length === 0 && !error && (
             <div className="py-14 text-center space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-2xl flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900">
-                🔎
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900 shadow-inner">
+                <Search className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <h3 className="font-display font-bold text-slate-900 dark:text-white text-base tracking-tight">
                 Ready for Academic Search Matching
@@ -263,9 +264,10 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                         <Link
                           href={`/scholars/${match.slug}`}
                           onClick={onClose}
-                          className="px-3.5 py-1.5 rounded-xl bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold transition-colors shadow-2xs"
+                          className="px-3.5 py-1.5 rounded-xl bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold transition-colors shadow-2xs inline-flex items-center gap-1.5 group"
                         >
-                          View Dossier →
+                          <span>View Dossier</span>
+                          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
                         </Link>
                       </div>
                     </div>
@@ -289,13 +291,13 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                               className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 text-xs space-y-0.5"
                             >
                               <div className="flex items-center gap-1.5 font-semibold text-slate-800 dark:text-slate-200 truncate">
-                                <span>
-                                  {cit.sourceType === 'credential' && '🎓'}
-                                  {cit.sourceType === 'confession' && '📜'}
-                                  {cit.sourceType === 'publication' && '📖'}
-                                  {cit.sourceType === 'course' && '📋'}
-                                  {cit.sourceType === 'availability' && '💼'}
-                                  {cit.sourceType === 'biography' && '🏛️'}
+                                <span className="shrink-0 flex items-center">
+                                  {cit.sourceType === 'credential' && <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2]" />}
+                                  {cit.sourceType === 'confession' && <ScrollText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 stroke-[2]" />}
+                                  {cit.sourceType === 'publication' && <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 stroke-[2]" />}
+                                  {cit.sourceType === 'course' && <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 stroke-[2]" />}
+                                  {cit.sourceType === 'availability' && <Briefcase className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[2]" />}
+                                  {cit.sourceType === 'biography' && <Building2 className="w-3.5 h-3.5 text-slate-500 stroke-[2]" />}
                                 </span>
                                 <span className="truncate">{cit.title}</span>
                               </div>
@@ -314,9 +316,10 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                         {match.strengths.map((str, idx) => (
                           <span
                             key={idx}
-                            className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-medium border border-emerald-100 dark:border-emerald-900"
+                            className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-medium border border-emerald-100 dark:border-emerald-900 inline-flex items-center gap-1"
                           >
-                            ✓ {str}
+                            <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                            <span>{str}</span>
                           </span>
                         ))}
                       </div>

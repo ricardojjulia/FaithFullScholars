@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { BookOpen, GraduationCap, Library, BookMarked, Calendar, Star, ShieldCheck } from 'lucide-react';
 import { getPublicScholarBySlug } from '@/lib/domain/queries';
 import { formatOpportunityType, formatDeliveryMode } from '@/lib/domain/taxonomies';
 import { PublicNav } from '@/components/shell/public-nav';
@@ -75,7 +76,8 @@ export default async function ScholarProfilePage({
             {scholar.biography && (
               <section className="card-crisp p-6 sm:p-8">
                 <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                  <span>📖</span> Academic Biography & Research Overview
+                  <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+                  <span>Academic Biography & Research Overview</span>
                 </h2>
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                   {scholar.biography}
@@ -86,22 +88,24 @@ export default async function ScholarProfilePage({
                   {scholar.disciplines.map(({ discipline, is_primary }) => (
                     <span
                       key={discipline.id}
-                      className={`px-3 py-1 rounded-xl text-xs font-medium ${
+                      className={`px-3 py-1 rounded-xl text-xs font-medium inline-flex items-center gap-1.5 ${
                         is_primary
                           ? 'bg-indigo-50 text-indigo-900 border border-indigo-200 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300'
                           : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      {discipline.name} {is_primary && '★'}
+                      <span>{discipline.name}</span>
+                      {is_primary && <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
                     </span>
                   ))}
 
                   {scholar.traditions.map(({ tradition, is_primary }) => (
                     <span
                       key={tradition.id}
-                      className="px-3 py-1 rounded-xl text-xs bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium"
+                      className="px-3 py-1 rounded-xl text-xs bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-medium inline-flex items-center gap-1.5"
                     >
-                      Tradition: {tradition.name} {is_primary && '★'}
+                      <span>Tradition: {tradition.name}</span>
+                      {is_primary && <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
                     </span>
                   ))}
                 </div>
@@ -111,7 +115,8 @@ export default async function ScholarProfilePage({
             {/* Education & Terminal Degrees Card */}
             <section className="card-crisp p-6 sm:p-8">
               <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                <span>🎓</span> Education & Terminal Degrees
+                <GraduationCap className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+                <span>Education & Terminal Degrees</span>
               </h2>
 
               {scholar.credentials.length === 0 ? (
@@ -153,7 +158,8 @@ export default async function ScholarProfilePage({
             {/* Publications & Scholarly Monographs Card */}
             <section className="card-crisp p-6 sm:p-8">
               <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                <span>📚</span> Publications & Scholarly Output
+                <Library className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+                <span>Publications & Scholarly Output</span>
               </h2>
 
               {scholar.publications.length === 0 ? (
@@ -200,7 +206,8 @@ export default async function ScholarProfilePage({
             {/* Course Showcase & Inspectable Syllabi Card */}
             <section className="card-crisp p-6 sm:p-8">
               <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
-                <span>📖</span> Prepared Course Syllabi & Lecture Showcases
+                <BookMarked className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+                <span>Prepared Course Syllabi & Lecture Showcases</span>
               </h2>
 
               {scholar.courses.length === 0 ? (
@@ -260,7 +267,8 @@ export default async function ScholarProfilePage({
             {scholar.availability && (
               <section className="card-crisp p-6 space-y-4">
                 <h3 className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>📅</span> Institutional Availability
+                  <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+                  <span>Institutional Availability</span>
                 </h3>
 
                 <div>
@@ -300,8 +308,9 @@ export default async function ScholarProfilePage({
 
                 <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
                   <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-xl border border-slate-200/60 dark:border-slate-800 text-[11px] text-slate-500 space-y-1">
-                    <div className="font-semibold text-slate-700 dark:text-slate-300">
-                      🛡️ Verified Institutional Outreach
+                    <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Verified Institutional Outreach</span>
                     </div>
                     <div>
                       Direct emails and contact data are protected. Accredited deans and department chairs initiate contact via structured inquiry.

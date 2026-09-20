@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Briefcase, TrendingUp, ShieldCheck, ArrowRight } from 'lucide-react';
 
 export function ScholarRecommendationsRail() {
   return (
@@ -7,7 +8,8 @@ export function ScholarRecommendationsRail() {
       <div className="card-crisp p-5">
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
           <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-            <span>💼</span> Open Teaching Calls
+            <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+            <span>Open Teaching Calls</span>
           </h3>
           <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
             Active
@@ -61,9 +63,10 @@ export function ScholarRecommendationsRail() {
         <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 text-center">
           <Link
             href="/scholars?available=true"
-            className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:underline"
+            className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:underline inline-flex items-center gap-1.5 group"
           >
-            Browse Available Faculty →
+            <span>Browse Available Faculty</span>
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
           </Link>
         </div>
       </div>
@@ -71,7 +74,8 @@ export function ScholarRecommendationsRail() {
       {/* 2. Trending Theological Fields */}
       <div className="card-crisp p-5">
         <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-          <span>📈</span> Trending Disciplines
+          <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+          <span>Trending Disciplines</span>
         </h3>
         <div className="flex flex-wrap gap-1.5 text-xs">
           {[
@@ -95,8 +99,9 @@ export function ScholarRecommendationsRail() {
 
       {/* 3. Platform Trust & Governance Card */}
       <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 text-xs text-slate-500 space-y-2">
-        <div className="font-display font-bold tracking-tight text-slate-900 dark:text-white text-xs flex items-center gap-1.5">
-          <span>🛡️</span> Academic Trust & RLS Security
+        <div className="font-display font-bold tracking-tight text-slate-900 dark:text-white text-xs flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 stroke-[2]" />
+          <span>Academic Trust & RLS Security</span>
         </div>
         <p className="text-[11px] leading-relaxed">
           Faculty profiles undergo rigorous administrative review before public indexing. Private contact data and draft revisions are protected by 100% PostgreSQL Row Level Security.

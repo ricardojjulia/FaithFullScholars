@@ -1,4 +1,5 @@
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
+import { ScrollText } from 'lucide-react';
 import { formatAdherenceLevel } from '@/lib/domain/taxonomies';
 import { AdherenceLevel } from '@/lib/domain/types';
 
@@ -18,7 +19,8 @@ export function ScholarDoctrinalCard({ scholar }: ScholarDoctrinalCardProps) {
     <section className="card-crisp p-6 sm:p-8">
       <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100 dark:border-slate-800">
         <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-          <span>✝️</span> Doctrinal Stance & Historic Confessional Alignment
+          <ScrollText className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+          <span>Doctrinal Stance & Historic Confessional Alignment</span>
         </h2>
         <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-full border border-indigo-100 dark:border-indigo-900">
           ADR 0001
