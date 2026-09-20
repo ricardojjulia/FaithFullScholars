@@ -4,6 +4,7 @@ import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
 import { ScholarRecommendationsRail } from '@/components/scholars/scholar-recommendations-rail';
+import { AiMatcherTriggerButton } from '@/components/scholars/ai-matcher-trigger-button';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
@@ -62,8 +63,11 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-medium self-start sm:self-auto bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-            Showing <strong className="text-slate-900 dark:text-white">{scholars.length}</strong> verified faculty
+          <div className="flex items-center gap-3 self-start sm:self-auto">
+            <AiMatcherTriggerButton />
+            <div className="text-xs text-slate-500 font-medium bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+              Showing <strong className="text-slate-900 dark:text-white">{scholars.length}</strong> verified faculty
+            </div>
           </div>
         </div>
 

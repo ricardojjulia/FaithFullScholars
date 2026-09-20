@@ -20,6 +20,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Strategic Backlog Expansion (§21 Post-MVP Platform Capabilities)**:
+  - **Feature 1: Dean & Search Committee Shortlist Export (CSV & Executive Search Dossier)**:
+    - Built RFC-4180 compliant CSV export engine (`lib/inquiries/export-dossier.ts`) with UTF-8 BOM (`\uFEFF`) and CRLF line endings for seamless Excel and Google Sheets compatibility without character corruption on theological accents.
+    - Implemented authenticated API endpoint `GET /api/institution/saved-scholars/export` supporting `format=csv` (file attachment) and `format=json`.
+    - Created high-fidelity, print-optimized Academic Search Dossier page (`/institution/saved/dossier`) designed for seminary board and search committee review with `@media print` styling and `window.print()` trigger.
+    - Integrated "Export CSV" and "View Dossier" actions directly into the institution saved candidates header (`app/(institution)/institution/saved/page.tsx`).
+    - Added unit test suite `tests/unit/shortlist-export.test.ts`.
+  - **Feature 2: Scholar Profile Analytics Dashboard (`/dashboard/analytics`)**:
+    - Built high-performance scholar analytics engine (`lib/analytics/scholar-analytics.ts`) calculating search impressions, profile inspections, syllabus preview downloads, and inquiry conversion velocities.
+    - Created full-featured analytics workspace page (`app/dashboard/analytics/page.tsx`) with 4 interactive KPI metric cards, time-range filtering (8 Weeks, 30 Days, YTD), PDF export, institutional search keyword attribution table, theological tradition affinity bars, and algorithmic visibility recommendations.
+    - Implemented a zero-bloat, lightweight SVG and CSS engagement velocity line/area chart eliminating external bundle weight.
+    - Added persistent `📊 Analytics` link in the scholar workspace navigation bar (`app/dashboard/layout.tsx`) and linked overview cards from `app/dashboard/page.tsx`.
+    - Added unit test suite `tests/unit/scholar-analytics.test.ts`.
+  - **Feature 3: Citation-Grounded AI Faculty Matcher**:
+    - Developed AI Faculty Matcher engine (`lib/ai/gemini-faculty-matcher.ts`) combining Google Gemini LLM with an exhaustive deterministic theological heuristic baseline (`matchFacultyHeuristic`).
+    - Evaluates natural-language search committee prompts against candidate portfolios, surfacing grounded citations across doctoral credentials (terminal institution, year), confessional subscription levels, publication monographs, and course syllabi.
+    - Implemented API endpoint `POST /api/ai/match-faculty` with input sanitization and multi-candidate join analysis.
+    - Created executive search modal (`components/search/ai-faculty-matcher-modal.tsx`) with committee prompt chips, live match scoring badges (0-100%), citation cards, strengths, and direct dossier links.
+    - Added "✨ AI Search Matcher" trigger button to the Theological Faculty Directory header (`app/scholars/page.tsx`).
+    - Added unit test suite `tests/unit/faculty-matcher.test.ts`.
 - **Remote Staging & Production Verification Protocol (Step 3)**:
   - Published comprehensive pre-flight verification protocol and operational runbook (`docs/deployment/staging-verification-protocol.md`).
   - Outlined step-by-step procedures for Supabase CLI migration synchronization, remote RLS audit enforcement across all 25 tables (`DATABASE_URL=... npm run audit:rls`), remote pilot cohort population (`DATABASE_URL=... npm run seed:pilot`), and pilot readiness diagnostics (`npm run verify:pilot`).
