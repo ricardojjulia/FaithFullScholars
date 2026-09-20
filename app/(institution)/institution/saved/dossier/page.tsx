@@ -87,7 +87,7 @@ export default function SearchCommitteeDossierPage() {
             <span className="text-[11px] font-mono uppercase tracking-widest text-indigo-700 dark:text-indigo-400 font-bold block mb-1">
               FaithFull Scholars • Faculty Recruitment Dossier
             </span>
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-slate-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Academic Search Committee Candidate Dossier
             </h1>
             <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -157,7 +157,7 @@ export default function SearchCommitteeDossierPage() {
         {candidates.map((c, index) => (
           <div
             key={c.id}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xs space-y-5 print:break-inside-avoid print:shadow-none print:border-slate-300"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl card-crisp p-6 shadow-2xs space-y-5 print:break-inside-avoid print:shadow-none print:border-slate-300"
           >
             {/* Header / Identity */}
             <div className="flex justify-between items-start border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -166,7 +166,7 @@ export default function SearchCommitteeDossierPage() {
                   <span className="w-5 h-5 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold font-mono flex items-center justify-center">
                     {index + 1}
                   </span>
-                  <h3 className="text-lg font-serif font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-lg font-display font-bold tracking-tight text-slate-900 dark:text-white">
                     {c.full_name}
                   </h3>
                   {c.title && (

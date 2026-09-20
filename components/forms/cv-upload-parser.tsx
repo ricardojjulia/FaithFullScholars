@@ -144,7 +144,7 @@ export function CvUploadParser({ onParsed, isProcessing }: CvUploadParserProps) 
             <div className="w-14 h-14 rounded-2xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl mb-3 shadow-inner">
               📥
             </div>
-            <h3 className="text-base font-serif font-bold text-slate-900 dark:text-white">
+            <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Drag and drop your academic CV or syllabus
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">

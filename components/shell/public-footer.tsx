@@ -6,11 +6,11 @@ export function PublicFooter() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded bg-indigo-900 text-amber-300 font-serif font-bold text-sm flex items-center justify-center">
+            <div className="w-7 h-7 rounded-lg bg-indigo-900 text-amber-300 font-display font-bold text-xs flex items-center justify-center">
               FS
             </div>
-            <span className="font-serif font-bold text-lg text-slate-900 dark:text-white">
-              FaithFull Scholars
+            <span className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white">
+              FaithFull <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Scholars</span>
             </span>
           </div>
           <p className="text-xs text-slate-500 leading-relaxed">

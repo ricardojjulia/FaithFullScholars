@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Styling)**:
+  - Eliminated dated browser default serif (`Times New Roman`) across all page headings, hero headlines, navigation monograms, counters, metric KPI cards, and search filters.
+  - Standardized modern typography on **Aptos** and **Aptos Display** with `Plus_Jakarta_Sans` variable font fallback configured via Tailwind v4 `@theme inline` (`--font-sans` and `--font-display`).
+  - Added `.card-crisp` styling with micro-elevation, subtle border contrast, and modern border radiuses for a premium, clean SaaS aesthetic across scholar profiles, course showcases, and institutional dashboards.
+  - Reserved `.font-literary` (`Charter`, `Iowan Old Style`, `Palatino Linotype`) strictly for long-form doctrinal statements and confessions, providing warm academic book aesthetics rather than unstyled Times.
+  - Updated all layouts, dashboards (`/dashboard`, `/dashboard/analytics`, `/dashboard/courses`, `/dashboard/availability`), public directory pages (`/scholars`, `/courses`), and admin consoles.
 - **Next.js 16 Proxy File Convention Migration**:
   - Migrated from deprecated `middleware.ts` to canonical Next.js 16 `proxy.ts`, exporting `proxy(request: NextRequest)` and preserving Supabase SSR cookie session refresh logic and asset exclusion matchers.
   - Eliminated Turbopack build deprecation warnings (`middleware-to-proxy`).

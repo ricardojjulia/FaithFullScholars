@@ -14,7 +14,7 @@ export default function Home() {
             <span>✨</span> Dedicated to Theological & Biblical Higher Education
           </div>
 
-          <h1 className="font-serif text-4xl sm:text-6xl font-bold tracking-tight text-slate-900 dark:text-white mb-6 max-w-4xl mx-auto leading-tight sm:leading-none">
+          <h1 className="font-display text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 max-w-4xl mx-auto leading-tight sm:leading-[1.1]">
             The Academic & Teaching Network for Theological Faculty
           </h1>
 
@@ -69,7 +69,7 @@ export default function Home() {
         <section id="disciplines" className="py-16 bg-slate-100/70 dark:bg-slate-900/50 border-y border-slate-200 dark:border-slate-800">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="font-serif text-3xl font-bold text-slate-900 dark:text-white mb-3">
+              <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-3">
                 Built for the Rigor of Academic Theology
               </h2>
               <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
@@ -78,11 +78,11 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <div className="card-crisp p-6">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
                   📜
                 </div>
-                <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-2">
+                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Academic Identity & Doctrinal Fit
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -98,11 +98,11 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <div className="card-crisp p-6">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
                   🎥
                 </div>
-                <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-2">
+                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Course & Lecture Showcase
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -118,11 +118,11 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
+              <div className="card-crisp p-6">
                 <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
                   ✉️
                 </div>
-                <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-2">
+                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Structured Institutional Outreach
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -143,9 +143,9 @@ export default function Home() {
 
         {/* Trust & Governance Banner */}
         <section id="trust" className="py-16 max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="border border-indigo-100 dark:border-indigo-950 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-2xl p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="border border-indigo-100 dark:border-indigo-950 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-2xl p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
             <div className="max-w-xl">
-              <h3 className="font-serif font-bold text-2xl text-slate-900 dark:text-white mb-2">
+              <h3 className="font-display font-bold text-2xl tracking-tight text-slate-900 dark:text-white mb-2">
                 A Curated, Admin-Reviewed Community
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">

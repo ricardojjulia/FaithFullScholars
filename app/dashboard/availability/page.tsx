@@ -40,7 +40,7 @@ export default function AvailabilityManagerPage() {
   return (
     <div className="space-y-6">
       <div className="border-b border-slate-200 dark:border-slate-800 pb-4">
-        <h1 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
           Teaching Availability & Opportunities
         </h1>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -56,8 +56,8 @@ export default function AvailabilityManagerPage() {
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Availability Status Card */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h2 className="text-sm font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
+          <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
             General Availability Status
           </h2>
 
@@ -112,8 +112,8 @@ export default function AvailabilityManagerPage() {
         </div>
 
         {/* Opportunity Types */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-          <h2 className="text-sm font-serif font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
+          <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
             Desired Opportunity Types
           </h2>
 

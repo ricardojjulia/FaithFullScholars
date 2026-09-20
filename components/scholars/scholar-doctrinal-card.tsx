@@ -15,9 +15,9 @@ export function ScholarDoctrinalCard({ scholar }: ScholarDoctrinalCardProps) {
   }
 
   return (
-    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
+    <section className="card-crisp p-6 sm:p-8">
       <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100 dark:border-slate-800">
-        <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+        <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
           <span>✝️</span> Doctrinal Stance & Historic Confessional Alignment
         </h2>
         <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-full border border-indigo-100 dark:border-indigo-900">
@@ -31,8 +31,8 @@ export function ScholarDoctrinalCard({ scholar }: ScholarDoctrinalCardProps) {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
             Personal Faith Affirmation
           </h3>
-          <div className="relative bg-slate-50 dark:bg-slate-950/60 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 font-serif text-sm leading-relaxed text-slate-800 dark:text-slate-200">
-            <span className="text-3xl text-indigo-300 dark:text-indigo-800 absolute top-2 left-3 select-none leading-none">
+          <div className="relative bg-slate-50/80 dark:bg-slate-950/60 p-5 sm:p-6 rounded-2xl border border-slate-200/70 dark:border-slate-800 font-literary text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+            <span className="text-3xl text-indigo-300 dark:text-indigo-800 absolute top-2 left-3 select-none leading-none font-literary">
               &ldquo;
             </span>
             <p className="pl-4 whitespace-pre-wrap">
@@ -52,11 +52,11 @@ export function ScholarDoctrinalCard({ scholar }: ScholarDoctrinalCardProps) {
             {scholar.confessions.map((c) => (
               <div
                 key={c.confessional_standard.id}
-                className="bg-slate-50 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between"
+                className="bg-slate-50/60 dark:bg-slate-950/40 border border-slate-200/80 dark:border-slate-800 rounded-xl p-4 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <h4 className="font-serif font-bold text-sm text-slate-900 dark:text-white">
+                    <h4 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white">
                       {c.confessional_standard.name}
                     </h4>
                     {c.confessional_standard.year && (

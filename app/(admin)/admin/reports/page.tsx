@@ -28,7 +28,7 @@ export default async function AdminReportsPage(props: {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-serif font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
+          <h1 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2.5">
             <Flag className="h-6 w-6 text-rose-600 dark:text-rose-400" />
             <span>Reported Content & Trust Moderation</span>
           </h1>

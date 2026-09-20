@@ -97,7 +97,7 @@ export default function ProfileEditorPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-serif font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
             Profile & Doctrinal Revision Editor
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">

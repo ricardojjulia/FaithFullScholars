@@ -55,7 +55,7 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300 text-xs font-semibold mb-1">
               <span>🎓</span> Verified Faculty Directory
             </div>
-            <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Theological Faculty Network
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
@@ -92,7 +92,7 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
                 <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 text-3xl flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900">
                   🔒
                 </div>
-                <h3 className="font-serif font-bold text-xl text-slate-900 dark:text-white">
+                <h3 className="font-display font-bold text-xl tracking-tight text-slate-900 dark:text-white">
                   Create a Free Account to View More Faculty
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
@@ -116,7 +116,7 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
             ) : scholars.length === 0 ? (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3 shadow-xs">
                 <div className="text-3xl">🔍</div>
-                <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white">
+                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
                   No Scholars Found
                 </h3>
                 <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">

@@ -73,8 +73,8 @@ export default async function ScholarProfilePage({
           <div className="lg:col-span-8 space-y-6">
             {/* About / Academic Biography Card */}
             {scholar.biography && (
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
-                <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+              <section className="card-crisp p-6 sm:p-8">
+                <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                   <span>📖</span> Academic Biography & Research Overview
                 </h2>
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
@@ -109,8 +109,8 @@ export default async function ScholarProfilePage({
             )}
 
             {/* Education & Terminal Degrees Card */}
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
-              <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+            <section className="card-crisp p-6 sm:p-8">
+              <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
                 <span>🎓</span> Education & Terminal Degrees
               </h2>
 
@@ -151,8 +151,8 @@ export default async function ScholarProfilePage({
             </section>
 
             {/* Publications & Scholarly Monographs Card */}
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
-              <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+            <section className="card-crisp p-6 sm:p-8">
+              <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
                 <span>📚</span> Publications & Scholarly Output
               </h2>
 
@@ -181,7 +181,7 @@ export default async function ScholarProfilePage({
                       </h3>
 
                       {pub.citation_text ? (
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 italic font-serif">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 font-literary italic">
                           {pub.citation_text}
                         </p>
                       ) : (
@@ -198,8 +198,8 @@ export default async function ScholarProfilePage({
             </section>
 
             {/* Course Showcase & Inspectable Syllabi Card */}
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
-              <h2 className="font-serif font-bold text-lg text-slate-900 dark:text-white mb-5 flex items-center gap-2">
+            <section className="card-crisp p-6 sm:p-8">
+              <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-5 flex items-center gap-2">
                 <span>📖</span> Prepared Course Syllabi & Lecture Showcases
               </h2>
 
@@ -210,7 +210,7 @@ export default async function ScholarProfilePage({
                   {scholar.courses.map((course) => (
                     <div
                       key={course.id}
-                      className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors"
+                      className="border border-slate-200 dark:border-slate-800 rounded-2xl p-5 hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors bg-white dark:bg-slate-900"
                     >
                       <div className="flex items-center justify-between gap-2 mb-2">
                         <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
@@ -224,7 +224,7 @@ export default async function ScholarProfilePage({
                         </Link>
                       </div>
 
-                      <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white">
+                      <h3 className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white">
                         {course.title}
                       </h3>
 
@@ -258,8 +258,8 @@ export default async function ScholarProfilePage({
 
             {/* Teaching Opportunities & Availability Terms Card */}
             {scholar.availability && (
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
-                <h3 className="font-serif font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+              <section className="card-crisp p-6 space-y-4">
+                <h3 className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
                   <span>📅</span> Institutional Availability
                 </h3>
 

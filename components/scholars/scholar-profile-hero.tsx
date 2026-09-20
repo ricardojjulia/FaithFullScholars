@@ -48,7 +48,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-6">
           <div className="flex items-end gap-5">
             {/* 120px Circular Overlapping Avatar */}
-            <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-indigo-950 text-amber-300 font-serif font-bold text-4xl sm:text-5xl flex items-center justify-center border-4 border-white dark:border-slate-900 shadow-lg shrink-0">
+            <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-3xl bg-indigo-950 text-amber-300 font-display font-bold text-3xl sm:text-4xl flex items-center justify-center border-4 border-white dark:border-slate-900 shadow-lg shrink-0 tracking-tight">
               {initials}
               {scholar.availability?.is_available_for_hire && (
                 <span
@@ -60,7 +60,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
 
             <div className="pb-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="font-serif text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">
+                <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {scholar.full_name}
                 </h1>
                 {scholar.verification_status === 'verified' && (

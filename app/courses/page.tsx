@@ -43,7 +43,7 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
               <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300 text-xs font-semibold mb-2">
                 <span>📖</span> Inspectable Curriculum
               </div>
-              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white">
+              <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
                 Theological Course Showcase
               </h1>
               <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -90,9 +90,9 @@ export default async function CoursesPage({ searchParams }: CoursesPageProps) {
 
         {/* Course Grid */}
         {courses.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center space-y-3">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl card-crisp p-12 text-center space-y-3">
             <div className="text-3xl">📚</div>
-            <h3 className="font-serif font-bold text-lg text-slate-900 dark:text-white">
+            <h3 className="font-display font-bold tracking-tight text-lg text-slate-900 dark:text-white">
               No Courses Found
             </h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto">

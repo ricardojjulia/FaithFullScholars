@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { DevToolbar } from "@/components/dev/dev-toolbar";
 import { FeedbackShell } from "@/components/feedback/feedback-shell";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const sansFallback = Plus_Jakarta_Sans({
+  variable: "--font-sans-fallback",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -29,9 +31,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${sansFallback.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
+      <body className="min-h-full flex flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans">
         <FeedbackShell>
           <I18nProvider>{children}</I18nProvider>
         </FeedbackShell>
