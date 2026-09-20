@@ -31,7 +31,16 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, and Citation-Grounded AI Faculty Matcher)**, the **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Card Elevation)**, and the **Modern Edge Vector Iconography Overhaul (`lucide-react`)** are fully implemented, audited, and verified across all 6 quality gates (124 tests across 22 suites, 25/25 tables RLS enforced).
+- **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, and Citation-Grounded AI Faculty Matcher)**, the **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Card Elevation)**, the **Modern Edge Vector Iconography Overhaul (`lucide-react`)**, and the **Database Security Hardening & Automated Splinter Audit Gate** are fully implemented, audited, and verified across all 7 quality gates (124 tests across 22 suites, 25/25 tables RLS enforced, 0 Splinter security findings).
+- **Database Security Hardening & Splinter Advisor Compliance:**
+  - Audited and hardened PostgreSQL database using official Supabase Security Advisor ([Splinter](https://github.com/supabase/splinter)) checks and catalog audits.
+  - **Eliminated User Metadata Tampering Risk:** Replaced vulnerable `auth.jwt() -> 'user_metadata' ->> ...` lookups in RLS policies with authenticated identity references (`auth.uid()`), preventing privilege escalation or role spoofing.
+  - **Function Search Path Hardening:** Explicitly pinned `search_path = public, pg_temp` across all stored functions and triggers (`handle_updated_at`, `record_search_query`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), eliminating mutable search path injection vulnerabilities.
+  - **Restricted Permissive Insert Policies:** Fixed `inquiries` policy to enforce target scholar existence checks rather than raw permissive true bypasses.
+  - **Auth RLS InitPlan Optimization:** Converted all `auth.uid()` calls in RLS policies across 16 policies to scalar subqueries `(select auth.uid())`, allowing PostgreSQL to evaluate auth tokens once per query (InitPlan) instead of per row.
+  - **Covering Indexes for Foreign Keys:** Added indexes for all 20 unindexed foreign key relationships across joined tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `inquiries`, `saved_scholars`, `saved_courses`, etc.), eliminating sequential scans during cascade operations.
+  - **Defense-in-Depth RLS Enforcement:** Enabled `FORCE ROW LEVEL SECURITY` across all 25 public application tables.
+  - **Automated Security Gate:** Created `scripts/audit-security.ts` (`npm run audit:security`), fully integrated into `npm run verify` and GitHub Actions CI.
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`):** Purged all dated unicode emojis and legacy glyphs across 43+ UI files in favor of sharp, purposeful vector SVG icons from `lucide-react`. Standardized stroke weights (`1.75-2px`), subtle micro-container icon boxes, and polished hover interactions matching Linear, Raycast, and Stripe design standards.
 - **Clean Modern Sans & Aptos Typography Revamp:** Modernized typography across all layouts, dashboards, cards, headers, and navigation menus, eliminating dated browser default serifs in favor of **Aptos** and **Aptos Display** with `Plus_Jakarta_Sans` geometric fallback. Introduced `.card-crisp` micro-elevation and subtle border contrast, reserving fine literary serif typography (`.font-literary`) strictly for long-form doctrinal affirmations.
 - **Dean & Search Committee Shortlist Export (§21):** RFC-4180 CSV export with UTF-8 BOM (`\uFEFF`) and CRLF formatting via `GET /api/institution/saved-scholars/export?format=csv` plus print-ready Academic Search Dossier report (`/institution/saved/dossier`).
@@ -55,7 +64,7 @@ Initial ADRs:
   ```bash
   npm run verify
   ```
-  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (22 suites, 124 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
+  Runs all 7 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (22 suites, 124 tests), `audit:rls` (25/25 tables), `audit:security` (Splinter security advisor), and Next.js Turbopack `build`.
 
 ## Product Shape
 

@@ -14,10 +14,11 @@
     "test": "vitest run",
     "test:ci": "vitest run",
     "audit:rls": "tsx scripts/audit-rls.ts",
+    "audit:security": "tsx scripts/audit-security.ts",
     "seed:pilot": "tsx scripts/seed-pilot-cohort.ts",
     "verify:pilot": "tsx scripts/verify-pilot-readiness.ts",
     "version:check": "node scripts/check-version.mjs",
-    "verify": "npm run version:check && npm run lint && npm run typecheck && npm run test && npm run audit:rls && npm run build"
+    "verify": "npm run version:check && npm run lint && npm run typecheck && npm run test && npm run audit:rls && npm run audit:security && npm run build"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

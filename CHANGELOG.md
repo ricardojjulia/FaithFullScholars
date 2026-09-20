@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Eliminated Turbopack build deprecation warnings (`middleware-to-proxy`).
 
 ### Fixed
+- **Database Security Hardening & Vulnerability Remediation (Supabase Splinter Advisor)**:
+  - **Eliminated `rls_references_user_metadata` Vulnerability**: Removed mutable JWT `user_metadata` checks from RLS policies in favor of server-verified `auth.uid()` references, preventing unprivileged clients from tampering with role or tenant metadata.
+  - **Pinned Function Search Paths (`function_search_path_mutable`)**: Applied `SET search_path = public, pg_temp` to all stored PostgreSQL functions and triggers (`handle_updated_at`, `record_search_query`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), preventing malicious search-path hijacking.
+  - **Restricted Permissive Insert Policies (`rls_policy_always_true`)**: Hardened `inquiries` insert policy (`"Institutions or visitors can submit inquiries"`) by verifying target scholar existence rather than accepting blanket `WITH CHECK (true)` bypasses.
+  - **Auth RLS InitPlan Optimization (`auth_rls_initplan`)**: Converted repetitive inline `auth.uid()` policy calls across 16 policies into scalar subqueries `(select auth.uid())`, allowing PostgreSQL query planner to evaluate auth context once per query instead of re-evaluating per row.
+  - **Covering Indexes for Unindexed Foreign Keys (`unindexed_foreign_keys`)**: Added 20 covering indexes on foreign key columns across child tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `inquiries`, `saved_scholars`, `saved_courses`, etc.), preventing full sequential table scans during cascading deletes and foreign key validation.
+  - **Enforced Defense-in-Depth RLS (`FORCE ROW LEVEL SECURITY`)**: Enabled `FORCE ROW LEVEL SECURITY` across all 25 public tables to ensure RLS is enforced regardless of table ownership.
 - **SSR Hydration Mismatch in `LanguageSwitcher` / `I18nProvider`**:
   - Replaced client-branching `useState(() => if (typeof window !== 'undefined'))` with React 19 idiomatic `useSyncExternalStore` in `lib/i18n/i18n-context.tsx` to eliminate hydration mismatch errors when `fs_locale` differs from server defaults.
   - Added `suppressHydrationWarning` on `components/shell/language-switcher.tsx` button and flag/code spans for defense-in-depth.
@@ -35,6 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Automated Supabase Security Advisor & Splinter Audit Gate**:
+  - Implemented `scripts/audit-security.ts` (`npm run audit:security`) bundling the full official Supabase Splinter security and performance linter suite.
+  - Verifies 6 security advisor categories: Critical Schema Errors (0002/0015), Function Search Path Pinned (0011), RLS User Metadata References (0015), Restricted Permissive Inserts (0024), Covering Indexes on Foreign Keys (0001), and Subquery InitPlan on RLS Auth Functions (0003).
+  - Built-in `--test-failure` canary proving that the audit gate detects and halts on insecure database configurations.
+  - Integrated `audit:security` into `npm run verify` and GitHub Actions CI workflow (`.github/workflows/ci.yml`).
 - **Strategic Backlog Expansion (§21 Post-MVP Platform Capabilities)**:
   - **Feature 1: Dean & Search Committee Shortlist Export (CSV & Executive Search Dossier)**:
     - Built RFC-4180 compliant CSV export engine (`lib/inquiries/export-dossier.ts`) with UTF-8 BOM (`\uFEFF`) and CRLF line endings for seamless Excel and Google Sheets compatibility without character corruption on theological accents.
