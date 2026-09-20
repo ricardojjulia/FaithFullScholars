@@ -45,58 +45,85 @@ export default function DashboardOverviewPage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Profile Inquiries
-          </span>
+        <Link
+          href="/dashboard/inquiries"
+          className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Profile Inquiries
+            </span>
+            <span className="text-xs text-emerald-600 font-semibold">+2 this month</span>
+          </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-serif text-slate-900 dark:text-white">4</span>
-            <span className="text-xs text-emerald-600 font-semibold">+2 this month</span>
+            <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">View →</span>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
             Structured seminary contacts
           </span>
-        </div>
+        </Link>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Public Directory Views
-          </span>
+        <Link
+          href="/dashboard/analytics"
+          className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Public Directory Views
+            </span>
+            <span className="text-xs text-emerald-600 font-semibold">+18%</span>
+          </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-serif text-slate-900 dark:text-white">182</span>
-            <span className="text-xs text-emerald-600 font-semibold">+18%</span>
+            <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Analytics →</span>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
             Deans & academic searchers
           </span>
-        </div>
+        </Link>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Course Syllabi Live
-          </span>
+        <Link
+          href="/dashboard/courses"
+          className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Course Syllabi Live
+            </span>
+            <span className="text-xs text-indigo-600 font-medium">Showcased</span>
+          </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-serif text-slate-900 dark:text-white">3</span>
-            <span className="text-xs text-indigo-600 font-medium">Showcased</span>
+            <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Manage →</span>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
             Sample lecture embeds enabled
           </span>
-        </div>
+        </Link>
 
-        <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-            Teaching Availability
-          </span>
-          <div className="mt-2 flex items-baseline gap-2">
+        <Link
+          href="/dashboard/availability"
+          className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Teaching Availability
+            </span>
             <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
               Available
             </span>
           </div>
+          <div className="mt-2 flex items-baseline gap-2">
+            <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+              Adjunct & modular
+            </span>
+            <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Edit →</span>
+          </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
             Adjunct & modular intensives
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* Quick Action Panels */}

@@ -31,7 +31,10 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Step 1 (Pilot Cohort Seed Expansion)**, **Step 2 (AI-Assisted CV & Syllabus Intelligence Engine)**, and **Step 3 (Remote Production Deployment & Staging Verification Protocol)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 quality gates (112 tests across 19 suites, 25/25 tables RLS enforced).
+- **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), and the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, and Citation-Grounded AI Faculty Matcher)** are fully implemented, audited, and verified across all 6 quality gates (124 tests across 22 suites, 25/25 tables RLS enforced).
+- **Dean & Search Committee Shortlist Export (§21):** RFC-4180 CSV export with UTF-8 BOM (`\uFEFF`) and CRLF formatting via `GET /api/institution/saved-scholars/export?format=csv` plus print-ready Academic Search Dossier report (`/institution/saved/dossier`).
+- **Scholar Profile Analytics Dashboard (§21):** High-velocity scholar analytics engine (`/dashboard/analytics`) featuring 4 KPI metrics, zero-bloat SVG/CSS 8-week engagement velocity chart, institutional keyword attribution table, tradition affinity demographics, and algorithmic recommendations.
+- **Citation-Grounded AI Faculty Matcher (§21):** Seminary provost search assistant (`/api/ai/match-faculty` & modal) combining Google Gemini LLM with an exhaustive deterministic theological heuristic baseline, generating fit scores (0-100%) and grounded citations across credentials, confessions, publications, and syllabi.
 - **Remote Staging & Production Verification Protocol (Step 3):** Authoritative pre-flight deployment runbook (`docs/deployment/staging-verification-protocol.md`) establishing five non-negotiable gates: Supabase migration sync, remote multi-tenant RLS audit (100% pass across 25 tables), reference cohort population (`seed:pilot`), pilot readiness diagnostic (`verify:pilot`), and Vercel edge runtime smoke testing with strict security headers.
 - **AI-Assisted CV & Syllabus Intelligence Engine (Step 2):** Google Gemini generative AI extractor (`lib/ai/gemini-cv-extractor.ts`) tailored for theological academia (Chicago/SBL publication parsing, doctoral degrees, confessional affinities) and course syllabus analyzer (`lib/ai/gemini-syllabus-tagger.ts`) extracting course codes, levels, learning outcomes, required primary texts, and delivery modes, paired with high-accuracy heuristic baseline fallbacks.
 - **Production Edge Security Headers (Phase 6):** Strict HTTP security headers configured in `next.config.ts` including CSP with YouTube/Unsplash/Supabase whitelisting, HSTS (`max-age=63072000; includeSubDomains; preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
@@ -50,7 +53,7 @@ Initial ADRs:
   ```bash
   npm run verify
   ```
-  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (19 suites, 112 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
+  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (22 suites, 124 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
 
 ## Product Shape
 

@@ -117,12 +117,29 @@ export default function InstitutionSavedPage() {
           </p>
         </div>
 
-        <Link
-          href="/scholars"
-          className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition"
-        >
-          Discover More Scholars
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="/api/institution/saved-scholars/export?format=csv"
+            download
+            className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1"
+          >
+            <span>📥</span>
+            <span>Export CSV</span>
+          </a>
+          <Link
+            href="/institution/saved/dossier"
+            className="px-3.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-xl text-xs font-semibold shadow-2xs transition flex items-center gap-1"
+          >
+            <span>🖨️</span>
+            <span>Committee Dossier</span>
+          </Link>
+          <Link
+            href="/scholars"
+            className="px-3.5 py-1.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+          >
+            Discover Scholars
+          </Link>
+        </div>
       </div>
 
       {/* Tabs */}
