@@ -162,11 +162,13 @@ export function parseCvText(rawText: string): ParsedCvDraft {
 
   const degreePatterns = [
     { regex: /\b(Ph\.?D\.?|Doctor of Philosophy)\b/i, degree: 'Ph.D.' },
+    { regex: /\b(D\.?Phil\.?)\b/i, degree: 'D.Phil.' },
     { regex: /\b(Th\.?D\.?|Doctor of Theology)\b/i, degree: 'Th.D.' },
     { regex: /\b(D\.?Min\.?|Doctor of Ministry)\b/i, degree: 'D.Min.' },
     { regex: /\b(Th\.?M\.?|Master of Theology)\b/i, degree: 'Th.M.' },
     { regex: /\b(M\.?Div\.?|Master of Divinity)\b/i, degree: 'M.Div.' },
     { regex: /\b(M\.?T\.?S\.?|Master of Theological Studies)\b/i, degree: 'M.T.S.' },
+    { regex: /\b(M\.?St\.?|Master of Studies)\b/i, degree: 'M.St.' },
     { regex: /\b(M\.?A\.?|Master of Arts)\b/i, degree: 'M.A.' },
     { regex: /\b(B\.?A\.?|Bachelor of Arts)\b/i, degree: 'B.A.' },
     { regex: /\b(B\.?S\.?|Bachelor of Science)\b/i, degree: 'B.S.' }

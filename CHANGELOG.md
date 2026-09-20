@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **AI-Assisted CV & Syllabus Intelligence Engine (Step 2)**:
+  - Built `extractCvWithGemini` (`lib/ai/gemini-cv-extractor.ts`) utilizing Google Gemini generative AI with theological academic system prompt, Chicago/SBL publication parsing, doctoral degree extraction, and deterministic heuristic fallback (`parseCvText`).
+  - Built `tagSyllabusWithGemini` and `parseSyllabusHeuristic` (`lib/ai/gemini-syllabus-tagger.ts`) extracting course codes, levels (undergraduate, graduate, doctoral), learning outcomes, required texts, topical tags, and recommended delivery modes (residential, hybrid, online).
+  - Enhanced degree patterns in `lib/profiles/cv-parser.ts` to recognize UK/European academic doctoral credentials (`D.Phil.`, `M.St.`).
+  - Added comprehensive test suite `tests/unit/ai-intelligence.test.ts` (11 tests) verifying schema adherence, theological taxonomy inference, and offline/error fallbacks.
 - **Pilot Cohort Seed Expansion**:
   - Expanded reference pilot database to 5 diverse, approved scholars across Reformed, Baptist, Anglican, and Presbyterian traditions: Dr. Calvin Edwards, Dr. Sarah MacArthur, Dr. Thomas Cranmer-Davies, Dr. Marcus Aurelius Vance, and Dr. Elizabeth Montgomery-Knox.
   - Added complete doctoral credentials, publications, course showcases with delivery modes and previews, historic confessional affirmations, and availability profiles.

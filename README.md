@@ -30,7 +30,8 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, and **Phase 6 (MVP Release Hardening & Deployment Preparation)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 quality gates (101 tests across 18 suites, 25/25 tables RLS enforced).
+- **Current Position:** Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Step 1 (Pilot Cohort Seed Expansion)**, and **Step 2 (AI-Assisted CV & Syllabus Intelligence Engine)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 quality gates (112 tests across 19 suites, 25/25 tables RLS enforced).
+- **AI-Assisted CV & Syllabus Intelligence Engine (Step 2):** Google Gemini generative AI extractor (`lib/ai/gemini-cv-extractor.ts`) tailored for theological academia (Chicago/SBL publication parsing, doctoral degrees, confessional affinities) and course syllabus analyzer (`lib/ai/gemini-syllabus-tagger.ts`) extracting course codes, levels, learning outcomes, required primary texts, and delivery modes, paired with high-accuracy heuristic baseline fallbacks.
 - **Production Edge Security Headers (Phase 6):** Strict HTTP security headers configured in `next.config.ts` including CSP with YouTube/Unsplash/Supabase whitelisting, HSTS (`max-age=63072000; includeSubDomains; preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
 - **Comprehensive E2E User Journeys (Phase 6):** Automated integration test suite (`tests/integration/e2e-user-journeys.test.ts`) covering all 4 core personas: scholar onboarding & revision staging, admin triage & snapshot promotion, public discovery & anti-scraping gating, and institutional outreach & shortlist lifecycle.
 - **Pilot Reference Cohort:** 5 fully populated, approved reference scholars across Reformed, Baptist, Anglican, and Presbyterian traditions (Dr. Calvin Edwards, Dr. Sarah MacArthur, Dr. Thomas Cranmer-Davies, Dr. Marcus Aurelius Vance, Dr. Elizabeth Montgomery-Knox) with complete doctoral credentials, publications, course showcases, and availability profiles. All 7 diagnostic categories report 100% `PASS` via `npm run verify:pilot`.
@@ -47,7 +48,7 @@ Initial ADRs:
   ```bash
   npm run verify
   ```
-  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (18 suites, 101 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
+  Runs all 6 quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (19 suites, 112 tests), `audit:rls` (25/25 tables), and Next.js Turbopack `build`.
 
 ## Product Shape
 
