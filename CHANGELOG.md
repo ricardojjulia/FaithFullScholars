@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
+  - Completely purged dated 1980s unicode emojis (`📥`, `👁️`, `✍️`, `📖`, `💼`, `🎓`, `🏛️`, `📍`, `📜`, `✉️`, `🔗`, `📈`, `🛡️`, `🔍`, `📅`, `📄`, `📚`, `✨`, `⚡`, `🖨️`, `▶`, `🔒`, `✓`, `★`, `☆`, `🎉`, `👤`, `🎯`, `📤`, `🇺🇸`, `🇪🇸`) and raw unicode glyphs across all 43+ user interface files.
+  - Replaced all legacy symbols with precision, modern vector SVG icons from `lucide-react` configured with uniform `1.75-2px` stroke widths, balanced micro-container icon boxes, and smooth hover micro-interactions inspired by Linear, Raycast, and Stripe.
+  - Modernized navigation bars (`public-nav`, `user-menu`, `language-switcher`, `admin-nav`, `institution-nav`), public landing hero cards, scholar search directories, profile hero dossiers, syllabi showcases, onboarding wizard steps, candidate shortlist dossiers, CV parser controls, admin review side-by-side diff viewers, and analytics KPI metrics.
 - **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Styling)**:
   - Eliminated dated browser default serif (`Times New Roman`) across all page headings, hero headlines, navigation monograms, counters, metric KPI cards, and search filters.
   - Standardized modern typography on **Aptos** and **Aptos Display** with `Plus_Jakarta_Sans` variable font fallback configured via Tailwind v4 `@theme inline` (`--font-sans` and `--font-display`).

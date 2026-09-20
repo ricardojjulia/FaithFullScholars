@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Sparkles, Search, ScrollText, Video, Send } from "lucide-react";
 import { PublicNav } from "@/components/shell/public-nav";
 import { PublicFooter } from "@/components/shell/public-footer";
 
@@ -10,8 +11,9 @@ export default function Home() {
       {/* Hero Section */}
       <main className="flex-1">
         <section className="py-20 sm:py-28 px-4 sm:px-6 text-center max-w-5xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/50 dark:border-indigo-900 text-indigo-800 dark:text-indigo-300 text-xs font-semibold mb-6">
-            <span>✨</span> Dedicated to Theological & Biblical Higher Education
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/50 dark:border-indigo-900 text-indigo-800 dark:text-indigo-300 text-xs font-semibold mb-6 shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+            <span>Dedicated to Theological & Biblical Higher Education</span>
           </div>
 
           <h1 className="font-display text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 max-w-4xl mx-auto leading-tight sm:leading-[1.1]">
@@ -29,7 +31,7 @@ export default function Home() {
             className="max-w-2xl mx-auto bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-2xl p-2 shadow-lg flex flex-col sm:flex-row gap-2"
           >
             <div className="flex-1 flex items-center px-3 py-2">
-              <span className="text-slate-400 mr-2">🔍</span>
+              <Search className="w-4 h-4 text-slate-400 mr-2.5 shrink-0 stroke-[2]" />
               <input
                 type="text"
                 name="search"
@@ -79,8 +81,8 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="card-crisp p-6">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
-                  📜
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center mb-4 shadow-2xs">
+                  <ScrollText className="w-6 h-6 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
                 </div>
                 <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Academic Identity & Doctrinal Fit
@@ -99,8 +101,8 @@ export default function Home() {
               </div>
 
               <div className="card-crisp p-6">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
-                  🎥
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center mb-4 shadow-2xs">
+                  <Video className="w-6 h-6 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
                 </div>
                 <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Course & Lecture Showcase
@@ -119,8 +121,8 @@ export default function Home() {
               </div>
 
               <div className="card-crisp p-6">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950 flex items-center justify-center text-2xl mb-4">
-                  ✉️
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 border border-indigo-100 dark:border-indigo-900 flex items-center justify-center mb-4 shadow-2xs">
+                  <Send className="w-6 h-6 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
                 </div>
                 <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white mb-2">
                   Structured Institutional Outreach

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { Sparkles, Check } from 'lucide-react';
 import { CvUploadParser } from '@/components/forms/cv-upload-parser';
 import { ParsedCvDraft } from '@/lib/profiles/cv-parser';
 import { RevisionSnapshotData, PublicationType } from '@/lib/domain/types';
@@ -82,8 +83,9 @@ export default function OnboardingPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Onboarding Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-300 text-xs font-semibold">
-            <span>✨ Scholar Onboarding Wizard</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-300 text-xs font-semibold shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+            <span>Scholar Onboarding Wizard</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
             Set Up Your Academic & Theological Profile
@@ -264,8 +266,8 @@ export default function OnboardingPage() {
         {/* Step 3: Success */}
         {step === 'success' && (
           <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp text-center space-y-4 max-w-md mx-auto">
-            <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl mx-auto shadow-inner">
-              ✓
+            <div className="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+              <Check className="w-7 h-7 stroke-[2.5]" />
             </div>
 
             <h2 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">

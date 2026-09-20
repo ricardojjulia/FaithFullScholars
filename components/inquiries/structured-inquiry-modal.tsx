@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { X, Check, BookOpen, Lock, Loader2 } from 'lucide-react';
 import { OpportunityType, DeliveryMode } from '@/lib/domain/types';
 import { useTranslation } from '@/lib/i18n/i18n-context';
 
@@ -135,10 +136,10 @@ export function StructuredInquiryModal({
           </div>
           <button
             onClick={resetAndClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl leading-none p-1"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             aria-label="Close"
           >
-            ×
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -146,8 +147,8 @@ export function StructuredInquiryModal({
         <div className="p-6 max-h-[80vh] overflow-y-auto">
           {success ? (
             <div className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto text-3xl">
-                ✓
+              <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                <Check className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">
                 {t('inquiry.success_title') || 'Inquiry Dispatched Successfully!'}
@@ -160,7 +161,7 @@ export function StructuredInquiryModal({
                 <button
                   type="button"
                   onClick={resetAndClose}
-                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition"
+                  className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium text-sm transition shadow-xs"
                 >
                   {t('inquiry.done') || 'Done'}
                 </button>
@@ -169,8 +170,8 @@ export function StructuredInquiryModal({
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {courseTitle && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-lg text-sm text-amber-900 dark:text-amber-200 flex items-center space-x-2">
-                  <span>📖</span>
+                <div className="p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl text-sm text-amber-900 dark:text-amber-200 flex items-center space-x-2">
+                  <BookOpen className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
                   <span>
                     Regarding Course Showcase: <strong>{courseTitle}</strong>
                   </span>
@@ -273,8 +274,8 @@ export function StructuredInquiryModal({
               </div>
 
               {/* Anti-spam notice */}
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-lg text-xs text-slate-500 dark:text-slate-400 flex items-start space-x-2">
-                <span className="text-indigo-500 font-bold">🔒</span>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-xs text-slate-500 dark:text-slate-400 flex items-start space-x-2">
+                <Lock className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
                 <span>
                   {t('inquiry.privacy_notice') ||
                     'Inquiries are routed through structured platform communication. Scholar personal contact details are released upon inquiry acceptance.'}
@@ -286,16 +287,16 @@ export function StructuredInquiryModal({
                 <button
                   type="button"
                   onClick={resetAndClose}
-                  className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition"
+                  className="px-4 py-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-sm font-medium transition"
                 >
                   {t('inquiry.cancel') || 'Cancel'}
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-50 flex items-center space-x-2"
+                  className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition disabled:opacity-50 flex items-center space-x-2 shadow-xs"
                 >
-                  {loading && <span className="animate-spin text-sm">⏳</span>}
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{t('inquiry.submit') || 'Send Inquiry'}</span>
                 </button>
               </div>

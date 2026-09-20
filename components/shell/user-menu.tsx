@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { User, ChevronDown } from 'lucide-react';
 
 export function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,11 +27,12 @@ export function UserMenu() {
         aria-label="User account and profile menu"
         className="flex flex-col items-center justify-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg"
       >
-        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 text-xs font-semibold">
-          👤
+        <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300">
+          <User className="w-3.5 h-3.5" />
         </div>
         <span className="text-[10px] font-medium hidden sm:flex items-center gap-0.5 mt-0.5">
-          Me <span className="text-[8px]">▼</span>
+          <span>Me</span>
+          <ChevronDown className={`w-2.5 h-2.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </span>
       </button>
 

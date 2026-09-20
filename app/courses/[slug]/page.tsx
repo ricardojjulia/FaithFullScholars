@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
+import { FileText } from 'lucide-react';
 import { getPublicCourseBySlug } from '@/lib/domain/queries';
 import { formatDeliveryMode } from '@/lib/domain/taxonomies';
 import { PublicNav } from '@/components/shell/public-nav';
@@ -134,7 +135,8 @@ export default async function CourseDetailPage({
         <div className="space-y-6">
           <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl card-crisp p-6 shadow-sm">
             <h2 className="font-display font-bold tracking-tight text-lg text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-              <span>📄</span> Syllabus & Modular Structure
+              <FileText className="w-5 h-5 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />
+              <span>Syllabus & Modular Structure</span>
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
               This course is ready for modular intensive delivery (1–2 weeks), synchronous online semester instruction, or asynchronous video module integration.

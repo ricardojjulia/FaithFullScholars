@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Check, ArrowRight } from 'lucide-react';
 import { PublicCourseCard } from '@/lib/domain/queries';
 import { formatDeliveryMode } from '@/lib/domain/taxonomies';
 
@@ -64,14 +65,22 @@ export function CourseCard({ course }: { course: PublicCourseCard }) {
 
       {/* Bottom Action */}
       <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-        <span className="text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
-          {course.public_preview_enabled ? '✓ Preview & Syllabus Available' : 'Course Catalog'}
+        <span className="inline-flex items-center text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+          {course.public_preview_enabled ? (
+            <>
+              <Check className="w-3 h-3 stroke-[2.5] mr-1 text-emerald-600 dark:text-emerald-400" />
+              <span>Syllabus Available</span>
+            </>
+          ) : (
+            'Course Catalog'
+          )}
         </span>
         <Link
           href={`/courses/${course.slug}`}
-          className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:underline flex items-center gap-1"
+          className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:underline flex items-center gap-1 group"
         >
-          Inspect Syllabus →
+          <span>Inspect Syllabus</span>
+          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
         </Link>
       </div>
     </div>

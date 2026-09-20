@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Building2, MapPin, ScrollText, ArrowRight } from 'lucide-react';
 import { PublicScholarCard } from '@/lib/domain/queries';
 import { formatOpportunityType } from '@/lib/domain/taxonomies';
 
@@ -50,7 +51,7 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
         <div className="mb-4 text-xs text-slate-600 dark:text-slate-400 space-y-1">
           {scholar.current_institution && (
             <div className="flex items-center gap-1.5">
-              <span>🏛️</span>
+              <Building2 className="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[1.75]" />
               <span className="font-medium text-slate-700 dark:text-slate-300">
                 {scholar.current_institution}
               </span>
@@ -58,7 +59,7 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
           )}
           {scholar.location && (
             <div className="flex items-center gap-1.5 text-slate-500">
-              <span>📍</span>
+              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 stroke-[1.75]" />
               <span>{scholar.location}</span>
             </div>
           )}
@@ -86,10 +87,11 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
           {scholar.confessions.slice(0, 2).map((c) => (
             <span
               key={c.slug}
-              className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300 text-[11px]"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-200 dark:bg-amber-950/40 dark:border-amber-900 dark:text-amber-300 text-[11px]"
               title={`Affirms ${c.name} (${c.adherence_level.replace(/_/g, ' ')})`}
             >
-              📜 {c.name.split('(')[0].trim()}
+              <ScrollText className="w-3 h-3 text-amber-700 dark:text-amber-400 shrink-0 stroke-[2]" />
+              <span>{c.name.split('(')[0].trim()}</span>
             </span>
           ))}
         </div>
@@ -113,9 +115,10 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
 
         <Link
           href={`/scholars/${scholar.slug}`}
-          className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors"
+          className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center gap-1.5 transition-colors group/link"
         >
-          View Profile →
+          <span>View Profile</span>
+          <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5" />
         </Link>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { GraduationCap, Lock, Search } from 'lucide-react';
 import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/lib/domain/queries';
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
@@ -52,8 +53,9 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
         {/* Page Banner Header */}
         <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300 text-xs font-semibold mb-1">
-              <span>🎓</span> Verified Faculty Directory
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300 text-xs font-semibold mb-1 shadow-2xs">
+              <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
+              <span>Verified Faculty Directory</span>
             </div>
             <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
               Theological Faculty Network
@@ -89,8 +91,8 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
             {isPageGated ? (
               /* Anti-Harvesting Deep Pagination Wall (ADR 0008) */
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 text-center shadow-xs space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 text-3xl flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900">
-                  🔒
+                <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900 shadow-inner">
+                  <Lock className="w-7 h-7 text-indigo-700 dark:text-indigo-400" />
                 </div>
                 <h3 className="font-display font-bold text-xl tracking-tight text-slate-900 dark:text-white">
                   Create a Free Account to View More Faculty
@@ -115,7 +117,9 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
               </div>
             ) : scholars.length === 0 ? (
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-3 shadow-xs">
-                <div className="text-3xl">🔍</div>
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
+                  <Search className="w-6 h-6" />
+                </div>
                 <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
                   No Scholars Found
                 </h3>

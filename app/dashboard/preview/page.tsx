@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ShieldAlert, ArrowLeft, Check, GraduationCap } from 'lucide-react';
 import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
@@ -182,7 +183,9 @@ export default function DraftPreviewPage() {
       {/* Floating Staging Notification Banner */}
       <div className="bg-amber-500 text-slate-950 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">🛡️</span>
+          <div className="w-8 h-8 rounded-xl bg-amber-400/80 dark:bg-amber-600/80 flex items-center justify-center shrink-0">
+            <ShieldAlert className="w-5 h-5 text-slate-950" />
+          </div>
           <div>
             <span className="text-xs font-bold uppercase tracking-wider block">
               Draft Revision Staging Preview (ADR 0005)
@@ -196,9 +199,10 @@ export default function DraftPreviewPage() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/dashboard/profile"
-            className="px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold rounded-xl transition-colors"
+            className="px-3 py-1.5 bg-slate-900 text-white hover:bg-slate-800 text-xs font-semibold rounded-xl transition-colors inline-flex items-center gap-1.5"
           >
-            ← Return to Editor
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Editor</span>
           </Link>
 
           {!submitted ? (
@@ -210,8 +214,9 @@ export default function DraftPreviewPage() {
               Submit for Admin Review
             </button>
           ) : (
-            <span className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl">
-              ✓ Submitted for Review
+            <span className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5" />
+              <span>Submitted for Review</span>
             </span>
           )}
         </div>
@@ -233,8 +238,8 @@ export default function DraftPreviewPage() {
               <div className="space-y-3">
                 {mockScholar.credentials.map((cred) => (
                   <div key={cred.id} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
-                      🎓
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
+                      <GraduationCap className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-slate-900 dark:text-white">

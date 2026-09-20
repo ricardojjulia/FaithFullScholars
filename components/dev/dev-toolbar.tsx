@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { X, ExternalLink, ArrowRight, Zap } from "lucide-react";
 
 export function DevToolbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,10 +28,10 @@ export function DevToolbar() {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-white px-1 rounded hover:bg-slate-800 text-sm font-sans cursor-pointer"
+              className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-800 transition-colors cursor-pointer"
               title="Minimize toolbar"
             >
-              ✕
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -54,26 +55,29 @@ export function DevToolbar() {
               href="http://127.0.0.1:49323"
               target="_blank"
               rel="noreferrer"
-              className="p-1.5 text-center rounded bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 transition-colors"
+              className="p-1.5 text-center rounded bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 transition-colors inline-flex items-center justify-center gap-1"
             >
-              Studio ↗
+              <span>Studio</span>
+              <ExternalLink className="w-2.5 h-2.5" />
             </a>
             <a
               href="http://127.0.0.1:49324"
               target="_blank"
               rel="noreferrer"
-              className="p-1.5 text-center rounded bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 transition-colors"
+              className="p-1.5 text-center rounded bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-300 transition-colors inline-flex items-center justify-center gap-1"
             >
-              Mailbox ↗
+              <span>Mailbox</span>
+              <ExternalLink className="w-2.5 h-2.5" />
             </a>
           </div>
 
           <div className="mt-2 pt-2 border-t border-slate-800 text-center">
             <Link
               href="/dev/status"
-              className="block w-full py-1 text-center rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white transition-colors text-[11px] font-semibold"
+              className="w-full py-1 text-center rounded bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white transition-colors text-[11px] font-semibold inline-flex items-center justify-center gap-1"
             >
-              Full Diagnostics Screen →
+              <span>Full Diagnostics Screen</span>
+              <ArrowRight className="w-3 h-3" />
             </Link>
           </div>
         </div>
@@ -85,7 +89,7 @@ export function DevToolbar() {
         >
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[11px] font-semibold text-indigo-400">DEV :3845</span>
-          <span className="text-[10px] text-slate-500 font-sans">⚡</span>
+          <Zap className="w-3 h-3 text-amber-500" />
         </button>
       )}
     </aside>

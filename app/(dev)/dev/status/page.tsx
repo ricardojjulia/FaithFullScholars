@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function DevStatusPage() {
@@ -139,17 +140,19 @@ export default async function DevStatusPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-medium transition-colors"
+              className="px-3 py-1.5 rounded-lg border border-slate-700 bg-slate-800 hover:bg-slate-700 text-xs font-medium transition-colors inline-flex items-center gap-1.5"
             >
-              ← Back to App
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to App</span>
             </Link>
             <a
               href="http://127.0.0.1:49323"
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors shadow-sm"
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors shadow-sm inline-flex items-center gap-1.5"
             >
-              Open Supabase Studio ↗
+              <span>Open Supabase Studio</span>
+              <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>
@@ -241,9 +244,10 @@ export default async function DevStatusPage() {
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-indigo-400 hover:text-indigo-300 underline"
+                          className="text-indigo-400 hover:text-indigo-300 underline inline-flex items-center gap-1"
                         >
-                          Open ↗
+                          <span>Open</span>
+                          <ExternalLink className="w-3 h-3" />
                         </a>
                       ) : (
                         <span className="text-slate-600">—</span>
