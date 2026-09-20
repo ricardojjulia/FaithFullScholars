@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Remote Staging & Production Verification Protocol (Step 3)**:
+  - Published comprehensive pre-flight verification protocol and operational runbook (`docs/deployment/staging-verification-protocol.md`).
+  - Outlined step-by-step procedures for Supabase CLI migration synchronization, remote RLS audit enforcement across all 25 tables (`DATABASE_URL=... npm run audit:rls`), remote pilot cohort population (`DATABASE_URL=... npm run seed:pilot`), and pilot readiness diagnostics (`npm run verify:pilot`).
+  - Documented edge runtime compatibility, CSP/HSTS security header verification, and rollback incident playbooks for Vercel production deployments.
 - **AI-Assisted CV & Syllabus Intelligence Engine (Step 2)**:
   - Built `extractCvWithGemini` (`lib/ai/gemini-cv-extractor.ts`) utilizing Google Gemini generative AI with theological academic system prompt, Chicago/SBL publication parsing, doctoral degree extraction, and deterministic heuristic fallback (`parseCvText`).
   - Built `tagSyllabusWithGemini` and `parseSyllabusHeuristic` (`lib/ai/gemini-syllabus-tagger.ts`) extracting course codes, levels (undergraduate, graduate, doctoral), learning outcomes, required texts, topical tags, and recommended delivery modes (residential, hybrid, online).
