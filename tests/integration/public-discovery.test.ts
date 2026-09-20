@@ -117,9 +117,29 @@ describe('Public Discovery Integration Tests (Phase 2)', () => {
       const client = new Client({ connectionString: dbUrl });
       await client.connect();
 
-      // Get an existing account id to satisfy foreign key
-      const accRes = await client.query('SELECT id FROM public.accounts LIMIT 1');
-      const accountId = accRes.rows[0].id;
+      // Get an existing account without an attached scholar, or create a unique test account
+      const accRes = await client.query(`
+        SELECT a.id FROM public.accounts a 
+        LEFT JOIN public.scholars s ON a.id = s.account_id 
+        WHERE s.id IS NULL 
+        LIMIT 1
+      `);
+      let accountId = accRes.rows[0]?.id;
+      let createdTestAccount = false;
+      const testAccountId = 'a0000000-0000-0000-0000-000000000099';
+
+      if (!accountId) {
+        await client.query(`
+          INSERT INTO auth.users (id, instance_id, aud, role, email) 
+          VALUES ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'draft-test-isolated@faithfullscholars.org')
+          ON CONFLICT (id) DO NOTHING;
+          INSERT INTO public.accounts (id, email, role) 
+          VALUES ($1, 'draft-test-isolated@faithfullscholars.org', 'scholar')
+          ON CONFLICT (id) DO NOTHING;
+        `, [testAccountId]);
+        accountId = testAccountId;
+        createdTestAccount = true;
+      }
 
       // Temporarily insert a draft scholar to verify public loader ignores it
       const insertRes = await client.query(`
@@ -142,6 +162,10 @@ describe('Public Discovery Integration Tests (Phase 2)', () => {
       } finally {
         // Clean up draft scholar
         await client.query('DELETE FROM public.scholars WHERE id = $1', [draftId]);
+        if (createdTestAccount) {
+          await client.query('DELETE FROM public.accounts WHERE id = $1', [testAccountId]);
+          await client.query('DELETE FROM auth.users WHERE id = $1', [testAccountId]);
+        }
         await client.end();
       }
     });
