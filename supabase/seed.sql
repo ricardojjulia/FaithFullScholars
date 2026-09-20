@@ -60,7 +60,10 @@ INSERT INTO auth.users (
   ('a1000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'admin@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
   ('a1000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dr.calvin.edwards@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
   ('a1000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dr.sarah.macarthur@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
-  ('a1000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'recruiter@wts.edu', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now())
+  ('a1000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'recruiter@wts.edu', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+  ('a1000000-0000-0000-0000-000000000005', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dr.thomas.cranmer@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+  ('a1000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dr.marcus.vance@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now()),
+  ('a1000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'dr.elizabeth.knox@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 -- 6. Sample Accounts
@@ -68,7 +71,10 @@ INSERT INTO public.accounts (id, email, role) VALUES
   ('a1000000-0000-0000-0000-000000000001', 'admin@faithfullscholars.org', 'admin'),
   ('a1000000-0000-0000-0000-000000000002', 'dr.calvin.edwards@faithfullscholars.org', 'scholar'),
   ('a1000000-0000-0000-0000-000000000003', 'dr.sarah.macarthur@faithfullscholars.org', 'scholar'),
-  ('a1000000-0000-0000-0000-000000000004', 'recruiter@wts.edu', 'institution_user')
+  ('a1000000-0000-0000-0000-000000000004', 'recruiter@wts.edu', 'institution_user'),
+  ('a1000000-0000-0000-0000-000000000005', 'dr.thomas.cranmer@faithfullscholars.org', 'scholar'),
+  ('a1000000-0000-0000-0000-000000000006', 'dr.marcus.vance@faithfullscholars.org', 'scholar'),
+  ('a1000000-0000-0000-0000-000000000007', 'dr.elizabeth.knox@faithfullscholars.org', 'scholar')
 ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, role = EXCLUDED.role;
 
 -- 7. Sample Scholars
@@ -108,6 +114,54 @@ INSERT INTO public.scholars (
     'approved',
     'verified',
     'I gladly subscribe to the Chicago Statement on Biblical Inerrancy and affirm the Apostles'' Creed and Nicene Creed as faithful summaries of biblical revelation.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000003',
+    'a1000000-0000-0000-0000-000000000005',
+    'thomas-cranmer-davies',
+    'Dr. Thomas Cranmer-Davies',
+    'Professor of Old Testament & Hebrew Scriptures',
+    'Trinity Evangelical Divinity School',
+    'Senior Research Fellow in Semitics',
+    'Specializing in West Semitic philology, poetic parallelism in the Psalms of Lament, and the theological reception of the Hebrew Canon. Over 15 years of postgraduate Hebrew exegesis teaching.',
+    'Oxford, UK',
+    'Europe/London',
+    'institution_inquiry',
+    'approved',
+    'verified',
+    'I gladly subscribe to the historic Thirty-Nine Articles of Religion and affirm the full canonical inspiration, authority, and infallibility of the Old and New Testaments as God-breathed revelation.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000004',
+    'a1000000-0000-0000-0000-000000000006',
+    'marcus-vance',
+    'Dr. Marcus Aurelius Vance',
+    'Associate Professor of Christian Apologetics & Systematic Theology',
+    'Southern Baptist Theological Seminary',
+    'Associate Professor',
+    'Focused on presuppositional apologetics, transcendental epistemological arguments, and Reformed Baptist covenant theology. Regular speaker at theological conferences on worldview and cultural engagement.',
+    'Louisville, KY',
+    'America/New_York',
+    'institution_inquiry',
+    'approved',
+    'verified',
+    'I affirm with full conviction the Second London Baptist Confession of Faith (1689), the Chicago Statement on Biblical Inerrancy, and the historic Nicene Creed.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000005',
+    'a1000000-0000-0000-0000-000000000007',
+    'elizabeth-montgomery-knox',
+    'Dr. Elizabeth Montgomery-Knox',
+    'Associate Professor of Christian Ethics & Practical Theology',
+    'Reformed Theological Seminary',
+    'Chair of Christian Ethics',
+    'Researching Christian bioethics, virtue ethics in pastoral ministry, and the intersection of covenant theology with modern bioethics and medicine. Extensive background in hospital chaplaincy.',
+    'Charlotte, NC',
+    'America/New_York',
+    'institution_inquiry',
+    'approved',
+    'verified',
+    'I subscribe sincerely to the Westminster Confession of Faith and Catechisms as containing the system of doctrine taught in the Holy Scriptures of the Old and New Testaments.'
   )
 ON CONFLICT (slug) DO UPDATE SET full_name = EXCLUDED.full_name, biography = EXCLUDED.biography;
 
@@ -134,25 +188,67 @@ INSERT INTO public.scholar_profile_revisions (
     'Initial profile verification clean.',
     now() - interval '14 days',
     now() - interval '13 days'
+  ),
+  (
+    '01000000-0000-0000-0000-000000000003',
+    'f1000000-0000-0000-0000-000000000003',
+    1,
+    'approved',
+    '{"full_name": "Dr. Thomas Cranmer-Davies", "title": "Professor of Old Testament & Hebrew Scriptures", "biography": "Specializing in West Semitic philology, poetic parallelism in the Psalms of Lament, and Hebrew Canon reception."}'::jsonb,
+    'Verified doctoral credentials with Oxford University registry.',
+    now() - interval '20 days',
+    now() - interval '19 days'
+  ),
+  (
+    '01000000-0000-0000-0000-000000000004',
+    'f1000000-0000-0000-0000-000000000004',
+    1,
+    'approved',
+    '{"full_name": "Dr. Marcus Aurelius Vance", "title": "Associate Professor of Christian Apologetics & Systematic Theology", "biography": "Focused on presuppositional apologetics, transcendental epistemological arguments, and Reformed Baptist covenant theology."}'::jsonb,
+    'Verified faculty status and doctoral credentials.',
+    now() - interval '18 days',
+    now() - interval '17 days'
+  ),
+  (
+    '01000000-0000-0000-0000-000000000005',
+    'f1000000-0000-0000-0000-000000000005',
+    1,
+    'approved',
+    '{"full_name": "Dr. Elizabeth Montgomery-Knox", "title": "Associate Professor of Christian Ethics & Practical Theology", "biography": "Researching Christian bioethics, virtue ethics in pastoral ministry, and covenant theology."}'::jsonb,
+    'Verified PTS doctoral degree and bioethics publications.',
+    now() - interval '15 days',
+    now() - interval '14 days'
   )
 ON CONFLICT (scholar_id, revision_number) DO NOTHING;
 
 -- Link published revisions
 UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-000000000001' WHERE id = 'f1000000-0000-0000-0000-000000000001';
 UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-000000000002' WHERE id = 'f1000000-0000-0000-0000-000000000002';
+UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-000000000003' WHERE id = 'f1000000-0000-0000-0000-000000000003';
+UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-000000000004' WHERE id = 'f1000000-0000-0000-0000-000000000004';
+UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-000000000005' WHERE id = 'f1000000-0000-0000-0000-000000000005';
 
 -- 9. Scholar Disciplines
 INSERT INTO public.scholar_disciplines (scholar_id, discipline_id, is_primary) VALUES
   ('f1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000004', true),
   ('f1000000-0000-0000-0000-000000000001', 'd1000000-0000-0000-0000-000000000003', false),
   ('f1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000002', true),
-  ('f1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000005', false)
+  ('f1000000-0000-0000-0000-000000000002', 'd1000000-0000-0000-0000-000000000005', false),
+  ('f1000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000001', true),
+  ('f1000000-0000-0000-0000-000000000003', 'd1000000-0000-0000-0000-000000000005', false),
+  ('f1000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000008', true),
+  ('f1000000-0000-0000-0000-000000000004', 'd1000000-0000-0000-0000-000000000003', false),
+  ('f1000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000007', true),
+  ('f1000000-0000-0000-0000-000000000005', 'd1000000-0000-0000-0000-000000000006', false)
 ON CONFLICT (scholar_id, discipline_id) DO NOTHING;
 
 -- 10. Scholar Traditions
 INSERT INTO public.scholar_traditions (scholar_id, tradition_id, is_primary) VALUES
   ('f1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000001', true),
-  ('f1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000006', true)
+  ('f1000000-0000-0000-0000-000000000002', 'b1000000-0000-0000-0000-000000000006', true),
+  ('f1000000-0000-0000-0000-000000000003', 'b1000000-0000-0000-0000-000000000003', true),
+  ('f1000000-0000-0000-0000-000000000004', 'b1000000-0000-0000-0000-000000000002', true),
+  ('f1000000-0000-0000-0000-000000000005', 'b1000000-0000-0000-0000-000000000001', true)
 ON CONFLICT (scholar_id, tradition_id) DO NOTHING;
 
 -- 11. Scholar Confessions
@@ -160,7 +256,13 @@ INSERT INTO public.scholar_confessions (scholar_id, confessional_standard_id, ad
   ('f1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000004', 'full_subscription', NULL),
   ('f1000000-0000-0000-0000-000000000001', 'c1000000-0000-0000-0000-000000000001', 'full_subscription', NULL),
   ('f1000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000012', 'full_subscription', NULL),
-  ('f1000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000001', 'full_subscription', NULL)
+  ('f1000000-0000-0000-0000-000000000002', 'c1000000-0000-0000-0000-000000000001', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000003', 'c1000000-0000-0000-0000-000000000010', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000003', 'c1000000-0000-0000-0000-000000000001', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000006', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000012', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000005', 'c1000000-0000-0000-0000-000000000004', 'full_subscription', NULL),
+  ('f1000000-0000-0000-0000-000000000005', 'c1000000-0000-0000-0000-000000000002', 'full_subscription', NULL)
 ON CONFLICT (scholar_id, confessional_standard_id) DO NOTHING;
 
 -- 12. Credentials
@@ -169,7 +271,14 @@ INSERT INTO public.credentials (scholar_id, degree, field_of_study, institution_
   ('f1000000-0000-0000-0000-000000000001', 'Th.M.', 'Systematic Theology', 'Westminster Theological Seminary', 2004, false, 2),
   ('f1000000-0000-0000-0000-000000000001', 'M.Div.', 'Pastoral Studies', 'Reformed Theological Seminary', 2002, false, 3),
   ('f1000000-0000-0000-0000-000000000002', 'Ph.D.', 'New Testament & Early Christianity', 'University of Cambridge', 2014, true, 1),
-  ('f1000000-0000-0000-0000-000000000002', 'M.A.', 'Biblical Languages', 'Trinity Evangelical Divinity School', 2010, false, 2)
+  ('f1000000-0000-0000-0000-000000000002', 'M.A.', 'Biblical Languages', 'Trinity Evangelical Divinity School', 2010, false, 2),
+  ('f1000000-0000-0000-0000-000000000003', 'D.Phil.', 'Hebrew & Semitic Studies', 'University of Oxford', 2012, true, 1),
+  ('f1000000-0000-0000-0000-000000000003', 'M.St.', 'Jewish Studies in the Graeco-Roman Period', 'University of Oxford', 2008, false, 2),
+  ('f1000000-0000-0000-0000-000000000004', 'Ph.D.', 'Systematic Theology & Apologetics', 'Southern Baptist Theological Seminary', 2016, true, 1),
+  ('f1000000-0000-0000-0000-000000000004', 'M.Div.', 'Theology & Biblical Languages', 'Southern Baptist Theological Seminary', 2011, false, 2),
+  ('f1000000-0000-0000-0000-000000000005', 'Ph.D.', 'Christian Ethics', 'Princeton Theological Seminary', 2015, true, 1),
+  ('f1000000-0000-0000-0000-000000000005', 'Th.M.', 'Historical & Practical Theology', 'Reformed Theological Seminary', 2010, false, 2),
+  ('f1000000-0000-0000-0000-000000000005', 'M.Div.', 'Pastoral Ministry', 'Gordon-Conwell Theological Seminary', 2008, false, 3)
 ON CONFLICT DO NOTHING;
 
 -- 13. Publications
@@ -190,6 +299,33 @@ INSERT INTO public.publications (scholar_id, title, publication_type, publisher_
     'Baker Academic',
     2020,
     'MacArthur, Sarah. Light in the Darkness: The Prologue of John in Greco-Roman Context. Grand Rapids: Baker Academic, 2020.',
+    1
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000003',
+    'Poetics and Theodicy in the Hebrew Psalter',
+    'book',
+    'Oxford University Press',
+    2019,
+    'Cranmer-Davies, Thomas. Poetics and Theodicy in the Hebrew Psalter. Oxford: Oxford University Press, 2019.',
+    1
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000004',
+    'A Presuppositional Defense of Christian Monotheism',
+    'book',
+    'Crossway',
+    2022,
+    'Vance, Marcus A. A Presuppositional Defense of Christian Monotheism. Wheaton: Crossway, 2022.',
+    1
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000005',
+    'Covenant Virtue: Christian Ethics at the End of Life',
+    'book',
+    'Eerdmans',
+    2021,
+    'Montgomery-Knox, Elizabeth. Covenant Virtue: Christian Ethics at the End of Life. Grand Rapids: Eerdmans, 2021.',
     1
   )
 ON CONFLICT DO NOTHING;
@@ -222,6 +358,42 @@ INSERT INTO public.courses (
     ARRAY['online_sync', 'in_person_semester'],
     true,
     'public'
+  ),
+  (
+    '02000000-0000-0000-0000-000000000003',
+    'f1000000-0000-0000-0000-000000000003',
+    'Hebrew Poetry & The Psalms of Lament',
+    'hebrew-poetry-psalms-lament',
+    'An advanced postgraduate seminar exploring the poetic mechanics, liturgical setting, and theological profundity of lament in the Hebrew Psalter.',
+    'graduate',
+    'd1000000-0000-0000-0000-000000000001',
+    ARRAY['in_person_modular', 'online_sync'],
+    true,
+    'public'
+  ),
+  (
+    '02000000-0000-0000-0000-000000000004',
+    'f1000000-0000-0000-0000-000000000004',
+    'Trinitarian Epistemology & Presuppositional Apologetics',
+    'trinitarian-epistemology-apologetics',
+    'Critique of contemporary naturalism and postmodern skepticism through the lens of Cornelius Van Til and John Frame.',
+    'graduate',
+    'd1000000-0000-0000-0000-000000000008',
+    ARRAY['online_async', 'online_sync'],
+    true,
+    'public'
+  ),
+  (
+    '02000000-0000-0000-0000-000000000005',
+    'f1000000-0000-0000-0000-000000000005',
+    'Bioethics & Biomedical Ethics in Christian Pastoral Care',
+    'bioethics-pastoral-care',
+    'A clinical and biblical exploration of end-of-life decisions, gene editing, reproductive technologies, and Christian palliative care.',
+    'graduate',
+    'd1000000-0000-0000-0000-000000000007',
+    ARRAY['in_person_semester', 'online_sync'],
+    true,
+    'public'
   )
 ON CONFLICT (scholar_id, slug) DO NOTHING;
 
@@ -244,5 +416,29 @@ INSERT INTO public.availability_profiles (
     ARRAY['online_sync', 'online_async'],
     ARRAY['Fall 2026', 'Spring 2027'],
     'Available for online Hellenistic Greek exegesis modules and guest lectures on Johannine theology.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000003',
+    true,
+    ARRAY['adjunct_teaching', 'online_instruction', 'intensives_modular', 'guest_lecturing'],
+    ARRAY['online_sync', 'in_person_modular'],
+    ARRAY['Spring 2027', 'Summer 2027'],
+    'Available for modular intensive Hebrew courses and guest lectures on Old Testament theology.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000004',
+    true,
+    ARRAY['adjunct_teaching', 'online_instruction', 'conference_speaking', 'intensives_modular'],
+    ARRAY['online_async', 'online_sync'],
+    ARRAY['Fall 2026', 'Spring 2027'],
+    'Available for asynchronous and synchronous apologetics modules, modular intensives, and campus seminars.'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000005',
+    true,
+    ARRAY['adjunct_teaching', 'doctoral_supervision', 'curriculum_consulting', 'online_instruction'],
+    ARRAY['in_person_semester', 'online_sync'],
+    ARRAY['Fall 2026', 'Spring 2027', 'Summer 2027'],
+    'Available for semester-length courses in Christian bioethics and doctoral thesis supervision.'
   )
 ON CONFLICT (scholar_id) DO NOTHING;

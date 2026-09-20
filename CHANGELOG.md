@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Pilot Cohort Seed Expansion**:
+  - Expanded reference pilot database to 5 diverse, approved scholars across Reformed, Baptist, Anglican, and Presbyterian traditions: Dr. Calvin Edwards, Dr. Sarah MacArthur, Dr. Thomas Cranmer-Davies, Dr. Marcus Aurelius Vance, and Dr. Elizabeth Montgomery-Knox.
+  - Added complete doctoral credentials, publications, course showcases with delivery modes and previews, historic confessional affirmations, and availability profiles.
+  - Created programmatic seeder (`scripts/seed-pilot-cohort.ts` / `npm run seed:pilot`) and updated `supabase/seed.sql`.
+  - Achieved 100% `PASS` across all 7 diagnostic categories in `npm run verify:pilot`.
 - **Phase 6: MVP Release Hardening & Deployment Preparation**:
   - Configured strict HTTP security headers in `next.config.ts`: Content-Security-Policy (CSP) whitelisting YouTube, Unsplash, Gravatar, and Supabase Storage, Strict-Transport-Security (HSTS with 2-year duration, subdomains, and preloading), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
   - Built comprehensive End-to-End User Journey Integration test suite (`tests/integration/e2e-user-journeys.test.ts`) covering all 4 core personas: scholar onboarding & revision staging, admin triage & snapshot promotion, public discovery & search rate limiting, and institutional outreach & shortlist lifecycle.
