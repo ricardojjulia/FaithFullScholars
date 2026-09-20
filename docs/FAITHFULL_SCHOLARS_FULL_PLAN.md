@@ -865,19 +865,19 @@ Agents must verify current official CLI documentation before using commands that
 
 ## 21. Post-MVP Backlog
 
-- AI-assisted syllabus tagging.
-- Scholar analytics.
-- Institution subscriptions.
-- Premium scholar profiles.
-- Public SEO topic hubs.
-- Shortlist export.
-- Course licensing.
-- Contracts and booking.
-- Credential-verification partnerships.
-- Peer endorsements.
-- Conference speaker directory.
-- Seminary consortium accounts.
-- Citation-grounded AI institution search.
+- [x] **AI-assisted CV import & syllabus tagging** (`lib/ai/gemini-cv-extractor.ts`, `lib/ai/gemini-syllabus-tagger.ts`).
+- [x] **Scholar analytics dashboard** (`/dashboard/analytics`, `lib/analytics/scholar-analytics.ts`).
+- [x] **Shortlist export & search dossier** (`/institution/saved/dossier`, `GET /api/institution/saved-scholars/export`).
+- [x] **Citation-grounded AI institution search & faculty matcher** (`/api/ai/match-faculty`, `components/search/ai-faculty-matcher-modal.tsx`).
+- [ ] Institution subscriptions.
+- [ ] Premium scholar profiles.
+- [ ] Public SEO topic hubs.
+- [ ] Course licensing and syllabus distribution agreements.
+- [ ] Contracts and institutional booking workflows.
+- [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars).
+- [ ] Peer endorsements and theological faculty commendations.
+- [ ] Conference speaker directory and institutional speaking bureau.
+- [ ] Seminary consortium accounts.
 
 ## 22. Governing Decisions
 

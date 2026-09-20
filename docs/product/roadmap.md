@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, and **Phase 6 (MVP Release Hardening & Deployment Preparation)** along with the **Platform Language Translation Pipeline (Spanish `es`)** are fully implemented, audited, and verified across all 6 gates (101 tests, 25/25 RLS tables). Ready for live Vercel & Supabase pilot deployment.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, and **Remote Staging & Production Verification Protocol** are fully implemented, audited, and verified across all 6 gates (124 tests across 22 suites, 25/25 RLS tables, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -163,6 +163,28 @@ Exit criteria:
 - [x] Diagnostic script verifies pilot seed baseline (taxonomy, confessions, traditions, RLS).
 - [x] All 6 quality gates pass (`npm run verify` = 101 tests across 18 files, 25/25 tables RLS enforced).
 - [x] MVP is ready to support a controlled pilot cohort of scholars and institutions.
+
+## Phase 7: Strategic Backlog Capabilities & AI Intelligence (Completed)
+
+Goal: Deliver strategic platform capabilities from the Post-MVP backlog (§21) empowering seminary deans, search committees, and theological scholars with AI-assisted discovery, analytics, and dossier exports.
+
+Deliverables:
+
+- **Dean & Search Committee Shortlist Export**: RFC-4180 compliant CSV export engine (`export-dossier.ts`) with UTF-8 BOM and CRLF formatting via `GET /api/institution/saved-scholars/export?format=csv` plus print-ready Academic Search Dossier report (`/institution/saved/dossier`).
+- **Scholar Profile Analytics Dashboard**: High-velocity analytics engine (`/dashboard/analytics`, `scholar-analytics.ts`) featuring 4 KPI metrics, zero-bloat SVG/CSS 8-week engagement velocity chart, institutional keyword attribution table, tradition affinity demographics, and algorithmic recommendations.
+- **Citation-Grounded AI Faculty Matcher**: Seminary provost search assistant (`/api/ai/match-faculty` & modal) combining Google Gemini LLM with an exhaustive deterministic theological heuristic baseline, generating fit scores (0-100%) and grounded citations across credentials, confessions, publications, and syllabi.
+- **AI-Assisted CV & Syllabus Intelligence Engine**: Google Gemini generative AI extractor (`gemini-cv-extractor.ts`) tailored for theological academia (Chicago/SBL publication parsing, doctoral degrees, confessional affinities) and course syllabus analyzer (`gemini-syllabus-tagger.ts`) extracting course codes, levels, learning outcomes, required texts, and delivery modes.
+- **Remote Staging & Production Verification Protocol**: Authoritative pre-flight deployment runbook (`docs/deployment/staging-verification-protocol.md`) establishing 5 non-negotiable gates.
+- **Next.js 16 Proxy Convention Migration**: Replaced deprecated `middleware.ts` with canonical Next.js 16 `proxy.ts`.
+
+Exit criteria:
+
+- [x] Search committee dossiers can be exported to CSV or viewed in print-ready layout.
+- [x] Scholars can inspect profile view and search engagement metrics with zero external charting bloat.
+- [x] AI Faculty Matcher generates citation-grounded evaluations against academic portfolios.
+- [x] CV and syllabus intelligence engines extract structured theological data with heuristic fallbacks.
+- [x] Staging verification protocol published.
+- [x] All 6 quality gates pass (`npm run verify` = 124 tests across 22 files, 25/25 tables RLS enforced, clean build).
 
 ## Pilot Recommendation
 
