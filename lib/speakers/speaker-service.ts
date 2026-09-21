@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import {
-  TargetAudience,
   SpeakerTopic,
   SpeakerProfile,
 } from './types';
