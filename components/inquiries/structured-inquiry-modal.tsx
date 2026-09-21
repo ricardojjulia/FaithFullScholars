@@ -114,6 +114,7 @@ export function StructuredInquiryModal({
       <div
         role="dialog"
         aria-modal="true"
+        aria-labelledby="inquiry-modal-title"
         className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
@@ -129,7 +130,7 @@ export function StructuredInquiryModal({
               )}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+              <h2 id="inquiry-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">
                 {t('inquiry.title') || 'Institutional Inquiry'}
               </h2>
               <p className="text-sm text-slate-600 dark:text-slate-400">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Mic, Plus, Trash2, Video, Star, Sparkles } from 'lucide-react';
+import { Check, Mic, Plus, Trash2, Video, Star, Sparkles, Edit3, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   TargetAudience,
   TARGET_AUDIENCES,
@@ -93,8 +93,9 @@ export default function AvailabilityManagerPage() {
   const [form, setForm] = useState<AvailabilityState>(getInitialAvailability);
   const [saved, setSaved] = useState(false);
 
-  // New topic form state
+  // Topic form state (Add / Edit)
   const [showAddTopic, setShowAddTopic] = useState(false);
+  const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
   const [newTopicTitle, setNewTopicTitle] = useState('');
   const [newTopicDesc, setNewTopicDesc] = useState('');
   const [newTopicAudience, setNewTopicAudience] = useState<TargetAudience>('academic');
@@ -125,7 +126,29 @@ export default function AvailabilityManagerPage() {
     setTimeout(() => setSaved(false), 3000);
   }
 
-  function handleAddTopic(e: React.FormEvent) {
+  function handleStartEditTopic(topic: SpeakerTopicItem) {
+    setEditingTopicId(topic.id);
+    setNewTopicTitle(topic.title);
+    setNewTopicDesc(topic.description);
+    setNewTopicAudience(topic.target_audience);
+    setNewTopicMedia(topic.sample_media_url || '');
+    setNewTopicFeatured(topic.is_featured);
+    setTopicError(null);
+    setShowAddTopic(true);
+  }
+
+  function handleCancelTopicEdit() {
+    setEditingTopicId(null);
+    setNewTopicTitle('');
+    setNewTopicDesc('');
+    setNewTopicAudience('academic');
+    setNewTopicMedia('');
+    setNewTopicFeatured(false);
+    setTopicError(null);
+    setShowAddTopic(false);
+  }
+
+  function handleSaveTopic(e: React.FormEvent) {
     e.preventDefault();
     const input = {
       title: newTopicTitle,
@@ -141,34 +164,67 @@ export default function AvailabilityManagerPage() {
     }
     setTopicError(null);
 
-    const created: SpeakerTopicItem = {
-      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `topic-${Date.now()}`,
-      title: newTopicTitle.trim(),
-      description: newTopicDesc.trim(),
-      target_audience: newTopicAudience,
-      sample_media_url: newTopicMedia.trim() ? newTopicMedia.trim() : null,
-      is_featured: newTopicFeatured,
-    };
+    if (editingTopicId) {
+      const updatedTopic: SpeakerTopicItem = {
+        id: editingTopicId,
+        title: newTopicTitle.trim(),
+        description: newTopicDesc.trim(),
+        target_audience: newTopicAudience,
+        sample_media_url: newTopicMedia.trim() ? newTopicMedia.trim() : null,
+        is_featured: newTopicFeatured,
+      };
 
-    setForm((prev) => {
-      const updatedTopics = [...(prev.topics || []), created];
-      try {
-        sessionStorage.setItem(
-          'fs_availability_preferences',
-          JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
-        );
-      } catch {
-        // ignore
-      }
-      return { ...prev, topics: updatedTopics };
-    });
+      setForm((prev) => {
+        const updatedTopics = (prev.topics || []).map((t) => (t.id === editingTopicId ? updatedTopic : t));
+        try {
+          sessionStorage.setItem(
+            'fs_availability_preferences',
+            JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+          );
+        } catch {
+          // ignore
+        }
+        return { ...prev, topics: updatedTopics };
+      });
 
-    setNewTopicTitle('');
-    setNewTopicDesc('');
-    setNewTopicAudience('academic');
-    setNewTopicMedia('');
-    setNewTopicFeatured(false);
-    setShowAddTopic(false);
+      fetch('/api/scholars/speaker-topics', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTopic),
+      }).catch(() => {});
+
+      handleCancelTopicEdit();
+    } else {
+      const created: SpeakerTopicItem = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `topic-${Date.now()}`,
+        title: newTopicTitle.trim(),
+        description: newTopicDesc.trim(),
+        target_audience: newTopicAudience,
+        sample_media_url: newTopicMedia.trim() ? newTopicMedia.trim() : null,
+        is_featured: newTopicFeatured,
+      };
+
+      setForm((prev) => {
+        const updatedTopics = [...(prev.topics || []), created];
+        try {
+          sessionStorage.setItem(
+            'fs_availability_preferences',
+            JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+          );
+        } catch {
+          // ignore
+        }
+        return { ...prev, topics: updatedTopics };
+      });
+
+      fetch('/api/scholars/speaker-topics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(created),
+      }).catch(() => {});
+
+      handleCancelTopicEdit();
+    }
   }
 
   function handleDeleteTopic(id: string) {
@@ -184,6 +240,43 @@ export default function AvailabilityManagerPage() {
       }
       return { ...prev, topics: updatedTopics };
     });
+
+    fetch(`/api/scholars/speaker-topics?id=${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }).catch(() => {});
+
+    if (editingTopicId === id) {
+      handleCancelTopicEdit();
+    }
+  }
+
+  function handleMoveTopic(index: number, direction: 'up' | 'down') {
+    const topics = [...(form.topics || [])];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= topics.length) return;
+
+    const temp = topics[index];
+    topics[index] = topics[targetIndex];
+    topics[targetIndex] = temp;
+
+    setForm((prev) => {
+      try {
+        sessionStorage.setItem(
+          'fs_availability_preferences',
+          JSON.stringify({ ...prev, topics, updatedAt: new Date().toISOString() })
+        );
+      } catch {
+        // ignore
+      }
+      return { ...prev, topics };
+    });
+
+    const reorderPayload = topics.map((t, idx) => ({ id: t.id, display_order: idx }));
+    fetch('/api/scholars/speaker-topics', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reorder: reorderPayload }),
+    }).catch(() => {});
   }
 
   const isSpeakingBureauActive =
@@ -403,7 +496,13 @@ export default function AvailabilityManagerPage() {
               </div>
               <button
                 type="button"
-                onClick={() => setShowAddTopic(!showAddTopic)}
+                onClick={() => {
+                  if (showAddTopic) {
+                    handleCancelTopicEdit();
+                  } else {
+                    setShowAddTopic(true);
+                  }
+                }}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -411,12 +510,12 @@ export default function AvailabilityManagerPage() {
               </button>
             </div>
 
-            {/* Add Topic Inline Form */}
+            {/* Add / Edit Topic Inline Form */}
             {showAddTopic && (
               <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-950 dark:text-indigo-200">
                   <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>New Lecture Topic</span>
+                  <span>{editingTopicId ? 'Edit Lecture Topic' : 'New Lecture Topic'}</span>
                 </div>
 
                 {topicError && (
@@ -495,13 +594,24 @@ export default function AvailabilityManagerPage() {
                       <span>Feature this topic prominently on scholar card</span>
                     </label>
 
-                    <button
-                      type="button"
-                      onClick={handleAddTopic}
-                      className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
-                    >
-                      Save Topic to Roster
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {editingTopicId && (
+                        <button
+                          type="button"
+                          onClick={handleCancelTopicEdit}
+                          className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={handleSaveTopic}
+                        className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+                      >
+                        {editingTopicId ? 'Update Topic' : 'Save Topic to Roster'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -514,12 +624,12 @@ export default function AvailabilityManagerPage() {
                   No speaking topics added yet. Click &ldquo;Add Topic&rdquo; to showcase your keynote addresses.
                 </div>
               ) : (
-                (form.topics || []).map((topic) => (
+                (form.topics || []).map((topic, idx) => (
                   <div
                     key={topic.id}
                     className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start justify-between gap-3 group hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                   >
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60">
                           {formatTargetAudience(topic.target_audience)}
@@ -550,14 +660,46 @@ export default function AvailabilityManagerPage() {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteTopic(topic.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-                      title="Remove topic"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTopic(idx, 'up')}
+                        disabled={idx === 0}
+                        className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        title="Move topic up"
+                        aria-label="Move topic up"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMoveTopic(idx, 'down')}
+                        disabled={idx === (form.topics || []).length - 1}
+                        className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        title="Move topic down"
+                        aria-label="Move topic down"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditTopic(topic)}
+                        className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition-colors"
+                        title="Edit topic"
+                        aria-label="Edit topic"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTopic(topic.id)}
+                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                        title="Remove topic"
+                        aria-label="Remove topic"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

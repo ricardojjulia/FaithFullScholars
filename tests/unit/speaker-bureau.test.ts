@@ -1,8 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import * as supabaseServer from '@/lib/supabase/server';
 import {
   validateSpeakerTopicInput,
   formatTargetAudience,
   TARGET_AUDIENCES,
+  getAllSpeakers,
 } from '@/lib/speakers/speaker-service';
 
 describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () => {
@@ -49,6 +51,42 @@ describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () 
       });
       expect(invalid.valid).toBe(false);
       expect(invalid.error).toMatch(/invalid target audience/i);
+    });
+
+    it('rejects non-string target audience values', () => {
+      const numberAudience = validateSpeakerTopicInput({
+        title: 'Covenant Theology in Genesis',
+        description: 'A comprehensive biblical-theological overview of the Abrahamic covenant.',
+        target_audience: 123 as unknown as string,
+      });
+      expect(numberAudience.valid).toBe(false);
+      expect(numberAudience.error).toMatch(/invalid target audience/i);
+
+      const booleanAudience = validateSpeakerTopicInput({
+        title: 'Covenant Theology in Genesis',
+        description: 'A comprehensive biblical-theological overview of the Abrahamic covenant.',
+        target_audience: true as unknown as string,
+      });
+      expect(booleanAudience.valid).toBe(false);
+      expect(booleanAudience.error).toMatch(/invalid target audience/i);
+    });
+
+    it('validates display order and featured flag types', () => {
+      const nonIntOrder = validateSpeakerTopicInput({
+        title: 'Covenant Theology in Genesis',
+        description: 'A comprehensive biblical-theological overview of the Abrahamic covenant.',
+        display_order: 1.5,
+      });
+      expect(nonIntOrder.valid).toBe(false);
+      expect(nonIntOrder.error).toMatch(/integer/i);
+
+      const badFeatured = validateSpeakerTopicInput({
+        title: 'Covenant Theology in Genesis',
+        description: 'A comprehensive biblical-theological overview of the Abrahamic covenant.',
+        is_featured: 'yes' as unknown as boolean,
+      });
+      expect(badFeatured.valid).toBe(false);
+      expect(badFeatured.error).toMatch(/boolean/i);
     });
 
     it('accepts valid inputs across all allowed target audiences', () => {
@@ -127,26 +165,112 @@ describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () 
       expect(sampleSpeaker.topics[0].target_audience).toBe('academic');
     });
 
-    it('requires both active speaking opportunity types and published topics for public directory listing', () => {
-      // Helper replicating the eligibility check in speaker-service
-      function isEligibleSpeaker(oppTypes: string[], topicsCount: number): boolean {
-        const hasAvailability =
-          oppTypes.includes('conference_speaking') ||
-          oppTypes.includes('guest_lecturing') ||
-          oppTypes.includes('guest_lecture');
-        const hasTopics = topicsCount > 0;
-        return hasAvailability && hasTopics;
-      }
+    it('requires both active speaking opportunity types and published topics via getAllSpeakers service', async () => {
+      const mockScholars = [
+        {
+          id: 'scholar-1',
+          full_name: 'Dr. Calvin Edwards',
+          slug: 'calvin-edwards',
+          title: 'Professor of Systematic Theology',
+          avatar_url: '/photos/calvin.jpg',
+          primary_institution: 'Puritan Reformed Theological Seminary',
+          scholar_disciplines: [{ disciplines: { name: 'Systematic Theology', slug: 'systematic-theology' } }],
+          scholar_traditions: [{ traditions: { name: 'Reformed / Presbyterian', slug: 'reformed' } }],
+          availability_profiles: [
+            {
+              opportunity_types: ['conference_speaking'],
+              travel_preferences: 'Continental US',
+              speaking_bio: 'Keynote lecturer on Reformed dogmatics.',
+              honorarium_policy: 'Standard academic honorarium',
+            },
+          ],
+          speaker_topics: [
+            {
+              id: 'top-1',
+              scholar_id: 'scholar-1',
+              title: 'Covenant Theology and Federal Hermeneutics',
+              description: 'Exposition of Reformed covenant theology across redemptive history.',
+              target_audience: 'academic',
+              sample_media_url: null,
+              display_order: 1,
+              is_featured: true,
+              created_at: '2026-09-21T00:00:00Z',
+              updated_at: '2026-09-21T00:00:00Z',
+            },
+          ],
+        },
+        {
+          // Scholar with topics but WITHOUT speaking opportunity types (e.g., only adjunct_teaching)
+          id: 'scholar-2',
+          full_name: 'Dr. No Speaking Availability',
+          slug: 'no-speaking-avail',
+          title: 'Adjunct Lecturer',
+          avatar_url: null,
+          primary_institution: 'Regional Seminary',
+          scholar_disciplines: [],
+          scholar_traditions: [],
+          availability_profiles: [
+            {
+              opportunity_types: ['adjunct_teaching', 'online_async'],
+              travel_preferences: null,
+              speaking_bio: null,
+              honorarium_policy: null,
+            },
+          ],
+          speaker_topics: [
+            {
+              id: 'top-2',
+              scholar_id: 'scholar-2',
+              title: 'Unpublished Speaking Topic',
+              description: 'Private topic that must not be surfaced in the public directory.',
+              target_audience: 'academic',
+              sample_media_url: null,
+              display_order: 1,
+              is_featured: false,
+              created_at: '2026-09-21T00:00:00Z',
+              updated_at: '2026-09-21T00:00:00Z',
+            },
+          ],
+        },
+        {
+          // Scholar with speaking opportunity types enabled but ZERO topics
+          id: 'scholar-3',
+          full_name: 'Dr. No Topics Yet',
+          slug: 'no-topics-yet',
+          title: 'Associate Professor',
+          avatar_url: null,
+          primary_institution: 'City Seminary',
+          scholar_disciplines: [],
+          scholar_traditions: [],
+          availability_profiles: [
+            {
+              opportunity_types: ['conference_speaking', 'guest_lecturing'],
+              travel_preferences: null,
+              speaking_bio: null,
+              honorarium_policy: null,
+            },
+          ],
+          speaker_topics: [],
+        },
+      ];
 
-      // Scholar with topics but without speaking availability enabled
-      expect(isEligibleSpeaker(['adjunct_teaching', 'online_async'], 3)).toBe(false);
+      vi.spyOn(supabaseServer, 'createClient').mockResolvedValue({
+        from: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: mockScholars,
+              error: null,
+            }),
+          }),
+        }),
+      } as unknown as Awaited<ReturnType<typeof supabaseServer.createClient>>);
 
-      // Scholar with speaking availability enabled but zero topics
-      expect(isEligibleSpeaker(['conference_speaking'], 0)).toBe(false);
+      const speakers = await getAllSpeakers();
 
-      // Scholar with speaking availability AND topics
-      expect(isEligibleSpeaker(['conference_speaking'], 2)).toBe(true);
-      expect(isEligibleSpeaker(['guest_lecturing'], 1)).toBe(true);
+      // Only scholar-1 satisfies BOTH hasAvailability AND hasTopics
+      expect(speakers).toHaveLength(1);
+      expect(speakers[0].scholar_id).toBe('scholar-1');
+      expect(speakers[0].full_name).toBe('Dr. Calvin Edwards');
     });
   });
 });

@@ -59,18 +59,34 @@ export function validateSpeakerTopicInput(input: Record<string, unknown>): { val
     return { valid: false, error: 'Topic description must be between 10 and 2000 characters.' };
   }
 
-  if (
-    input.target_audience &&
-    typeof input.target_audience === 'string' &&
-    !TARGET_AUDIENCES.includes(input.target_audience as TargetAudience)
-  ) {
-    return { valid: false, error: 'Invalid target audience selection.' };
+  if (input.target_audience !== undefined && input.target_audience !== null) {
+    if (
+      typeof input.target_audience !== 'string' ||
+      !TARGET_AUDIENCES.includes(input.target_audience as TargetAudience)
+    ) {
+      return { valid: false, error: 'Invalid target audience selection.' };
+    }
   }
 
-  if (input.sample_media_url && typeof input.sample_media_url === 'string' && input.sample_media_url.trim()) {
+  if (input.sample_media_url !== undefined && input.sample_media_url !== null && input.sample_media_url !== '') {
+    if (typeof input.sample_media_url !== 'string') {
+      return { valid: false, error: 'Sample media URL must be a valid URL string.' };
+    }
     const trimmedUrl = input.sample_media_url.trim();
     if (!trimmedUrl.startsWith('https://') && !trimmedUrl.startsWith('http://')) {
       return { valid: false, error: 'Sample media URL must start with http:// or https://' };
+    }
+  }
+
+  if (input.display_order !== undefined && input.display_order !== null) {
+    if (typeof input.display_order !== 'number' || !Number.isInteger(input.display_order)) {
+      return { valid: false, error: 'Display order must be an integer.' };
+    }
+  }
+
+  if (input.is_featured !== undefined && input.is_featured !== null) {
+    if (typeof input.is_featured !== 'boolean') {
+      return { valid: false, error: 'Featured flag must be a boolean.' };
     }
   }
 
