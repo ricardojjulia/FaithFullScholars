@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { X, Check, BookOpen, Lock, Loader2 } from 'lucide-react';
 import { OpportunityType, DeliveryMode } from '@/lib/domain/types';
 import { useTranslation } from '@/lib/i18n/i18n-context';
+import { createClient } from '@/lib/supabase/client';
 
 interface StructuredInquiryModalProps {
   isOpen: boolean;
@@ -44,8 +46,8 @@ export function StructuredInquiryModal({
   scholar,
   courseId,
   courseTitle,
-  institutionId = 'f2000000-0000-0000-0000-000000000001', // Seed WTS institution as default
-  defaultInstitutionEmail = 'academic.dean@wts.edu',
+  institutionId,
+  defaultInstitutionEmail = '',
   defaultOpportunityType = 'adjunct_teaching',
 }: StructuredInquiryModalProps) {
   const { t } = useTranslation();
@@ -57,6 +59,71 @@ export function StructuredInquiryModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  // Authenticated institution verification gate (ADR 0008 / PR #21 Security Gate)
+  const [checkingAuth, setCheckingAuth] = useState(!institutionId);
+  const [hasInstitutionAccess, setHasInstitutionAccess] = useState(Boolean(institutionId));
+  const [resolvedInstitutionId, setResolvedInstitutionId] = useState<string | undefined>(institutionId);
+  const [resolvedInstitutionName, setResolvedInstitutionName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || institutionId) return;
+    let isMounted = true;
+
+    async function checkInstitutionSession() {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (!user) {
+          if (isMounted) {
+            setHasInstitutionAccess(false);
+            setCheckingAuth(false);
+          }
+          return;
+        }
+
+        const { data: instUser } = await supabase
+          .from('institution_users')
+          .select('institution_id, institutions(id, name, status, contact_email)')
+          .eq('account_id', user.id)
+          .maybeSingle();
+
+        const inst = instUser?.institutions as unknown as {
+          id: string;
+          name: string;
+          status: string;
+          contact_email: string;
+        } | null;
+
+        if (isMounted) {
+          if (instUser && inst && inst.status === 'approved') {
+            setHasInstitutionAccess(true);
+            setResolvedInstitutionId(instUser.institution_id);
+            setResolvedInstitutionName(inst.name);
+            if (inst.contact_email) {
+              setContactEmail((prev) => prev || inst.contact_email);
+            }
+          } else {
+            setHasInstitutionAccess(false);
+          }
+          setCheckingAuth(false);
+        }
+      } catch {
+        if (isMounted) {
+          setHasInstitutionAccess(false);
+          setCheckingAuth(false);
+        }
+      }
+    }
+
+    checkInstitutionSession();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, institutionId]);
 
   if (!isOpen) return null;
 
@@ -76,7 +143,7 @@ export function StructuredInquiryModal({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          institution_id: institutionId,
+          institution_id: resolvedInstitutionId,
           scholar_id: scholar.id,
           course_id: courseId || null,
           opportunity_type: opportunityType,
@@ -136,6 +203,11 @@ export function StructuredInquiryModal({
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Outreach to <span className="font-semibold text-slate-900 dark:text-slate-200">{scholar.fullName}</span>
                 {scholar.primaryInstitution && ` (${scholar.primaryInstitution})`}
+                {resolvedInstitutionName && (
+                  <span className="block text-xs text-indigo-600 dark:text-indigo-400 mt-0.5 font-medium">
+                    Dispatching on behalf of {resolvedInstitutionName}
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -150,7 +222,43 @@ export function StructuredInquiryModal({
 
         {/* Content */}
         <div className="p-6 max-h-[80vh] overflow-y-auto">
-          {success ? (
+          {checkingAuth ? (
+            <div className="py-12 text-center space-y-3">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600 dark:text-indigo-400" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Verifying institutional credentials...
+              </p>
+            </div>
+          ) : !hasInstitutionAccess ? (
+            <div className="py-8 px-4 text-center space-y-4">
+              <div className="w-14 h-14 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-2xl flex items-center justify-center mx-auto border border-amber-200 dark:border-amber-800 shadow-inner">
+                <Lock className="w-7 h-7" />
+              </div>
+              <div className="max-w-md mx-auto space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Institutional Verification Required
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                  To safeguard faculty contact privacy and maintain academic integrity, direct outreach and keynote speaking invitations are restricted to verified academic institutions, seminary deans, and symposium organizers.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <Link
+                  href="/login?role=institution"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+                >
+                  Sign In with Institutional Account
+                </Link>
+                <Link
+                  href="/institution/profile"
+                  className="w-full sm:w-auto px-5 py-2.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-semibold transition"
+                >
+                  Register Institutional Profile
+                </Link>
+              </div>
+            </div>
+          ) : success ? (
             <div className="text-center py-8 space-y-4">
               <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
                 <Check className="w-8 h-8" />

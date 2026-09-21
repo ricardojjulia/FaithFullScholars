@@ -178,7 +178,7 @@ export default function AvailabilityManagerPage() {
     setShowAddTopic(false);
   }
 
-  function handleSaveTopic(e: React.FormEvent) {
+  async function handleSaveTopic(e: React.FormEvent) {
     e.preventDefault();
     const input = {
       title: newTopicTitle,
@@ -194,6 +194,8 @@ export default function AvailabilityManagerPage() {
     }
     setTopicError(null);
 
+    const prevTopics = [...(form.topics || [])];
+
     if (editingTopicId) {
       const updatedTopic: SpeakerTopicItem = {
         id: editingTopicId,
@@ -204,26 +206,36 @@ export default function AvailabilityManagerPage() {
         is_featured: newTopicFeatured,
       };
 
-      setForm((prev) => {
-        const updatedTopics = (prev.topics || []).map((t) => (t.id === editingTopicId ? updatedTopic : t));
+      // Optimistically update
+      const optimisticTopics = prevTopics.map((t) => (t.id === editingTopicId ? updatedTopic : t));
+      setForm((prev) => ({ ...prev, topics: optimisticTopics }));
+
+      try {
+        const res = await fetch('/api/scholars/speaker-topics', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTopic),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.error || 'Failed to update topic');
+        }
+
         try {
           sessionStorage.setItem(
             'fs_availability_preferences',
-            JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+            JSON.stringify({ ...form, topics: optimisticTopics, updatedAt: new Date().toISOString() })
           );
         } catch {
           // ignore
         }
-        return { ...prev, topics: updatedTopics };
-      });
-
-      fetch('/api/scholars/speaker-topics', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTopic),
-      }).catch(() => {});
-
-      handleCancelTopicEdit();
+        handleCancelTopicEdit();
+      } catch (err: unknown) {
+        // Rollback on failure
+        setForm((prev) => ({ ...prev, topics: prevTopics }));
+        setTopicError(err instanceof Error ? err.message : 'Failed to update topic on server');
+      }
     } else {
       const localId =
         typeof crypto !== 'undefined' && crypto.randomUUID
@@ -239,101 +251,118 @@ export default function AvailabilityManagerPage() {
         is_featured: newTopicFeatured,
       };
 
-      setForm((prev) => {
-        const updatedTopics = [...(prev.topics || []), created];
+      // Optimistically update
+      const optimisticTopics = [...prevTopics, created];
+      setForm((prev) => ({ ...prev, topics: optimisticTopics }));
+
+      try {
+        const res = await fetch('/api/scholars/speaker-topics', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(created),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.error || 'Failed to save topic');
+        }
+
+        const data = await res.json().catch(() => null);
+        const finalId = data?.topic?.id || localId;
+        const reconciledTopics = optimisticTopics.map((t) =>
+          t.id === localId ? { ...t, id: finalId } : t
+        );
+
+        setForm((prev) => ({ ...prev, topics: reconciledTopics }));
         try {
           sessionStorage.setItem(
             'fs_availability_preferences',
-            JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+            JSON.stringify({ ...form, topics: reconciledTopics, updatedAt: new Date().toISOString() })
           );
         } catch {
           // ignore
         }
-        return { ...prev, topics: updatedTopics };
+        handleCancelTopicEdit();
+      } catch (err: unknown) {
+        // Rollback on failure
+        setForm((prev) => ({ ...prev, topics: prevTopics }));
+        setTopicError(err instanceof Error ? err.message : 'Failed to save topic to server');
+      }
+    }
+  }
+
+  async function handleDeleteTopic(id: string) {
+    const prevTopics = [...(form.topics || [])];
+    const updatedTopics = prevTopics.filter((t) => t.id !== id);
+    setForm((prev) => ({ ...prev, topics: updatedTopics }));
+
+    try {
+      const res = await fetch(`/api/scholars/speaker-topics?id=${encodeURIComponent(id)}`, {
+        method: 'DELETE',
       });
 
-      // Synchronize with API and reconcile topic ID with server-generated ID if different
-      fetch('/api/scholars/speaker-topics', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(created),
-      })
-        .then((res) => (res.ok ? res.json() : null))
-        .then((data) => {
-          if (data?.topic?.id && data.topic.id !== localId) {
-            const serverId = data.topic.id;
-            setForm((prev) => {
-              const reconciledTopics = (prev.topics || []).map((t) =>
-                t.id === localId ? { ...t, id: serverId } : t
-              );
-              try {
-                sessionStorage.setItem(
-                  'fs_availability_preferences',
-                  JSON.stringify({ ...prev, topics: reconciledTopics, updatedAt: new Date().toISOString() })
-                );
-              } catch {
-                // ignore
-              }
-              return { ...prev, topics: reconciledTopics };
-            });
-          }
-        })
-        .catch(() => {});
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || 'Failed to delete topic');
+      }
 
-      handleCancelTopicEdit();
-    }
-  }
-
-  function handleDeleteTopic(id: string) {
-    setForm((prev) => {
-      const updatedTopics = (prev.topics || []).filter((t) => t.id !== id);
       try {
         sessionStorage.setItem(
           'fs_availability_preferences',
-          JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+          JSON.stringify({ ...form, topics: updatedTopics, updatedAt: new Date().toISOString() })
         );
       } catch {
         // ignore
       }
-      return { ...prev, topics: updatedTopics };
-    });
 
-    fetch(`/api/scholars/speaker-topics?id=${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-    }).catch(() => {});
-
-    if (editingTopicId === id) {
-      handleCancelTopicEdit();
+      if (editingTopicId === id) {
+        handleCancelTopicEdit();
+      }
+    } catch (err: unknown) {
+      // Rollback on failure
+      setForm((prev) => ({ ...prev, topics: prevTopics }));
+      setTopicError(err instanceof Error ? err.message : 'Failed to delete topic from server');
     }
   }
 
-  function handleMoveTopic(index: number, direction: 'up' | 'down') {
-    const topics = [...(form.topics || [])];
+  async function handleMoveTopic(index: number, direction: 'up' | 'down') {
+    const prevTopics = [...(form.topics || [])];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= topics.length) return;
+    if (targetIndex < 0 || targetIndex >= prevTopics.length) return;
 
-    const temp = topics[index];
-    topics[index] = topics[targetIndex];
-    topics[targetIndex] = temp;
+    const reordered = [...prevTopics];
+    const temp = reordered[index];
+    reordered[index] = reordered[targetIndex];
+    reordered[targetIndex] = temp;
 
-    setForm((prev) => {
+    setForm((prev) => ({ ...prev, topics: reordered }));
+
+    try {
+      const reorderPayload = reordered.map((t, idx) => ({ id: t.id, display_order: idx }));
+      const res = await fetch('/api/scholars/speaker-topics', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reorder: reorderPayload }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || 'Failed to update topic order');
+      }
+
       try {
         sessionStorage.setItem(
           'fs_availability_preferences',
-          JSON.stringify({ ...prev, topics, updatedAt: new Date().toISOString() })
+          JSON.stringify({ ...form, topics: reordered, updatedAt: new Date().toISOString() })
         );
       } catch {
         // ignore
       }
-      return { ...prev, topics };
-    });
-
-    const reorderPayload = topics.map((t, idx) => ({ id: t.id, display_order: idx }));
-    fetch('/api/scholars/speaker-topics', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reorder: reorderPayload }),
-    }).catch(() => {});
+    } catch (err: unknown) {
+      // Rollback on failure
+      setForm((prev) => ({ ...prev, topics: prevTopics }));
+      setTopicError(err instanceof Error ? err.message : 'Failed to update topic ordering on server');
+    }
   }
 
   const isSpeakingBureauActive =
@@ -566,6 +595,12 @@ export default function AvailabilityManagerPage() {
                 <span>{showAddTopic ? 'Cancel' : 'Add Topic'}</span>
               </button>
             </div>
+
+            {topicError && !showAddTopic && (
+              <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 font-medium">
+                {topicError}
+              </div>
+            )}
 
             {/* Add / Edit Topic Inline Form */}
             {showAddTopic && (
