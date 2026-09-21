@@ -34,7 +34,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://avatars.githubusercontent.com https://www.gravatar.com",
       "font-src 'self' data:",
       "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:* http://localhost:*",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -44,6 +44,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   async headers() {
     return [
       {

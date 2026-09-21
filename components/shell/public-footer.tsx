@@ -38,6 +38,16 @@ export function PublicFooter() {
                 Available for Adjunct Teaching
               </Link>
             </li>
+            <li>
+              <Link href="/disciplines" className="hover:text-indigo-600">
+                Theological Disciplines
+              </Link>
+            </li>
+            <li>
+              <Link href="/traditions" className="hover:text-indigo-600">
+                Theological Traditions
+              </Link>
+            </li>
           </ul>
         </div>
 

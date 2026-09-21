@@ -42,6 +42,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Live Staging & Production Deployment Pre-Flight Tooling (`verify:deploy`)**:
+  - Implemented `scripts/verify-deployment.ts` (`npm run verify:deploy`) automating comprehensive pre-flight verification for staging and production deployments.
+  - Validates critical environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
+  - Verifies PostgreSQL connectivity, 100% RLS enforcement and forced coverage across all 26 public tables, 77 active granular security policies, and zero Splinter advisor findings.
+  - Verifies reference taxonomies (9 disciplines, 12 confessions, 6 traditions) and approved faculty seed profiles.
+  - Performs static client bundle security scans (`.next/static/`) to mathematically verify zero sensitive server credentials (e.g. `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`) leak into browser chunks.
+- **Public SEO Topic Hubs & Schema.org JSON-LD Structured Metadata**:
+  - Created dedicated theological taxonomy landing pages and hubs:
+    - `/disciplines` and `/disciplines/[slug]`: Search-engine crawlable directory of theological disciplines (e.g. Biblical Languages, Systematic Theology, Church History) linking directly to verified faculty.
+    - `/traditions` and `/traditions/[slug]`: Historic confessional tradition hubs (Reformed & Presbyterian, Baptist, Anglican, Lutheran, Wesleyan, Evangelical) organizing scholars and syllabi.
+  - Built Schema.org JSON-LD generator (`lib/seo/json-ld.ts`) injecting rich structured snippets (`BreadcrumbList`, `CollectionPage`, `ItemList`, `Person`, `EducationalOrganization`) for search engine indexation.
+  - Added query functions in `lib/domain/queries.ts` (`getAllDisciplines`, `getDisciplineBySlug`, `getAllTraditions`, `getTraditionBySlug`).
+  - Linked topic hubs into `components/shell/public-footer.tsx`.
+- **Playwright End-to-End Browser Test Automation Suite (`@playwright/test`)**:
+  - Configured `@playwright/test` runner with Chromium automation (`playwright.config.ts`, `tests/e2e/`, `npm run test:e2e`).
+  - Created 3 comprehensive end-to-end user journey test suites covering all 7 critical browser paths:
+    - `tests/e2e/public-discovery.spec.ts`: Verifies landing page hero typography, faculty directory search, and inspectable course syllabi.
+    - `tests/e2e/scholar-profile.spec.ts`: Verifies doctoral credentials, confessional stance (ADR 0001), and interactive faculty commendation modal.
+    - `tests/e2e/seo-topic-hubs.spec.ts`: Verifies discipline/tradition index pages, hub navigation, and Schema.org JSON-LD script tags.
+  - Updated `vitest.config.mts` to isolate `tests/e2e/**` from the unit/integration test runner.
+- **Peer Endorsements & Faculty Commendations System (§21 Post-MVP Backlog)**:
+  - Added database migration `supabase/migrations/20260920213000_scholar_endorsements.sql` creating `scholar_endorsements` with 6 granular RLS policies, 3 covering indexes (`idx_scholar_endorsements_endorser`, `recipient`, `status`), and search-path-pinned updated_at trigger.
+  - Created domain service `lib/endorsements/endorsement-service.ts` supporting colleague relationship taxonomies (`Doctoral Supervisor`, `Department Colleague`, `Research Collaborator`, `Co-Author`, `Faculty Peer`).
+  - Built REST API endpoints `GET` and `POST /api/scholars/[id]/endorsements` with authentication validation and status lifecycle (`pending_review`, `approved`, `rejected`).
+  - Developed responsive UI components: `ScholarEndorsementsCard` and `EndorseColleagueModal` (`components/scholars/`), integrated directly into `/scholars/[slug]`.
+  - Added unit test suite `tests/unit/scholar-endorsements.test.ts`.
 - **Automated Supabase Security Advisor & Splinter Audit Gate**:
   - Implemented `scripts/audit-security.ts` (`npm run audit:security`) bundling the full official Supabase Splinter security and performance linter suite.
   - Verifies 6 security advisor categories: Critical Schema Errors (0002/0015), Function Search Path Pinned (0011), RLS User Metadata References (0015), Restricted Permissive Inserts (0024), Covering Indexes on Foreign Keys (0001), and Subquery InitPlan on RLS Auth Functions (0003).
