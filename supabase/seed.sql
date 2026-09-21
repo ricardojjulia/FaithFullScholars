@@ -442,3 +442,90 @@ INSERT INTO public.availability_profiles (
     'Available for semester-length courses in Christian bioethics and doctoral thesis supervision.'
   )
 ON CONFLICT (scholar_id) DO NOTHING;
+
+-- 16. Institution Academic Postings (Opportunities Marketplace)
+INSERT INTO public.institution_postings (
+  id, institution_id, title, slug, opportunity_type, discipline_id, tradition_id,
+  required_degree, delivery_mode, term, description, confessional_requirements,
+  compensation_notes, deadline, status
+) VALUES
+  (
+    'f1000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000001',
+    'Adjunct Professor in Historical Theology (Reformation Era)',
+    'adjunct-prof-historical-theology-wts',
+    'adjunct',
+    'd1000000-0000-0000-0000-000000000003',
+    'b1000000-0000-0000-0000-000000000001',
+    'Ph.D. or Th.D. in Historical Theology',
+    'online_synchronous',
+    'Spring 2027',
+    'Westminster Theological Seminary seeks a qualified adjunct professor to teach a master-level seminar on Post-Reformation Scholasticism and the Westminster Standards.',
+    'Subscription to the Westminster Confession of Faith and Catechisms (ex animo).',
+    '$4,500 per 3-credit course section plus LMS course prep stipend',
+    '2026-11-15',
+    'published'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000002',
+    'e1000000-0000-0000-0000-000000000002',
+    'Modular Intensive Lecturer: Johannine Literature & Christology',
+    'modular-lecturer-johannine-christology-rts',
+    'modular_intensive',
+    'd1000000-0000-0000-0000-000000000002',
+    'b1000000-0000-0000-0000-000000000001',
+    'Ph.D. in New Testament Studies',
+    'in_person',
+    'Summer 2027',
+    'Reformed Theological Seminary (Orlando) is seeking a guest faculty member for a one-week intensive course on the Gospel of John and high Christology.',
+    'Hearty subscription to the historic Reformed confessions (Westminster or Three Forms of Unity).',
+    '$5,000 honorarium plus travel, housing, and meal per diem',
+    '2026-12-01',
+    'published'
+  ),
+  (
+    'f1000000-0000-0000-0000-000000000003',
+    'e1000000-0000-0000-0000-000000000003',
+    'Assistant Professor of Systematic Theology',
+    'assistant-prof-systematic-theology-sbts',
+    'full_time_tenure_track',
+    'd1000000-0000-0000-0000-000000000004',
+    'b1000000-0000-0000-0000-000000000002',
+    'Ph.D. in Systematic or Dogmatic Theology',
+    'in_person',
+    'Academic Year 2027–2028',
+    'The Southern Baptist Theological Seminary invites applications for a full-time tenure-track faculty appointment in Christian Theology.',
+    'Full agreement with the Baptist Faith and Message 2000 and the Abstract of Principles.',
+    'Competitive academic salary with comprehensive retirement and health benefits',
+    '2027-01-15',
+    'published'
+  )
+ON CONFLICT (slug) DO NOTHING;
+
+-- 17. Authoritative Institutional Faculty Endorsements
+INSERT INTO public.institution_endorsements (
+  id, institution_id, scholar_id, relationship_type, department_or_field,
+  endorsement_text, is_credential_verified, status
+) VALUES
+  (
+    'b3000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000001',
+    'f1000000-0000-0000-0000-000000000001',
+    'Former Faculty',
+    'Historical Theology',
+    'Dr. Calvin Edwards served on our visiting faculty in Historical Theology with exceptional pedagogical rigor and unswerving confessional commitment to Reformed dogmatics.',
+    true,
+    'active'
+  ),
+  (
+    'b3000000-0000-0000-0000-000000000002',
+    'e1000000-0000-0000-0000-000000000002',
+    'f1000000-0000-0000-0000-000000000002',
+    'Visiting Scholar',
+    'New Testament Studies',
+    'Dr. Sarah MacArthur demonstrated scholarly command and exemplary teaching excellence in our master of divinity exegetical seminars.',
+    true,
+    'active'
+  )
+ON CONFLICT (id) DO NOTHING;
+

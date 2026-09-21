@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, and **Remote Staging & Production Verification Protocol** are fully implemented, audited, and verified across all 6 gates (124 tests across 22 suites, 25/25 RLS tables, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, and **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)** are fully implemented, audited, and verified across all quality gates (130 tests across 24 suites, 9 Playwright E2E browser tests, 28/28 PostgreSQL tables RLS enforced, 0 Splinter security findings, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -185,6 +185,36 @@ Exit criteria:
 - [x] CV and syllabus intelligence engines extract structured theological data with heuristic fallbacks.
 - [x] Staging verification protocol published.
 - [x] All 6 quality gates pass (`npm run verify` = 124 tests across 22 files, 25/25 tables RLS enforced, clean build).
+
+## Phase 8: Platform Expansion & Authoritative Institutional Ecosystem (Completed)
+
+Goal: Expand FaithFull Scholars into a dual-purpose institutional marketplace for faculty openings and authoritative institutional endorsements, backed by hardened database security, complete Playwright E2E testing, deployment pre-flight diagnostics, and refined typography and vector iconography.
+
+Deliverables:
+
+- **Institutional Accounts Dual-Purpose Expansion**:
+  - **Academic Postings Marketplace** (`public.institution_postings`, `/opportunities`, `/opportunities/[slug]`): Seminaries and colleges publish adjunct calls, modular intensives, visiting fellowships, and full-time faculty appointments with confessional requirements, compensation terms, and direct scholar interest expressions (`/api/postings/[id]/express-interest`).
+  - **Institutional Opportunities Management Portal** (`/institution/postings`, `postings-service.ts`): Seminary deans draft, edit, publish, fill, and archive openings.
+  - **Authoritative Institutional Faculty Endorsements** (`public.institution_endorsements`, `/institution/endorsements`, `institutional-endorsement-service.ts`): Verified seminaries issue official institutional endorsements with relationship verification ('Current Faculty', 'Former Faculty', 'Visiting Scholar', etc.), displayed on scholar profiles with a distinctive gold institutional crest badge and clear distinction from peer colleague commendations.
+- **Modern Sans Typography & Visual Polish**: Replaced traditional serif body fonts across all dashboard shells, inquiry management, and administrative tables with clean, crisp `font-sans` (`Inter` / `system-ui`) with precise leading and letter-spacing for dense academic information readability.
+- **Refined Vector Iconography**: Replaced ASCII unicode glyphs with crisp, accessible inline SVG iconography across public nav, dashboard tabs, action buttons, and status indicators.
+- **Database Security Hardening & Splinter Integration**: Added automated Splinter SQL security advisor check (`npm run audit:security`), resolved all foreign key unindexed warnings (Splinter 0001), pinned search paths (`SET search_path = public, pg_temp`) on all stored procedures (Splinter 0011), and enforced 100% RLS across all 28 tables.
+- **End-to-End Testing Suite with Playwright**: Implemented browser journey test suite (`npm run test:e2e`) covering scholar directories, faceted filtering, profile views, inquiries, opportunities marketplace, and institution portals.
+- **Deployment Pre-Flight Tooling & Pilot Fixtures**: Built automated pre-flight script (`npm run verify:deploy`) validating 15 deployment checks and client bundle secret leak scans, plus pilot cohort seed script (`npm run seed:pilot`) and automated cohort validator (`npm run verify:pilot`).
+- **Topic Hubs for SEO & Taxonomy Navigation**: Created indexable `/disciplines` and `/traditions` hubs with Schema.org JSON-LD structured data for Google Search crawling and prospective student/dean discovery.
+
+Exit criteria:
+
+- [x] Opportunities directory `/opportunities` allows public discovery and type filtering for theological appointments.
+- [x] Institution users can post, manage, and close faculty opportunities via `/institution/postings`.
+- [x] Scholars can express interest in opportunities through authenticated interest submissions.
+- [x] Seminaries can issue official institutional endorsements with relationship status via `/institution/endorsements`.
+- [x] Scholar profiles prominently distinguish authoritative institutional endorsements from peer colleague commendations.
+- [x] 100% PostgreSQL Row Level Security enforced across all 28 public tables.
+- [x] Splinter security advisor passes with 0 findings across all 6 checks.
+- [x] Playwright E2E browser tests pass cleanly across all primary user workflows.
+- [x] Deployment pre-flight script verifies environment, database, taxonomy, faculty, and zero client secret leaks.
+- [x] Full test suite passes: 130 vitest unit/integration tests across 24 suites, 9 Playwright E2E tests, clean Next.js 16 build.
 
 ## Pilot Recommendation
 
