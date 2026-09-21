@@ -4,7 +4,7 @@ import { BookOpen, ArrowRight, Library, GraduationCap } from 'lucide-react';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { getAllDisciplines } from '@/lib/domain/queries';
-import { generateBreadcrumbJsonLd } from '@/lib/seo/json-ld';
+import { generateBreadcrumbJsonLd, serializeJsonLd } from '@/lib/seo/json-ld';
 
 export const metadata: Metadata = {
   title: 'Theological Disciplines & Faculty Specialties | FaithFull Scholars',
@@ -26,7 +26,7 @@ export default async function DisciplinesIndexPage() {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbsJsonLd) }}
       />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">

@@ -16,6 +16,7 @@ import { getTraditionBySlug } from '@/lib/domain/queries';
 import {
   generateBreadcrumbJsonLd,
   generateTraditionHubJsonLd,
+  serializeJsonLd,
 } from '@/lib/seo/json-ld';
 
 interface TraditionPageProps {
@@ -81,11 +82,11 @@ export default async function TraditionTopicHubPage({
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbsJsonLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(hubJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(hubJsonLd) }}
       />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">

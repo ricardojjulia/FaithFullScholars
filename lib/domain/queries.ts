@@ -700,9 +700,15 @@ export async function getTraditionBySlug(slug: string) {
     is_primary: l.is_primary,
   }));
 
+  const affinities = [tradition.name, 'Ecumenical'];
+  if (tradition.slug === 'reformed-presbyterian') {
+    affinities.push('Continental Reformed');
+  }
+
   const { data: confessions } = await supabase
     .from('confessional_standards')
-    .select('id, name, slug, year, description')
+    .select('id, name, slug, year, description, tradition_affinity')
+    .in('tradition_affinity', affinities)
     .order('year');
 
   return {

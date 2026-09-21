@@ -149,7 +149,8 @@ export async function submitPeerEndorsement(
     .single();
 
   if (error) {
-    return { error: error.message };
+    console.error('Failed to submit peer endorsement:', error);
+    return { error: 'Failed to record colleague endorsement. Please verify the scholar and try again.' };
   }
 
   return {

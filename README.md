@@ -75,7 +75,7 @@ Initial ADRs:
   npm run verify:deploy
   npm run test:e2e
   ```
-  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (24 suites, 130 tests), `audit:rls` (28/28 tables), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (13 checks), and Playwright E2E browser tests (9 tests).
+  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (25 suites, 134 tests), `audit:rls` (28/28 tables), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (15 checks), and Playwright E2E browser tests (9 tests).
 
 ## Product Shape
 

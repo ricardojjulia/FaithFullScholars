@@ -4,7 +4,7 @@ import { ScrollText, ArrowRight, ShieldCheck } from 'lucide-react';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { getAllTraditions } from '@/lib/domain/queries';
-import { generateBreadcrumbJsonLd } from '@/lib/seo/json-ld';
+import { generateBreadcrumbJsonLd, serializeJsonLd } from '@/lib/seo/json-ld';
 
 export const metadata: Metadata = {
   title: 'Historical Theological Traditions & Confessional Families | FaithFull Scholars',
@@ -26,7 +26,7 @@ export default async function TraditionsIndexPage() {
 
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbsJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbsJsonLd) }}
       />
 
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">

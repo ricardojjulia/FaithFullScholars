@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, and **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)** are fully implemented, audited, and verified across all quality gates (130 tests across 24 suites, 9 Playwright E2E browser tests, 28/28 PostgreSQL tables RLS enforced, 0 Splinter security findings, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, and **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)** are fully implemented, audited, and verified across all quality gates (134 tests across 25 suites, 9 Playwright E2E browser tests, 28/28 PostgreSQL tables RLS enforced, 0 Splinter security findings, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -196,7 +196,7 @@ Deliverables:
   - **Academic Postings Marketplace** (`public.institution_postings`, `/opportunities`, `/opportunities/[slug]`): Seminaries and colleges publish adjunct calls, modular intensives, visiting fellowships, and full-time faculty appointments with confessional requirements, compensation terms, and direct scholar interest expressions (`/api/postings/[id]/express-interest`).
   - **Institutional Opportunities Management Portal** (`/institution/postings`, `postings-service.ts`): Seminary deans draft, edit, publish, fill, and archive openings.
   - **Authoritative Institutional Faculty Endorsements** (`public.institution_endorsements`, `/institution/endorsements`, `institutional-endorsement-service.ts`): Verified seminaries issue official institutional endorsements with relationship verification ('Current Faculty', 'Former Faculty', 'Visiting Scholar', etc.), displayed on scholar profiles with a distinctive gold institutional crest badge and clear distinction from peer colleague commendations.
-- **Modern Sans Typography & Visual Polish**: Replaced traditional serif body fonts across all dashboard shells, inquiry management, and administrative tables with clean, crisp `font-sans` (`Inter` / `system-ui`) with precise leading and letter-spacing for dense academic information readability.
+- **Modern Sans Typography & Visual Polish**: Standardized modern typography on Aptos and Aptos Display with Plus Jakarta Sans fallback (`font-sans` and `font-display`) across all dashboard shells, inquiry management, and administrative tables, reserving literary serif strictly for historical confessions.
 - **Refined Vector Iconography**: Replaced ASCII unicode glyphs with crisp, accessible inline SVG iconography across public nav, dashboard tabs, action buttons, and status indicators.
 - **Database Security Hardening & Splinter Integration**: Added automated Splinter SQL security advisor check (`npm run audit:security`), resolved all foreign key unindexed warnings (Splinter 0001), pinned search paths (`SET search_path = public, pg_temp`) on all stored procedures (Splinter 0011), and enforced 100% RLS across all 28 tables.
 - **End-to-End Testing Suite with Playwright**: Implemented browser journey test suite (`npm run test:e2e`) covering scholar directories, faceted filtering, profile views, inquiries, opportunities marketplace, and institution portals.
@@ -214,7 +214,7 @@ Exit criteria:
 - [x] Splinter security advisor passes with 0 findings across all 6 checks.
 - [x] Playwright E2E browser tests pass cleanly across all primary user workflows.
 - [x] Deployment pre-flight script verifies environment, database, taxonomy, faculty, and zero client secret leaks.
-- [x] Full test suite passes: 130 vitest unit/integration tests across 24 suites, 9 Playwright E2E tests, clean Next.js 16 build.
+- [x] Full test suite passes: 134 vitest unit/integration tests across 25 suites, 9 Playwright E2E tests, clean Next.js 16 build.
 
 ## Pilot Recommendation
 

@@ -54,15 +54,12 @@ async function verifyDeployment() {
     record('Environment', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'FAIL', 'Missing or key too short');
   }
 
-  const dbUrl =
-    process.env.DATABASE_URL ||
-    process.env.DB_URL ||
-    'postgresql://postgres:postgres@127.0.0.1:49322/postgres';
+  const dbUrl = process.env.DATABASE_URL || process.env.DB_URL;
 
   if (dbUrl) {
     record('Environment', 'DATABASE_URL', 'PASS', `Configured (${dbUrl.replace(/:[^:@]+@/, ':***@')})`);
   } else {
-    record('Environment', 'DATABASE_URL', 'FAIL', 'Missing database connection string');
+    record('Environment', 'DATABASE_URL', 'FAIL', 'Missing database connection string (DATABASE_URL)');
   }
 
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -75,97 +72,146 @@ async function verifyDeployment() {
   // --------------------------------------------------------------------------
   // 2. Database Connectivity, RLS Coverage & Security Policies
   // --------------------------------------------------------------------------
-  const client = new Client({ connectionString: dbUrl });
-  let dbConnected = false;
+  if (!dbUrl) {
+    record('Database', 'PostgreSQL Connectivity', 'FAIL', 'Skipped: DATABASE_URL is not set');
+  } else {
+    const client = new Client({ connectionString: dbUrl });
+    let dbConnected = false;
 
-  try {
-    await client.connect();
-    dbConnected = true;
-    record('Database', 'PostgreSQL Connectivity', 'PASS', 'Direct connection established');
+    try {
+      await client.connect();
+      dbConnected = true;
+      record('Database', 'PostgreSQL Connectivity', 'PASS', 'Direct connection established');
 
-    // Audit Row Level Security on all public tables
-    const rlsQuery = `
-      SELECT
-        c.relname as table_name,
-        c.relrowsecurity as rls_enabled,
-        c.relforcerowsecurity as rls_forced
-      FROM pg_class c
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public'
-        AND c.relkind = 'r'
-        AND c.relname NOT IN ('schema_migrations', '_prisma_migrations', 'spatial_ref_sys')
-      ORDER BY c.relname;
-    `;
-    const rlsRes = await client.query(rlsQuery);
-    const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
+      // Audit Row Level Security on all public tables against expected inventory
+      const EXPECTED_APPLICATION_TABLES = [
+        'accounts',
+        'availability_profiles',
+        'confessional_standards',
+        'course_disciplines',
+        'courses',
+        'credentials',
+        'disciplines',
+        'inquiries',
+        'institution_endorsements',
+        'institution_postings',
+        'institution_users',
+        'institutions',
+        'media_links',
+        'pilot_feedback',
+        'pilot_feedback_rate_limits',
+        'profile_reviews',
+        'publications',
+        'reports',
+        'saved_courses',
+        'saved_scholars',
+        'scholar_confessions',
+        'scholar_disciplines',
+        'scholar_endorsements',
+        'scholar_profile_revisions',
+        'scholar_traditions',
+        'scholars',
+        'search_rate_limits',
+        'traditions',
+      ];
 
-    if (tablesWithoutRls.length === 0 && rlsRes.rows.length > 0) {
+      const rlsQuery = `
+        SELECT
+          c.relname as table_name,
+          c.relrowsecurity as rls_enabled,
+          c.relforcerowsecurity as rls_forced
+        FROM pg_class c
+        JOIN pg_namespace n ON n.oid = c.relnamespace
+        WHERE n.nspname = 'public'
+          AND c.relkind = 'r'
+          AND c.relname NOT IN ('schema_migrations', '_prisma_migrations', 'spatial_ref_sys')
+        ORDER BY c.relname;
+      `;
+      const rlsRes = await client.query(rlsQuery);
+      const liveTableNames = new Set(rlsRes.rows.map((r) => r.table_name));
+      const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
+      const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
+
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 28) {
+        record(
+          'Security (RLS)',
+          'Row Level Security Coverage',
+          'PASS',
+          `100% enforced & forced across all ${rlsRes.rows.length} public tables`
+        );
+      } else {
+        const issues = [];
+        if (missingTables.length > 0) issues.push(`Missing tables: ${missingTables.join(', ')}`);
+        if (tablesWithoutRls.length > 0) issues.push(`Lacking RLS: ${tablesWithoutRls.map((t) => t.table_name).join(', ')}`);
+        record(
+          'Security (RLS)',
+          'Row Level Security Coverage',
+          'FAIL',
+          issues.join(' | ')
+        );
+      }
+
+      // Check policy counts (baseline: 80+ granular policies)
+      const policyRes = await client.query(`
+        SELECT count(*) as total_policies
+        FROM pg_policy p
+        JOIN pg_class c ON p.polrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+        WHERE n.nspname = 'public';
+      `);
+      const policyCount = parseInt(policyRes.rows[0].total_policies, 10);
+      if (policyCount >= 80) {
+        record('Security (RLS)', 'Active Security Policies', 'PASS', `${policyCount} granular policies active`);
+      } else {
+        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 80 required)`);
+      }
+
+      // --------------------------------------------------------------------------
+      // 3. Pilot Readiness & Reference Seed Data
+      // --------------------------------------------------------------------------
+      const discRes = await client.query('SELECT count(*) FROM disciplines;');
+      const discCount = parseInt(discRes.rows[0].count, 10);
+      record('Taxonomy', 'Disciplines Taxonomy', discCount >= 5 ? 'PASS' : 'FAIL', `${discCount} disciplines`);
+
+      const confRes = await client.query('SELECT count(*) FROM confessional_standards;');
+      const confCount = parseInt(confRes.rows[0].count, 10);
+      record('Taxonomy', 'Confessional Standards', confCount >= 4 ? 'PASS' : 'FAIL', `${confCount} standards`);
+
+      const tradRes = await client.query('SELECT count(*) FROM traditions;');
+      const tradCount = parseInt(tradRes.rows[0].count, 10);
+      record('Taxonomy', 'Theological Traditions', tradCount >= 3 ? 'PASS' : 'FAIL', `${tradCount} traditions`);
+
+      const scholarsRes = await client.query("SELECT count(*) FROM scholars WHERE profile_status = 'approved';");
+      const scholarCount = parseInt(scholarsRes.rows[0].count, 10);
+      record('Faculty', 'Approved Scholar Profiles', scholarCount >= 3 ? 'PASS' : 'FAIL', `${scholarCount} approved profiles`);
+
+      const endorsementsRes = await client.query("SELECT count(*) FROM scholar_endorsements;");
+      const endorsementCount = parseInt(endorsementsRes.rows[0].count, 10);
+      record('Faculty', 'Endorsements System Table', 'PASS', `scholar_endorsements table active (${endorsementCount} entries)`);
+
+      const postingsRes = await client.query("SELECT count(*) FROM institution_postings;");
+      const postingsCount = parseInt(postingsRes.rows[0].count, 10);
       record(
-        'Security (RLS)',
-        'Row Level Security Coverage',
-        'PASS',
-        `100% enforced & forced across all ${rlsRes.rows.length} public tables`
+        'Postings',
+        'Opportunities System Table',
+        postingsCount > 0 ? 'PASS' : 'FAIL',
+        `institution_postings table active (${postingsCount} entries)`
       );
-    } else {
+
+      const instEndorsementsRes = await client.query("SELECT count(*) FROM institution_endorsements;");
+      const instEndorsementCount = parseInt(instEndorsementsRes.rows[0].count, 10);
       record(
-        'Security (RLS)',
-        'Row Level Security Coverage',
-        'FAIL',
-        `${tablesWithoutRls.length} tables lack mandatory RLS or FORCE ROW LEVEL SECURITY: ${tablesWithoutRls.map((t) => t.table_name).join(', ')}`
+        'Faculty',
+        'Institutional Endorsements',
+        instEndorsementCount > 0 ? 'PASS' : 'FAIL',
+        `institution_endorsements table active (${instEndorsementCount} entries)`
       );
-    }
-
-    // Check policy counts
-    const policyRes = await client.query(`
-      SELECT count(*) as total_policies
-      FROM pg_policy p
-      JOIN pg_class c ON p.polrelid = c.oid
-      JOIN pg_namespace n ON c.relnamespace = n.oid
-      WHERE n.nspname = 'public';
-    `);
-    const policyCount = parseInt(policyRes.rows[0].total_policies, 10);
-    if (policyCount >= 20) {
-      record('Security (RLS)', 'Active Security Policies', 'PASS', `${policyCount} granular policies active`);
-    } else {
-      record('Security (RLS)', 'Active Security Policies', 'WARN', `Only ${policyCount} policies found`);
-    }
-
-    // --------------------------------------------------------------------------
-    // 3. Pilot Readiness & Reference Seed Data
-    // --------------------------------------------------------------------------
-    const discRes = await client.query('SELECT count(*) FROM disciplines;');
-    const discCount = parseInt(discRes.rows[0].count, 10);
-    record('Taxonomy', 'Disciplines Taxonomy', discCount >= 5 ? 'PASS' : 'FAIL', `${discCount} disciplines`);
-
-    const confRes = await client.query('SELECT count(*) FROM confessional_standards;');
-    const confCount = parseInt(confRes.rows[0].count, 10);
-    record('Taxonomy', 'Confessional Standards', confCount >= 4 ? 'PASS' : 'FAIL', `${confCount} standards`);
-
-    const tradRes = await client.query('SELECT count(*) FROM traditions;');
-    const tradCount = parseInt(tradRes.rows[0].count, 10);
-    record('Taxonomy', 'Theological Traditions', tradCount >= 3 ? 'PASS' : 'FAIL', `${tradCount} traditions`);
-
-    const scholarsRes = await client.query("SELECT count(*) FROM scholars WHERE profile_status = 'approved';");
-    const scholarCount = parseInt(scholarsRes.rows[0].count, 10);
-    record('Faculty', 'Approved Scholar Profiles', scholarCount >= 3 ? 'PASS' : 'FAIL', `${scholarCount} approved profiles`);
-
-    const endorsementsRes = await client.query("SELECT count(*) FROM scholar_endorsements;");
-    const endorsementCount = parseInt(endorsementsRes.rows[0].count, 10);
-    record('Faculty', 'Endorsements System Table', 'PASS', `scholar_endorsements table active (${endorsementCount} entries)`);
-
-    const postingsRes = await client.query("SELECT count(*) FROM institution_postings;");
-    const postingsCount = parseInt(postingsRes.rows[0].count, 10);
-    record('Postings', 'Opportunities System Table', 'PASS', `institution_postings table active (${postingsCount} entries)`);
-
-    const instEndorsementsRes = await client.query("SELECT count(*) FROM institution_endorsements;");
-    const instEndorsementCount = parseInt(instEndorsementsRes.rows[0].count, 10);
-    record('Faculty', 'Institutional Endorsements', 'PASS', `institution_endorsements table active (${instEndorsementCount} entries)`);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    record('Database', 'PostgreSQL Connectivity', 'FAIL', `Connection error: ${msg}`);
-  } finally {
-    if (dbConnected) {
-      await client.end();
+    } catch {
+      record('Database', 'PostgreSQL Connectivity', 'FAIL', 'Connection error: Unable to connect to target PostgreSQL instance');
+    } finally {
+      if (dbConnected) {
+        await client.end();
+      }
     }
   }
 
@@ -243,7 +289,8 @@ async function verifyDeployment() {
   }
 }
 
-verifyDeployment().catch((err) => {
-  console.error('Pre-flight execution error:', err);
+verifyDeployment().catch((err: unknown) => {
+  const msg = err instanceof Error ? err.message : 'Unknown pre-flight error';
+  console.error(`Pre-flight execution halted: ${msg}`);
   process.exit(1);
 });

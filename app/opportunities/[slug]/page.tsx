@@ -18,6 +18,7 @@ import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { getPostingBySlug, formatOpportunityType } from '@/lib/postings/postings-service';
 import { ExpressInterestButton } from '@/components/opportunities/express-interest-button';
+import { serializeJsonLd } from '@/lib/seo/json-ld';
 
 interface OpportunityPageProps {
   params: Promise<{
@@ -84,7 +85,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityPageP
       {/* JSON-LD Script Tag */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }}
       />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">

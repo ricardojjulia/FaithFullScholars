@@ -66,7 +66,7 @@ export async function getEndorsementsByInstitution(
     .from('institution_endorsements')
     .select(`
       *,
-      scholar:scholars(id, full_name, slug, title_or_position)
+      scholar:scholars(id, full_name, slug, title)
     `)
     .eq('institution_id', institutionId)
     .order('created_at', { ascending: false });
@@ -75,5 +75,16 @@ export async function getEndorsementsByInstitution(
     return [];
   }
 
-  return data as InstitutionEndorsement[];
+  return (data as Array<InstitutionEndorsement & { scholar?: { id: string; full_name: string; slug: string; title: string | null } }>).map((item) => ({
+    ...item,
+    scholar: item.scholar
+      ? {
+          id: item.scholar.id,
+          full_name: item.scholar.full_name,
+          slug: item.scholar.slug,
+          title: item.scholar.title,
+          title_or_position: item.scholar.title,
+        }
+      : undefined,
+  })) as InstitutionEndorsement[];
 }

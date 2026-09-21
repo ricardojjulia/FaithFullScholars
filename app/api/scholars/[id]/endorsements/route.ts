@@ -30,10 +30,11 @@ export async function POST(
 
     // Verify session
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Authentication required to endorse colleagues.' }, { status: 401 });
     }
 
@@ -41,7 +42,7 @@ export async function POST(
     const { data: endorserScholar } = await supabase
       .from('scholars')
       .select('id, profile_status')
-      .eq('account_id', session.user.id)
+      .eq('account_id', user.id)
       .single();
 
     if (!endorserScholar) {

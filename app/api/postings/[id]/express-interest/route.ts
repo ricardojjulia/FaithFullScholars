@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     // Verify posting exists
     const { data: posting, error: postingError } = await supabase
       .from('institution_postings')
-      .select('id, title, institution_id, status')
+      .select('id, title, institution_id, opportunity_type, term, delivery_mode, status')
       .eq('id', postingId)
       .single();
 
@@ -37,61 +37,68 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'This opportunity is no longer open.' }, { status: 400 });
     }
 
-    // Get current user if authenticated
+    // Require authenticated session
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    // Look up scholar profile for this user if available
-    let scholarId: string | null = null;
-    let senderEmail = 'candidate@faithfullscholars.org';
-    let senderName = 'Verified Faculty Candidate';
-
-    if (user) {
-      const { data: scholar } = await supabase
-        .from('scholars')
-        .select('id, full_name, email')
-        .eq('account_id', user.id)
-        .maybeSingle();
-
-      if (scholar) {
-        scholarId = scholar.id;
-        senderName = scholar.full_name;
-        if (scholar.email) senderEmail = scholar.email;
-      }
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required to express interest in faculty opportunities.' },
+        { status: 401 }
+      );
     }
 
-    // Record inquiry / application
+    // Look up and verify approved scholar profile for this user
+    const { data: scholar } = await supabase
+      .from('scholars')
+      .select('id, full_name, profile_status')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    if (!scholar || scholar.profile_status !== 'approved') {
+      return NextResponse.json(
+        { error: 'An active, approved scholar profile is required to apply for faculty opportunities.' },
+        { status: 403 }
+      );
+    }
+
+    // Record formal inquiry in accordance with schema
     const { data: inquiry, error: inquiryError } = await supabase
       .from('inquiries')
       .insert({
-        scholar_id: scholarId,
         institution_id: posting.institution_id,
-        inquiry_type: 'adjunct',
-        subject: `Faculty Application: ${posting.title}`,
+        scholar_id: scholar.id,
+        sender_account_id: user.id,
+        opportunity_type: posting.opportunity_type || 'adjunct',
+        proposed_term: posting.term || null,
+        delivery_mode: posting.delivery_mode || null,
         message: coverNote.trim(),
-        sender_name: senderName,
-        sender_email: senderEmail,
+        contact_email: user.email || 'candidate@faithfullscholars.org',
         status: 'pending',
       })
       .select('id')
       .single();
 
     if (inquiryError) {
-      // In pilot or test mode with foreign key restrictions, succeed gracefully
-      console.warn('Note: Inquiry recorded via fallback log:', inquiryError.message);
+      console.error('Failed to record inquiry expression of interest:', inquiryError);
+      return NextResponse.json(
+        { error: 'Failed to record expression of interest. Please try again later.' },
+        { status: 400 }
+      );
     }
 
     return NextResponse.json(
       {
         success: true,
         message: 'Your expression of interest and dossier have been transmitted successfully.',
-        inquiryId: inquiry?.id || 'simulated-transmission',
+        inquiryId: inquiry.id,
       },
       { status: 201 }
     );
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('Unexpected error in POST express-interest:', err);
+    return NextResponse.json({ error: 'An unexpected internal error occurred.' }, { status: 500 });
   }
 }

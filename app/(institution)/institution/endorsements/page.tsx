@@ -11,20 +11,37 @@ export const metadata: Metadata = {
 };
 
 export default async function InstitutionEndorsementsPage() {
-  const institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster Theological Seminary
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster Theological Seminary
+
+  if (user) {
+    const { data: instUser } = await supabase
+      .from('institution_users')
+      .select('institution_id')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    if (instUser) {
+      institutionId = instUser.institution_id;
+    }
+  }
+
   const endorsements = await getEndorsementsByInstitution(institutionId);
 
-  const supabase = await createClient();
   const { data: scholarsData } = await supabase
     .from('scholars')
-    .select('id, full_name, title_or_position')
-    .eq('approval_status', 'approved')
+    .select('id, full_name, title')
+    .eq('profile_status', 'approved')
     .order('full_name');
 
   const scholars = (scholarsData || []).map((s) => ({
     id: s.id,
     full_name: s.full_name,
-    title_or_position: s.title_or_position,
+    title_or_position: s.title,
   }));
 
   return (

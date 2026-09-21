@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatOpportunityType, OpportunityType } from '@/lib/postings/postings-service';
+import { formatOpportunityType, OpportunityType, validatePostingInput } from '@/lib/postings/postings-service';
 import { InstitutionalRelationshipType } from '@/lib/endorsements/institutional-endorsement-service';
 
 describe('Institution Postings & Academic Opportunities (§21 Architecture)', () => {
@@ -15,24 +15,6 @@ describe('Institution Postings & Academic Opportunities (§21 Architecture)', ()
   });
 
   it('validates opportunity posting required parameters correctly', () => {
-    function validatePostingInput(input: Record<string, unknown>): { valid: boolean; error?: string } {
-      if (!input.title || typeof input.title !== 'string' || !input.title.trim()) {
-        return { valid: false, error: 'Title is required' };
-      }
-      if (!input.opportunity_type || typeof input.opportunity_type !== 'string') {
-        return { valid: false, error: 'Opportunity type is required' };
-      }
-      if (!input.required_degree || typeof input.required_degree !== 'string' || !input.required_degree.trim()) {
-        return { valid: false, error: 'Required degree is required' };
-      }
-      if (!input.term || typeof input.term !== 'string' || !input.term.trim()) {
-        return { valid: false, error: 'Academic term is required' };
-      }
-      if (!input.description || typeof input.description !== 'string' || !input.description.trim()) {
-        return { valid: false, error: 'Description is required' };
-      }
-      return { valid: true };
-    }
 
     expect(validatePostingInput({}).valid).toBe(false);
     expect(validatePostingInput({ title: 'Prof of NT' }).valid).toBe(false);

@@ -63,7 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Live Staging & Production Deployment Pre-Flight Tooling (`verify:deploy`)**:
   - Implemented `scripts/verify-deployment.ts` (`npm run verify:deploy`) automating comprehensive pre-flight verification for staging and production deployments.
   - Validates critical environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
-  - Verifies PostgreSQL connectivity, 100% RLS enforcement and forced coverage across all 26 public tables, 77 active granular security policies, and zero Splinter advisor findings.
+  - Verifies PostgreSQL connectivity, 100% RLS enforcement and forced coverage across all 28 public tables, 88 active granular security policies, and zero Splinter advisor findings.
   - Verifies reference taxonomies (9 disciplines, 12 confessions, 6 traditions) and approved faculty seed profiles.
   - Performs static client bundle security scans (`.next/static/`) to mathematically verify zero sensitive server credentials (e.g. `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`) leak into browser chunks.
 - **Public SEO Topic Hubs & Schema.org JSON-LD Structured Metadata**:
@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Peer Endorsements & Faculty Commendations System (§21 Post-MVP Backlog)**:
   - Added database migration `supabase/migrations/20260920213000_scholar_endorsements.sql` creating `scholar_endorsements` with 6 granular RLS policies, 3 covering indexes (`idx_scholar_endorsements_endorser`, `recipient`, `status`), and search-path-pinned updated_at trigger.
   - Created domain service `lib/endorsements/endorsement-service.ts` supporting colleague relationship taxonomies (`Doctoral Supervisor`, `Department Colleague`, `Research Collaborator`, `Co-Author`, `Faculty Peer`).
-  - Built REST API endpoints `GET` and `POST /api/scholars/[id]/endorsements` with authentication validation and status lifecycle (`pending_review`, `approved`, `rejected`).
+  - Built REST API endpoints `GET` and `POST /api/scholars/[id]/endorsements` with authentication validation and status lifecycle (`pending`, `approved`, `declined`, `hidden`).
   - Developed responsive UI components: `ScholarEndorsementsCard` and `EndorseColleagueModal` (`components/scholars/`), integrated directly into `/scholars/[slug]`.
   - Added unit test suite `tests/unit/scholar-endorsements.test.ts`.
 - **Automated Supabase Security Advisor & Splinter Audit Gate**:
@@ -113,7 +113,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Added unit test suite `tests/unit/faculty-matcher.test.ts`.
 - **Remote Staging & Production Verification Protocol (Step 3)**:
   - Published comprehensive pre-flight verification protocol and operational runbook (`docs/deployment/staging-verification-protocol.md`).
-  - Outlined step-by-step procedures for Supabase CLI migration synchronization, remote RLS audit enforcement across all 25 tables (`DATABASE_URL=... npm run audit:rls`), remote pilot cohort population (`DATABASE_URL=... npm run seed:pilot`), and pilot readiness diagnostics (`npm run verify:pilot`).
+  - Outlined step-by-step procedures for Supabase CLI migration synchronization, remote RLS audit enforcement across all 28 tables (`DATABASE_URL=... npm run audit:rls`), remote pilot cohort population (`DATABASE_URL=... npm run seed:pilot`), and pilot readiness diagnostics (`npm run verify:pilot`).
   - Documented edge runtime compatibility, CSP/HSTS security header verification, and rollback incident playbooks for Vercel production deployments.
 - **AI-Assisted CV & Syllabus Intelligence Engine (Step 2)**:
   - Built `extractCvWithGemini` (`lib/ai/gemini-cv-extractor.ts`) utilizing Google Gemini generative AI with theological academic system prompt, Chicago/SBL publication parsing, doctoral degree extraction, and deterministic heuristic fallback (`parseCvText`).
