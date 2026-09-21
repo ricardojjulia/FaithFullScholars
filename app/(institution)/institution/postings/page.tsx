@@ -1,14 +1,34 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { Plus, Briefcase, Calendar, Eye, Clock } from 'lucide-react';
-import { getAllPublishedPostings, formatOpportunityType } from '@/lib/postings/postings-service';
+import { createClient } from '@/lib/supabase/server';
+import { getPostingsByInstitution, formatOpportunityType } from '@/lib/postings/postings-service';
 
 export const metadata: Metadata = {
   title: 'Manage Opportunities & Teaching Calls | Institution Portal',
 };
 
 export default async function InstitutionPostingsPage() {
-  const postings = await getAllPublishedPostings();
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster partner workspace
+
+  if (user) {
+    const { data: instUser } = await supabase
+      .from('institution_users')
+      .select('institution_id')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    if (instUser) {
+      institutionId = instUser.institution_id;
+    }
+  }
+
+  const postings = await getPostingsByInstitution(institutionId);
 
   return (
     <div className="space-y-6">

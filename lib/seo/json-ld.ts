@@ -24,11 +24,31 @@ export function generateBreadcrumbJsonLd(items: BreadcrumbItem[]) {
   };
 }
 
+/**
+ * Safely serialize JSON-LD to prevent HTML script tag breakout / XSS injections.
+ */
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data).replace(/</g, '\\u003c');
+}
+
 export function generateDisciplineHubJsonLd(discipline: {
   name: string;
   description: string;
   slug: string;
 }, facultyCount: number, coursesCount: number) {
+  const itemListElement = [
+    {
+      '@type': 'EducationalOccupationalProgram',
+      name: `${discipline.name} Academic Faculty Cohort`,
+      numberOfCredentials: facultyCount,
+    },
+    {
+      '@type': 'Course',
+      name: `${discipline.name} Prepared Syllabi Catalog`,
+      numberOfCredentials: coursesCount,
+    },
+  ];
+
   return {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
@@ -48,19 +68,8 @@ export function generateDisciplineHubJsonLd(discipline: {
     },
     mainEntity: {
       '@type': 'ItemList',
-      numberOfItems: facultyCount,
-      itemListElement: [
-        {
-          '@type': 'EducationalOccupationalProgram',
-          name: `${discipline.name} Academic Faculty Cohort`,
-          numberOfCredentials: facultyCount,
-        },
-        {
-          '@type': 'Course',
-          name: `${discipline.name} Prepared Syllabi Catalog`,
-          numberOfCredentials: coursesCount,
-        },
-      ],
+      numberOfItems: itemListElement.length,
+      itemListElement,
     },
   };
 }
@@ -85,7 +94,7 @@ export function generateTraditionHubJsonLd(tradition: {
       '@type': 'Thing',
       name: tradition.name,
       description: tradition.description,
-      sameAs: standards,
+      keywords: standards.join(', '),
     },
   };
 }

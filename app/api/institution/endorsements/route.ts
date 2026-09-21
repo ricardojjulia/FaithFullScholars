@@ -15,24 +15,37 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Default institution or look up user institution
-    let institutionId = 'e1000000-0000-0000-0000-000000000001';
-
+    // Verify session
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (user) {
-      const { data: instUser } = await supabase
-        .from('institution_users')
-        .select('institution_id')
-        .eq('account_id', user.id)
-        .maybeSingle();
-
-      if (instUser) {
-        institutionId = instUser.institution_id;
-      }
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required to issue institutional endorsements.' },
+        { status: 401 }
+      );
     }
+
+    // Verify authenticated institution membership and approved institution status
+    const { data: instUser } = await supabase
+      .from('institution_users')
+      .select('institution_id, role, institutions(id, status)')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    const institution = (instUser?.institutions as unknown) as { id: string; status: string } | null;
+    if (!instUser || !institution || institution.status !== 'approved') {
+      return NextResponse.json(
+        { error: 'Only authorized members of approved institutions may issue institutional endorsements.' },
+        { status: 403 }
+      );
+    }
+
+    const institutionId = instUser.institution_id;
+    // Verified credential status is granted if issued by an institution owner or admin
+    const isVerifiedCredential = instUser.role === 'owner' || instUser.role === 'admin';
 
     const { data: endorsement, error } = await supabase
       .from('institution_endorsements')
@@ -42,19 +55,20 @@ export async function POST(request: NextRequest) {
         relationship_type: relationshipType,
         department_or_field: departmentOrField,
         endorsement_text: endorsementText,
-        is_credential_verified: true,
+        is_credential_verified: isVerifiedCredential,
         status: 'active',
       })
-      .select('id, relationship_type, department_or_field, status')
+      .select('id, relationship_type, department_or_field, is_credential_verified, status')
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Failed to insert institutional endorsement:', error);
+      return NextResponse.json({ error: 'Failed to record institutional endorsement.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, endorsement }, { status: 201 });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('Unexpected error in POST /api/institution/endorsements:', err);
+    return NextResponse.json({ error: 'An unexpected internal error occurred.' }, { status: 500 });
   }
 }

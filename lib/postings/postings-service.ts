@@ -9,6 +9,49 @@ export type OpportunityType =
   | 'guest_lecturer'
   | 'doctoral_supervision';
 
+export const OPPORTUNITY_TYPES: OpportunityType[] = [
+  'adjunct',
+  'modular_intensive',
+  'full_time_tenure_track',
+  'visiting_fellow',
+  'sabbatical_cover',
+  'guest_lecturer',
+  'doctoral_supervision',
+];
+
+export interface PostingInput {
+  title?: string;
+  opportunity_type?: string;
+  required_degree?: string;
+  term?: string;
+  description?: string;
+  discipline_id?: string | null;
+  tradition_id?: string | null;
+  delivery_mode?: string;
+  confessional_requirements?: string | null;
+  compensation_notes?: string | null;
+  deadline?: string | null;
+}
+
+export function validatePostingInput(input: Record<string, unknown>): { valid: boolean; error?: string } {
+  if (!input.title || typeof input.title !== 'string' || !input.title.trim()) {
+    return { valid: false, error: 'Title is required' };
+  }
+  if (!input.opportunity_type || typeof input.opportunity_type !== 'string' || !OPPORTUNITY_TYPES.includes(input.opportunity_type as OpportunityType)) {
+    return { valid: false, error: 'Opportunity type is required' };
+  }
+  if (!input.required_degree || typeof input.required_degree !== 'string' || !input.required_degree.trim()) {
+    return { valid: false, error: 'Required degree is required' };
+  }
+  if (!input.term || typeof input.term !== 'string' || !input.term.trim()) {
+    return { valid: false, error: 'Academic term is required' };
+  }
+  if (!input.description || typeof input.description !== 'string' || !input.description.trim()) {
+    return { valid: false, error: 'Description is required' };
+  }
+  return { valid: true };
+}
+
 export interface InstitutionPosting {
   id: string;
   institution_id: string;

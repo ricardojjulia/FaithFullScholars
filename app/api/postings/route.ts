@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getAllPublishedPostings } from '@/lib/postings/postings-service';
+import { getAllPublishedPostings, validatePostingInput } from '@/lib/postings/postings-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -39,33 +39,52 @@ export async function POST(request: NextRequest) {
       deadline,
     } = body;
 
-    if (!title || !term || !description) {
+    const validation = validatePostingInput({
+      title,
+      opportunity_type: opportunityType || 'adjunct',
+      required_degree: requiredDegree || 'Doctorate (Ph.D., Th.D., D.Phil.)',
+      term,
+      description,
+    });
+
+    if (!validation.valid) {
       return NextResponse.json(
-        { error: 'Title, term, and description are required.' },
+        { error: validation.error || 'Invalid posting data.' },
         { status: 400 }
       );
     }
 
     const supabase = await createClient();
 
-    // Look up institution for user or fallback to pilot seminary
-    let institutionId = 'e1000000-0000-0000-0000-000000000001';
-
+    // Verify session
     const {
       data: { user },
+      error: authError,
     } = await supabase.auth.getUser();
 
-    if (user) {
-      const { data: instUser } = await supabase
-        .from('institution_users')
-        .select('institution_id')
-        .eq('account_id', user.id)
-        .maybeSingle();
-
-      if (instUser) {
-        institutionId = instUser.institution_id;
-      }
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required to publish institution opportunities.' },
+        { status: 401 }
+      );
     }
+
+    // Verify authenticated institution membership and approved institution status
+    const { data: instUser } = await supabase
+      .from('institution_users')
+      .select('institution_id, institutions(id, status)')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    const institution = (instUser?.institutions as unknown) as { id: string; status: string } | null;
+    if (!instUser || !institution || institution.status !== 'approved') {
+      return NextResponse.json(
+        { error: 'Only authorized members of approved institutions may publish opportunities.' },
+        { status: 403 }
+      );
+    }
+
+    const institutionId = instUser.institution_id;
 
     // Generate slug
     const baseSlug = title
@@ -96,12 +115,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Failed to create institution posting:', error);
+      return NextResponse.json({ error: 'Failed to create opportunity posting.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, posting }, { status: 201 });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('Unexpected error in POST /api/postings:', err);
+    return NextResponse.json({ error: 'An unexpected internal error occurred.' }, { status: 500 });
   }
 }

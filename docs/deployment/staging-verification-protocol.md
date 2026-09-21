@@ -2,7 +2,7 @@
 
 > **Specification & Roadmap:** [`docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`](../FAITHFULL_SCHOLARS_FULL_PLAN.md) §18 (Phase 7 & 8)  
 > **Deployment Architecture:** [`docs/deployment/vercel-supabase.md`](vercel-supabase.md) & [ADR 0004](../adr/0004-vercel-supabase-platform.md)  
-> **Security Mandate:** 100% PostgreSQL Row Level Security (RLS) across all 25 tables prior to opening platform traffic.
+> **Security Mandate:** 100% PostgreSQL Row Level Security (RLS) across all 28 tables prior to opening platform traffic.
 
 ---
 
@@ -132,8 +132,8 @@ DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supab
    - `version:check`: Semantic version alignment across `package.json`, `package-lock.json`, and `docs/`.
    - `lint`: 0 ESLint errors or warnings.
    - `typecheck`: 0 TypeScript compiler errors.
-   - `test`: 19 test suites, 112 tests passing.
-   - `audit:rls`: 25/25 tables verified.
+   - `test`: 25 test suites, 134 tests passing.
+   - `audit:rls`: 28/28 tables verified.
    - `build`: Next.js Turbopack production bundle succeeds with 0 route errors.
 
 2. Verify HTTP Security Headers in [`next.config.ts`](../../next.config.ts):

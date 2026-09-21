@@ -801,7 +801,7 @@ Acceptance:
 
 ### Phase 8: Release Hardening & MVP Deployment Preparation (Completed)
 
-> **Status:** Completed (Strict edge security headers in `next.config.ts`, comprehensive E2E integration test suite across all 4 personas in `tests/integration/e2e-user-journeys.test.ts`, production release readiness checklist in `docs/deployment/release-readiness-checklist.md`, pilot diagnostic inspector in `scripts/verify-pilot-readiness.ts`, and 100% passing automated verification gates with 130 tests across 24 suites, 28/28 PostgreSQL tables RLS enforced, and 9 Playwright browser journeys).
+> **Status:** Completed (Strict edge security headers in `next.config.ts`, comprehensive E2E integration test suite across all 4 personas in `tests/integration/e2e-user-journeys.test.ts`, production release readiness checklist in `docs/deployment/release-readiness-checklist.md`, pilot diagnostic inspector in `scripts/verify-pilot-readiness.ts`, and 100% passing automated verification gates with 134 tests across 25 suites, 28/28 PostgreSQL tables RLS enforced, and 9 Playwright browser journeys).
 
 1. [x] Configure strict HTTP security headers: CSP with YouTube/Unsplash/Supabase whitelisting, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Permissions-Policy`.
 2. [x] Add comprehensive end-to-end integration tests validating discovery, CV onboarding, revision staging, visual diffs, admin approval, rate limiting, and structured inquiries.
