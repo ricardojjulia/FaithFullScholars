@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Check, Mic, Plus, Trash2, Video, Star, Sparkles, Edit3, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   TargetAudience,
@@ -53,16 +53,7 @@ const DEFAULT_AVAILABILITY: AvailabilityState = {
   travelPreferences: 'Domestic & Virtual preferred (willing to travel for multi-day conferences)',
   honorariumPolicy: 'Standard institutional honorarium + lodging and travel reimbursement',
   speakingBio: 'Experienced keynote speaker for academic symposiums, pastoral training conferences, and seminary chapels. Regular contributor to regional ETS and theological society meetings.',
-  topics: [
-    {
-      id: 'demo-topic-1',
-      title: 'Justification by Faith & Federal Theology in the Reformation',
-      description: 'An academic keynote examining the development of covenantal structures in early Reformed dogmatics.',
-      target_audience: 'academic',
-      sample_media_url: 'https://youtube.com/watch?v=sample-keynote',
-      is_featured: true,
-    }
-  ]
+  topics: [],
 };
 
 function getInitialAvailability(): AvailabilityState {
@@ -92,6 +83,45 @@ function getInitialAvailability(): AvailabilityState {
 export default function AvailabilityManagerPage() {
   const [form, setForm] = useState<AvailabilityState>(getInitialAvailability);
   const [saved, setSaved] = useState(false);
+  const [loadingTopics, setLoadingTopics] = useState(true);
+
+  // Load authenticated database state for persisted topics on mount
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/scholars/speaker-topics')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.topics && Array.isArray(data.topics)) {
+          setForm((prev) => {
+            const fetchedTopics = data.topics.map((t: SpeakerTopicItem) => ({
+              id: t.id,
+              title: t.title,
+              description: t.description,
+              target_audience: t.target_audience,
+              sample_media_url: t.sample_media_url,
+              is_featured: t.is_featured,
+            }));
+            try {
+              sessionStorage.setItem(
+                'fs_availability_preferences',
+                JSON.stringify({ ...prev, topics: fetchedTopics, updatedAt: new Date().toISOString() })
+              );
+            } catch {
+              // ignore
+            }
+            return { ...prev, topics: fetchedTopics };
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoadingTopics(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Topic form state (Add / Edit)
   const [showAddTopic, setShowAddTopic] = useState(false);
@@ -646,7 +676,11 @@ export default function AvailabilityManagerPage() {
 
             {/* List of current topics */}
             <div className="space-y-3">
-              {(form.topics || []).length === 0 ? (
+              {loadingTopics ? (
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400 animate-pulse">
+                  Loading keynote topics...
+                </div>
+              ) : (form.topics || []).length === 0 ? (
                 <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
                   No speaking topics added yet. Click &ldquo;Add Topic&rdquo; to showcase your keynote addresses.
                 </div>
