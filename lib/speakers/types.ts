@@ -44,48 +44,53 @@ export interface SpeakerTopicInput {
   is_featured?: boolean;
 }
 
-export function validateSpeakerTopicInput(input: Record<string, unknown>): { valid: boolean; error?: string } {
-  if (!input.title || typeof input.title !== 'string' || !input.title.trim()) {
+export function validateSpeakerTopicInput(input: unknown): { valid: boolean; error?: string } {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return { valid: false, error: 'Topic input must be a valid JSON object.' };
+  }
+  const typedInput = input as Record<string, unknown>;
+
+  if (!typedInput.title || typeof typedInput.title !== 'string' || !typedInput.title.trim()) {
     return { valid: false, error: 'Topic title is required.' };
   }
-  if (input.title.length < 3 || input.title.length > 200) {
+  if (typedInput.title.length < 3 || typedInput.title.length > 200) {
     return { valid: false, error: 'Topic title must be between 3 and 200 characters.' };
   }
 
-  if (!input.description || typeof input.description !== 'string' || !input.description.trim()) {
+  if (!typedInput.description || typeof typedInput.description !== 'string' || !typedInput.description.trim()) {
     return { valid: false, error: 'Topic description is required.' };
   }
-  if (input.description.length < 10 || input.description.length > 2000) {
+  if (typedInput.description.length < 10 || typedInput.description.length > 2000) {
     return { valid: false, error: 'Topic description must be between 10 and 2000 characters.' };
   }
 
-  if (input.target_audience !== undefined && input.target_audience !== null) {
+  if (typedInput.target_audience !== undefined && typedInput.target_audience !== null) {
     if (
-      typeof input.target_audience !== 'string' ||
-      !TARGET_AUDIENCES.includes(input.target_audience as TargetAudience)
+      typeof typedInput.target_audience !== 'string' ||
+      !TARGET_AUDIENCES.includes(typedInput.target_audience as TargetAudience)
     ) {
       return { valid: false, error: 'Invalid target audience selection.' };
     }
   }
 
-  if (input.sample_media_url !== undefined && input.sample_media_url !== null && input.sample_media_url !== '') {
-    if (typeof input.sample_media_url !== 'string') {
+  if (typedInput.sample_media_url !== undefined && typedInput.sample_media_url !== null && typedInput.sample_media_url !== '') {
+    if (typeof typedInput.sample_media_url !== 'string') {
       return { valid: false, error: 'Sample media URL must be a valid URL string.' };
     }
-    const trimmedUrl = input.sample_media_url.trim();
+    const trimmedUrl = typedInput.sample_media_url.trim();
     if (!trimmedUrl.startsWith('https://') && !trimmedUrl.startsWith('http://')) {
       return { valid: false, error: 'Sample media URL must start with http:// or https://' };
     }
   }
 
-  if (input.display_order !== undefined && input.display_order !== null) {
-    if (typeof input.display_order !== 'number' || !Number.isInteger(input.display_order)) {
+  if (typedInput.display_order !== undefined && typedInput.display_order !== null) {
+    if (typeof typedInput.display_order !== 'number' || !Number.isInteger(typedInput.display_order)) {
       return { valid: false, error: 'Display order must be an integer.' };
     }
   }
 
-  if (input.is_featured !== undefined && input.is_featured !== null) {
-    if (typeof input.is_featured !== 'boolean') {
+  if (typedInput.is_featured !== undefined && typedInput.is_featured !== null) {
+    if (typeof typedInput.is_featured !== 'boolean') {
       return { valid: false, error: 'Featured flag must be a boolean.' };
     }
   }

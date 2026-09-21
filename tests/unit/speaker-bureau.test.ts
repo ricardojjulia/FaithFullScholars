@@ -9,6 +9,14 @@ import {
 
 describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () => {
   describe('Input Validation (validateSpeakerTopicInput)', () => {
+    it('safely rejects non-object inputs (null, arrays, primitives)', () => {
+      expect(validateSpeakerTopicInput(null).valid).toBe(false);
+      expect(validateSpeakerTopicInput(undefined).valid).toBe(false);
+      expect(validateSpeakerTopicInput([]).valid).toBe(false);
+      expect(validateSpeakerTopicInput('not-an-object').valid).toBe(false);
+      expect(validateSpeakerTopicInput(123).valid).toBe(false);
+    });
+
     it('requires a non-empty topic title', () => {
       const result = validateSpeakerTopicInput({
         title: '',

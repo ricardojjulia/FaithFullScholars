@@ -62,7 +62,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Scholar profile not found' }, { status: 404 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be a valid JSON object' }, { status: 400 });
+    }
+
     const validation = validateSpeakerTopicInput(body);
     if (!validation.valid) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
@@ -168,17 +172,41 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Scholar profile not found' }, { status: 404 });
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Request body must be a valid JSON object' }, { status: 400 });
+    }
 
     // Support batch reorder
     if (Array.isArray(body.reorder)) {
+      if (body.reorder.length === 0) {
+        return NextResponse.json({ error: 'Reorder payload cannot be empty' }, { status: 400 });
+      }
+
       for (const item of body.reorder) {
-        if (item.id && typeof item.display_order === 'number') {
-          await supabase
-            .from('speaker_topics')
-            .update({ display_order: item.display_order })
-            .eq('id', item.id)
-            .eq('scholar_id', scholar.id);
+        if (
+          !item ||
+          typeof item !== 'object' ||
+          !item.id ||
+          typeof item.display_order !== 'number' ||
+          !Number.isInteger(item.display_order)
+        ) {
+          return NextResponse.json(
+            { error: 'Each reorder item must have an id and integer display_order' },
+            { status: 400 }
+          );
+        }
+      }
+
+      for (const item of body.reorder) {
+        const { error: updateError } = await supabase
+          .from('speaker_topics')
+          .update({ display_order: item.display_order })
+          .eq('id', item.id)
+          .eq('scholar_id', scholar.id);
+
+        if (updateError) {
+          return NextResponse.json({ error: 'Failed to update topic display order' }, { status: 500 });
         }
       }
       return NextResponse.json({ success: true });

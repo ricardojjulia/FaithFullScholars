@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Attached `public.set_updated_at()` trigger and created 3 covering indexes (`idx_speaker_topics_scholar_id`, `idx_speaker_topics_audience`, `idx_speaker_topics_featured`).
     - Zero Supabase Splinter security findings.
   - **Verification & Automation**:
-    - Added unit test suite `tests/unit/speaker-bureau.test.ts` (11 tests).
+    - Added unit test suite `tests/unit/speaker-bureau.test.ts` (12 tests).
     - Added database-backed RLS integration suite `tests/integration/speaker-bureau-rls.test.ts` (5 tests).
     - Added Playwright browser automation suite `tests/e2e/speaker-discovery.spec.ts` (3 tests, total 12 E2E tests).
     - Updated pre-flight deployment verification tooling (`scripts/verify-deployment.ts`) to 16 checks and 29 tables.
