@@ -57,29 +57,29 @@ DROP POLICY IF EXISTS "Scholars can view their own speaker topics" ON public.spe
 CREATE POLICY "Scholars can view their own speaker topics"
 ON public.speaker_topics FOR SELECT
 TO authenticated
-USING (scholar_id = (SELECT auth.uid()));
+USING (scholar_id = (SELECT public.get_current_scholar_id()));
 
 -- Policy 3: Scholars can insert their own speaker topics (Splinter 0003 & 0024)
 DROP POLICY IF EXISTS "Scholars can insert their own speaker topics" ON public.speaker_topics;
 CREATE POLICY "Scholars can insert their own speaker topics"
 ON public.speaker_topics FOR INSERT
 TO authenticated
-WITH CHECK (scholar_id = (SELECT auth.uid()));
+WITH CHECK (scholar_id = (SELECT public.get_current_scholar_id()));
 
 -- Policy 4: Scholars can update their own speaker topics
 DROP POLICY IF EXISTS "Scholars can update their own speaker topics" ON public.speaker_topics;
 CREATE POLICY "Scholars can update their own speaker topics"
 ON public.speaker_topics FOR UPDATE
 TO authenticated
-USING (scholar_id = (SELECT auth.uid()))
-WITH CHECK (scholar_id = (SELECT auth.uid()));
+USING (scholar_id = (SELECT public.get_current_scholar_id()))
+WITH CHECK (scholar_id = (SELECT public.get_current_scholar_id()));
 
 -- Policy 5: Scholars can delete their own speaker topics
 DROP POLICY IF EXISTS "Scholars can delete their own speaker topics" ON public.speaker_topics;
 CREATE POLICY "Scholars can delete their own speaker topics"
 ON public.speaker_topics FOR DELETE
 TO authenticated
-USING (scholar_id = (SELECT auth.uid()));
+USING (scholar_id = (SELECT public.get_current_scholar_id()));
 
 -- Policy 6: Platform administrators can manage all speaker topics
 DROP POLICY IF EXISTS "Admins can manage all speaker topics" ON public.speaker_topics;

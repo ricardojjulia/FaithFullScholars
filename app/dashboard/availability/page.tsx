@@ -1,42 +1,95 @@
 'use client';
 
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Mic } from 'lucide-react';
 
 const OPPORTUNITY_OPTIONS = [
   { id: 'adjunct_teaching', label: 'Adjunct Faculty Appointments', desc: 'Semester or term-based teaching contracts' },
   { id: 'online_async', label: 'Online Asynchronous Courses', desc: 'Pre-recorded modules and LMS discussion grading' },
   { id: 'online_sync', label: 'Online Synchronous Classes', desc: 'Live video seminar instruction' },
   { id: 'modular_intensive', label: 'One-Week Modular Intensives', desc: 'In-person or hybrid concentrated master-level modules' },
-  { id: 'guest_lecture', label: 'Guest Lectures & Chapel Addresses', desc: 'Single session or short conference series' },
+  { id: 'conference_speaking', label: 'Conference Keynotes & Speaking Bureau', desc: 'Keynote addresses, plenary symposium lectures, and conference presentations (ADR 0009)' },
+  { id: 'guest_lecturing', label: 'Guest Lectures & Chapel Addresses', desc: 'Single session or short conference series' },
   { id: 'doctoral_supervision', label: 'Doctoral Supervision & External Reader', desc: 'Ph.D./Th.D. dissertation advising and thesis review' },
   { id: 'curriculum_consulting', label: 'Curriculum & ATS Accreditation Review', desc: 'Program development and institutional assessment' }
 ];
 
-export default function AvailabilityManagerPage() {
-  const [status, setStatus] = useState<'available' | 'limited' | 'unavailable' | 'sabbatical'>('available');
-  const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>([
+interface AvailabilityState {
+  status: 'available' | 'limited' | 'unavailable' | 'sabbatical';
+  selectedOpportunities: string[];
+  availableFrom: string;
+  notes: string;
+  travelPreferences: string;
+  honorariumPolicy: string;
+  speakingBio: string;
+}
+
+const DEFAULT_AVAILABILITY: AvailabilityState = {
+  status: 'available',
+  selectedOpportunities: [
     'adjunct_teaching',
     'online_async',
-    'modular_intensive'
-  ]);
-  const [availableFrom, setAvailableFrom] = useState('2026-09-01');
-  const [notes, setNotes] = useState('Open to fall modular intensives and online synchronous seminars.');
+    'modular_intensive',
+    'conference_speaking'
+  ],
+  availableFrom: '2026-09-01',
+  notes: 'Open to fall modular intensives and online synchronous seminars.',
+  travelPreferences: 'Domestic & Virtual preferred (willing to travel for multi-day conferences)',
+  honorariumPolicy: 'Standard institutional honorarium + lodging and travel reimbursement',
+  speakingBio: 'Experienced keynote speaker for academic symposiums, pastoral training conferences, and seminary chapels. Regular contributor to regional ETS and theological society meetings.'
+};
+
+function getInitialAvailability(): AvailabilityState {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = sessionStorage.getItem('fs_availability_preferences');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          ...DEFAULT_AVAILABILITY,
+          ...parsed,
+          selectedOpportunities: Array.isArray(parsed.selectedOpportunities)
+            ? parsed.selectedOpportunities
+            : DEFAULT_AVAILABILITY.selectedOpportunities,
+        };
+      }
+    } catch {
+      // fallback
+    }
+  }
+  return DEFAULT_AVAILABILITY;
+}
+
+export default function AvailabilityManagerPage() {
+  const [form, setForm] = useState<AvailabilityState>(getInitialAvailability);
   const [saved, setSaved] = useState(false);
 
   function toggleOpportunity(id: string) {
-    if (selectedOpportunities.includes(id)) {
-      setSelectedOpportunities(selectedOpportunities.filter((o) => o !== id));
-    } else {
-      setSelectedOpportunities([...selectedOpportunities, id]);
-    }
+    setForm((prev) => ({
+      ...prev,
+      selectedOpportunities: prev.selectedOpportunities.includes(id)
+        ? prev.selectedOpportunities.filter((o) => o !== id)
+        : [...prev.selectedOpportunities, id],
+    }));
   }
 
   function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    try {
+      sessionStorage.setItem(
+        'fs_availability_preferences',
+        JSON.stringify({ ...form, updatedAt: new Date().toISOString() })
+      );
+    } catch {
+      // ignore
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   }
+
+  const isSpeakingBureauActive =
+    form.selectedOpportunities.includes('conference_speaking') ||
+    form.selectedOpportunities.includes('guest_lecturing');
 
   return (
     <div className="space-y-6">
@@ -52,7 +105,7 @@ export default function AvailabilityManagerPage() {
       {saved && (
         <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 text-xs font-medium flex items-center gap-2">
           <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span>Availability preferences saved to your draft revision.</span>
+          <span>Availability preferences and speaking bureau settings saved to your draft profile.</span>
         </div>
       )}
 
@@ -73,9 +126,9 @@ export default function AvailabilityManagerPage() {
               <button
                 key={opt.id}
                 type="button"
-                onClick={() => setStatus(opt.id as typeof status)}
+                onClick={() => setForm((prev) => ({ ...prev, status: opt.id as AvailabilityState['status'] }))}
                 className={`p-3 rounded-xl border text-left transition-all ${
-                  status === opt.id
+                  form.status === opt.id
                     ? `${opt.color} ring-2 ring-indigo-500/20 shadow-xs font-bold`
                     : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                 }`}
@@ -92,8 +145,9 @@ export default function AvailabilityManagerPage() {
               </label>
               <input
                 type="date"
-                value={availableFrom}
-                onChange={(e) => setAvailableFrom(e.target.value)}
+                name="availableFrom"
+                value={form.availableFrom}
+                onChange={(e) => setForm((prev) => ({ ...prev, availableFrom: e.target.value }))}
                 className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
               />
             </div>
@@ -104,8 +158,9 @@ export default function AvailabilityManagerPage() {
               </label>
               <input
                 type="text"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
+                name="notes"
+                value={form.notes}
+                onChange={(e) => setForm((prev) => ({ ...prev, notes: e.target.value }))}
                 placeholder="e.g. Open to 1 modular intensive per semester..."
                 className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
               />
@@ -121,7 +176,7 @@ export default function AvailabilityManagerPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {OPPORTUNITY_OPTIONS.map((opp) => {
-              const active = selectedOpportunities.includes(opp.id);
+              const active = form.selectedOpportunities.includes(opp.id);
               return (
                 <label
                   key={opp.id}
@@ -133,6 +188,7 @@ export default function AvailabilityManagerPage() {
                 >
                   <input
                     type="checkbox"
+                    name={`opp_${opp.id}`}
                     checked={active}
                     onChange={() => toggleOpportunity(opp.id)}
                     className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
@@ -154,18 +210,40 @@ export default function AvailabilityManagerPage() {
         {/* Speaking Bureau & Keynote Topics (§21 / ADR 0009) */}
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <div>
-              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white">
-                Theological Speaking Bureau & Keynote Lectures
-              </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Showcase your keynote lecture topics, chapel messages, and symposium presentations to event committees.
-              </p>
+            <div className="flex items-center gap-2">
+              <Mic className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <div>
+                <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white">
+                  Theological Speaking Bureau & Keynote Lectures
+                </h2>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Showcase your keynote lecture topics, chapel messages, and symposium presentations to event committees.
+                </p>
+              </div>
             </div>
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60">
-              Speaking Bureau
+            <span
+              className={`text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${
+                isSpeakingBureauActive
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/60'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              {isSpeakingBureauActive ? 'Directory Active' : 'Speaking Inactive'}
             </span>
           </div>
+
+          {!isSpeakingBureauActive && (
+            <div className="p-3 bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-800/50 rounded-xl text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between">
+              <span>Speaking Bureau is currently disabled. Check <strong>Conference Keynotes</strong> above to list topics in the directory.</span>
+              <button
+                type="button"
+                onClick={() => toggleOpportunity('conference_speaking')}
+                className="px-2.5 py-1 text-[11px] font-semibold bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors"
+              >
+                Enable Speaking
+              </button>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -174,7 +252,9 @@ export default function AvailabilityManagerPage() {
               </label>
               <input
                 type="text"
-                defaultValue="Domestic & Virtual preferred (willing to travel for multi-day conferences)"
+                name="travelPreferences"
+                value={form.travelPreferences}
+                onChange={(e) => setForm((prev) => ({ ...prev, travelPreferences: e.target.value }))}
                 placeholder="e.g. Regional driving distance or virtual..."
                 className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
               />
@@ -186,7 +266,9 @@ export default function AvailabilityManagerPage() {
               </label>
               <input
                 type="text"
-                defaultValue="Standard institutional honorarium + lodging and travel reimbursement"
+                name="honorariumPolicy"
+                value={form.honorariumPolicy}
+                onChange={(e) => setForm((prev) => ({ ...prev, honorariumPolicy: e.target.value }))}
                 placeholder="e.g. Standard institutional honorarium..."
                 className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
               />
@@ -199,7 +281,9 @@ export default function AvailabilityManagerPage() {
             </label>
             <textarea
               rows={3}
-              defaultValue="Experienced keynote speaker for academic symposiums, pastoral training conferences, and seminary chapels. Regular contributor to regional ETS and theological society meetings."
+              name="speakingBio"
+              value={form.speakingBio}
+              onChange={(e) => setForm((prev) => ({ ...prev, speakingBio: e.target.value }))}
               placeholder="Describe your speaking ministry, style, and preferred contexts..."
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
             />

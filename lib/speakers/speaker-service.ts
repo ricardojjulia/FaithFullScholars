@@ -76,9 +76,11 @@ export async function getAllSpeakers(filters?: {
         : row.availability_profiles;
       const oppTypes: string[] = avail?.opportunity_types || [];
       const hasAvailability =
-        oppTypes.includes('conference_speaking') || oppTypes.includes('guest_lecturing');
+        oppTypes.includes('conference_speaking') ||
+        oppTypes.includes('guest_lecturing') ||
+        oppTypes.includes('guest_lecture');
       const hasTopics = Array.isArray(row.speaker_topics) && row.speaker_topics.length > 0;
-      return hasAvailability || hasTopics;
+      return hasAvailability && hasTopics;
     })
     .map((row: ScholarDbRow) => {
       const avail = Array.isArray(row.availability_profiles)

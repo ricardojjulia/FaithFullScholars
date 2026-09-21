@@ -126,6 +126,29 @@ describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () 
       expect(sampleSpeaker.tradition_slug).toBe('anglican');
       expect(sampleSpeaker.topics[0].target_audience).toBe('academic');
     });
+
+    it('requires both active speaking opportunity types and published topics for public directory listing', () => {
+      // Helper replicating the eligibility check in speaker-service
+      function isEligibleSpeaker(oppTypes: string[], topicsCount: number): boolean {
+        const hasAvailability =
+          oppTypes.includes('conference_speaking') ||
+          oppTypes.includes('guest_lecturing') ||
+          oppTypes.includes('guest_lecture');
+        const hasTopics = topicsCount > 0;
+        return hasAvailability && hasTopics;
+      }
+
+      // Scholar with topics but without speaking availability enabled
+      expect(isEligibleSpeaker(['adjunct_teaching', 'online_async'], 3)).toBe(false);
+
+      // Scholar with speaking availability enabled but zero topics
+      expect(isEligibleSpeaker(['conference_speaking'], 0)).toBe(false);
+
+      // Scholar with speaking availability AND topics
+      expect(isEligibleSpeaker(['conference_speaking'], 2)).toBe(true);
+      expect(isEligibleSpeaker(['guest_lecturing'], 1)).toBe(true);
+    });
   });
 });
+
 
