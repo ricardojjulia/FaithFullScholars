@@ -56,34 +56,33 @@ const DEFAULT_AVAILABILITY: AvailabilityState = {
   topics: [],
 };
 
-function getInitialAvailability(): AvailabilityState {
-  if (typeof window !== 'undefined') {
-    try {
-      const stored = sessionStorage.getItem('fs_availability_preferences');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return {
-          ...DEFAULT_AVAILABILITY,
-          ...parsed,
-          selectedOpportunities: Array.isArray(parsed.selectedOpportunities)
-            ? parsed.selectedOpportunities
-            : DEFAULT_AVAILABILITY.selectedOpportunities,
-          topics: Array.isArray(parsed.topics)
-            ? parsed.topics
-            : DEFAULT_AVAILABILITY.topics,
-        };
-      }
-    } catch {
-      // fallback
-    }
-  }
-  return DEFAULT_AVAILABILITY;
-}
-
 export default function AvailabilityManagerPage() {
-  const [form, setForm] = useState<AvailabilityState>(getInitialAvailability);
+  const [form, setForm] = useState<AvailabilityState>(DEFAULT_AVAILABILITY);
   const [saved, setSaved] = useState(false);
   const [loadingTopics, setLoadingTopics] = useState(true);
+
+  // Hydration-safe loading of cached sessionStorage preferences after mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      try {
+        const stored = sessionStorage.getItem('fs_availability_preferences');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          setForm((prev) => ({
+            ...prev,
+            ...parsed,
+            selectedOpportunities: Array.isArray(parsed.selectedOpportunities)
+              ? parsed.selectedOpportunities
+              : prev.selectedOpportunities,
+            topics: Array.isArray(parsed.topics) ? parsed.topics : prev.topics,
+          }));
+        }
+      } catch {
+        // fallback
+      }
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Load authenticated database state for persisted topics on mount
   useEffect(() => {
@@ -178,8 +177,8 @@ export default function AvailabilityManagerPage() {
     setShowAddTopic(false);
   }
 
-  async function handleSaveTopic(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSaveTopic(e?: React.SyntheticEvent) {
+    if (e) e.preventDefault();
     const input = {
       title: newTopicTitle,
       description: newTopicDesc,
