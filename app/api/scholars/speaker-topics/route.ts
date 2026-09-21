@@ -68,17 +68,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
+    const insertData: Record<string, unknown> = {
+      scholar_id: scholar.id,
+      title: body.title.trim(),
+      description: body.description.trim(),
+      target_audience: body.target_audience || 'academic',
+      sample_media_url: body.sample_media_url ? body.sample_media_url.trim() : null,
+      is_featured: Boolean(body.is_featured),
+      display_order: typeof body.display_order === 'number' ? body.display_order : 0,
+    };
+
+    if (
+      typeof body.id === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.id)
+    ) {
+      insertData.id = body.id;
+    }
+
     const { data: newTopic, error: insertError } = await supabase
       .from('speaker_topics')
-      .insert({
-        scholar_id: scholar.id,
-        title: body.title.trim(),
-        description: body.description.trim(),
-        target_audience: body.target_audience || 'academic',
-        sample_media_url: body.sample_media_url ? body.sample_media_url.trim() : null,
-        is_featured: Boolean(body.is_featured),
-        display_order: typeof body.display_order === 'number' ? body.display_order : 0,
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -180,9 +189,23 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Topic ID is required' }, { status: 400 });
     }
 
-    // If updating content fields, run validation
-    if (body.title || body.description || body.target_audience) {
-      const validation = validateSpeakerTopicInput(body);
+    // Validate any present content fields on every PATCH path (including sample_media_url safety)
+    if (
+      body.title !== undefined ||
+      body.description !== undefined ||
+      body.target_audience !== undefined ||
+      body.sample_media_url !== undefined ||
+      body.display_order !== undefined ||
+      body.is_featured !== undefined
+    ) {
+      const validation = validateSpeakerTopicInput({
+        title: body.title !== undefined ? body.title : 'Valid Partial Update Title',
+        description: body.description !== undefined ? body.description : 'Valid Partial Update Abstract Content',
+        target_audience: body.target_audience,
+        sample_media_url: body.sample_media_url,
+        display_order: body.display_order,
+        is_featured: body.is_featured,
+      });
       if (!validation.valid) {
         return NextResponse.json({ error: validation.error }, { status: 400 });
       }
@@ -193,7 +216,10 @@ export async function PATCH(req: NextRequest) {
     if (typeof body.description === 'string') updatePayload.description = body.description.trim();
     if (typeof body.target_audience === 'string') updatePayload.target_audience = body.target_audience;
     if (body.sample_media_url !== undefined) {
-      updatePayload.sample_media_url = body.sample_media_url ? String(body.sample_media_url).trim() : null;
+      updatePayload.sample_media_url =
+        body.sample_media_url && typeof body.sample_media_url === 'string'
+          ? body.sample_media_url.trim()
+          : null;
     }
     if (typeof body.is_featured === 'boolean') updatePayload.is_featured = body.is_featured;
     if (typeof body.display_order === 'number') updatePayload.display_order = body.display_order;

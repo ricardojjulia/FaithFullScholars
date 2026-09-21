@@ -195,8 +195,13 @@ export default function AvailabilityManagerPage() {
 
       handleCancelTopicEdit();
     } else {
+      const localId =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `topic-${Date.now()}`;
+
       const created: SpeakerTopicItem = {
-        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `topic-${Date.now()}`,
+        id: localId,
         title: newTopicTitle.trim(),
         description: newTopicDesc.trim(),
         target_audience: newTopicAudience,
@@ -217,11 +222,33 @@ export default function AvailabilityManagerPage() {
         return { ...prev, topics: updatedTopics };
       });
 
+      // Synchronize with API and reconcile topic ID with server-generated ID if different
       fetch('/api/scholars/speaker-topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(created),
-      }).catch(() => {});
+      })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.topic?.id && data.topic.id !== localId) {
+            const serverId = data.topic.id;
+            setForm((prev) => {
+              const reconciledTopics = (prev.topics || []).map((t) =>
+                t.id === localId ? { ...t, id: serverId } : t
+              );
+              try {
+                sessionStorage.setItem(
+                  'fs_availability_preferences',
+                  JSON.stringify({ ...prev, topics: reconciledTopics, updatedAt: new Date().toISOString() })
+                );
+              } catch {
+                // ignore
+              }
+              return { ...prev, topics: reconciledTopics };
+            });
+          }
+        })
+        .catch(() => {});
 
       handleCancelTopicEdit();
     }
