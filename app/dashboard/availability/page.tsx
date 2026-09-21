@@ -1,7 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Mic } from 'lucide-react';
+import { Check, Mic, Plus, Trash2, Video, Star, Sparkles } from 'lucide-react';
+import {
+  TargetAudience,
+  TARGET_AUDIENCES,
+  formatTargetAudience,
+  validateSpeakerTopicInput,
+} from '@/lib/speakers/types';
 
 const OPPORTUNITY_OPTIONS = [
   { id: 'adjunct_teaching', label: 'Adjunct Faculty Appointments', desc: 'Semester or term-based teaching contracts' },
@@ -14,6 +20,15 @@ const OPPORTUNITY_OPTIONS = [
   { id: 'curriculum_consulting', label: 'Curriculum & ATS Accreditation Review', desc: 'Program development and institutional assessment' }
 ];
 
+export interface SpeakerTopicItem {
+  id: string;
+  title: string;
+  description: string;
+  target_audience: TargetAudience;
+  sample_media_url: string | null;
+  is_featured: boolean;
+}
+
 interface AvailabilityState {
   status: 'available' | 'limited' | 'unavailable' | 'sabbatical';
   selectedOpportunities: string[];
@@ -22,6 +37,7 @@ interface AvailabilityState {
   travelPreferences: string;
   honorariumPolicy: string;
   speakingBio: string;
+  topics: SpeakerTopicItem[];
 }
 
 const DEFAULT_AVAILABILITY: AvailabilityState = {
@@ -36,7 +52,17 @@ const DEFAULT_AVAILABILITY: AvailabilityState = {
   notes: 'Open to fall modular intensives and online synchronous seminars.',
   travelPreferences: 'Domestic & Virtual preferred (willing to travel for multi-day conferences)',
   honorariumPolicy: 'Standard institutional honorarium + lodging and travel reimbursement',
-  speakingBio: 'Experienced keynote speaker for academic symposiums, pastoral training conferences, and seminary chapels. Regular contributor to regional ETS and theological society meetings.'
+  speakingBio: 'Experienced keynote speaker for academic symposiums, pastoral training conferences, and seminary chapels. Regular contributor to regional ETS and theological society meetings.',
+  topics: [
+    {
+      id: 'demo-topic-1',
+      title: 'Justification by Faith & Federal Theology in the Reformation',
+      description: 'An academic keynote examining the development of covenantal structures in early Reformed dogmatics.',
+      target_audience: 'academic',
+      sample_media_url: 'https://youtube.com/watch?v=sample-keynote',
+      is_featured: true,
+    }
+  ]
 };
 
 function getInitialAvailability(): AvailabilityState {
@@ -51,6 +77,9 @@ function getInitialAvailability(): AvailabilityState {
           selectedOpportunities: Array.isArray(parsed.selectedOpportunities)
             ? parsed.selectedOpportunities
             : DEFAULT_AVAILABILITY.selectedOpportunities,
+          topics: Array.isArray(parsed.topics)
+            ? parsed.topics
+            : DEFAULT_AVAILABILITY.topics,
         };
       }
     } catch {
@@ -63,6 +92,15 @@ function getInitialAvailability(): AvailabilityState {
 export default function AvailabilityManagerPage() {
   const [form, setForm] = useState<AvailabilityState>(getInitialAvailability);
   const [saved, setSaved] = useState(false);
+
+  // New topic form state
+  const [showAddTopic, setShowAddTopic] = useState(false);
+  const [newTopicTitle, setNewTopicTitle] = useState('');
+  const [newTopicDesc, setNewTopicDesc] = useState('');
+  const [newTopicAudience, setNewTopicAudience] = useState<TargetAudience>('academic');
+  const [newTopicMedia, setNewTopicMedia] = useState('');
+  const [newTopicFeatured, setNewTopicFeatured] = useState(false);
+  const [topicError, setTopicError] = useState<string | null>(null);
 
   function toggleOpportunity(id: string) {
     setForm((prev) => ({
@@ -85,6 +123,67 @@ export default function AvailabilityManagerPage() {
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  }
+
+  function handleAddTopic(e: React.FormEvent) {
+    e.preventDefault();
+    const input = {
+      title: newTopicTitle,
+      description: newTopicDesc,
+      target_audience: newTopicAudience,
+      sample_media_url: newTopicMedia.trim() ? newTopicMedia.trim() : null,
+      is_featured: newTopicFeatured,
+    };
+    const validation = validateSpeakerTopicInput(input);
+    if (!validation.valid) {
+      setTopicError(validation.error || 'Invalid topic input');
+      return;
+    }
+    setTopicError(null);
+
+    const created: SpeakerTopicItem = {
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `topic-${Date.now()}`,
+      title: newTopicTitle.trim(),
+      description: newTopicDesc.trim(),
+      target_audience: newTopicAudience,
+      sample_media_url: newTopicMedia.trim() ? newTopicMedia.trim() : null,
+      is_featured: newTopicFeatured,
+    };
+
+    setForm((prev) => {
+      const updatedTopics = [...(prev.topics || []), created];
+      try {
+        sessionStorage.setItem(
+          'fs_availability_preferences',
+          JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+        );
+      } catch {
+        // ignore
+      }
+      return { ...prev, topics: updatedTopics };
+    });
+
+    setNewTopicTitle('');
+    setNewTopicDesc('');
+    setNewTopicAudience('academic');
+    setNewTopicMedia('');
+    setNewTopicFeatured(false);
+    setShowAddTopic(false);
+  }
+
+  function handleDeleteTopic(id: string) {
+    setForm((prev) => {
+      const updatedTopics = (prev.topics || []).filter((t) => t.id !== id);
+      try {
+        sessionStorage.setItem(
+          'fs_availability_preferences',
+          JSON.stringify({ ...prev, topics: updatedTopics, updatedAt: new Date().toISOString() })
+        );
+      } catch {
+        // ignore
+      }
+      return { ...prev, topics: updatedTopics };
+    });
   }
 
   const isSpeakingBureauActive =
@@ -208,16 +307,18 @@ export default function AvailabilityManagerPage() {
         </div>
 
         {/* Speaking Bureau & Keynote Topics (§21 / ADR 0009) */}
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <div className="flex items-center gap-2">
-              <Mic className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/60 flex items-center justify-center">
+                <Mic className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              </div>
               <div>
                 <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white">
-                  Theological Speaking Bureau & Keynote Lectures
+                  Theological Speaking Bureau & Keynote Portfolio
                 </h2>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Showcase your keynote lecture topics, chapel messages, and symposium presentations to event committees.
+                  Manage keynote lectures, target audiences, and travel parameters for event committees.
                 </p>
               </div>
             </div>
@@ -287,6 +388,180 @@ export default function AvailabilityManagerPage() {
               placeholder="Describe your speaking ministry, style, and preferred contexts..."
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
             />
+          </div>
+
+          {/* Keynote Topics Management Section */}
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Keynote Lectures & Presentation Topics ({form.topics?.length || 0})
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Topics listed below appear on your scholar dossier and in the speaking bureau directory.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddTopic(!showAddTopic)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{showAddTopic ? 'Cancel' : 'Add Topic'}</span>
+              </button>
+            </div>
+
+            {/* Add Topic Inline Form */}
+            {showAddTopic && (
+              <div className="p-4 rounded-xl border border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-950 dark:text-indigo-200">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span>New Lecture Topic</span>
+                </div>
+
+                {topicError && (
+                  <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-700 dark:text-rose-300 font-medium">
+                    {topicError}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Topic Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={newTopicTitle}
+                      onChange={(e) => setNewTopicTitle(e.target.value)}
+                      placeholder="e.g. The Doctrine of Justification in the Early Reformers"
+                      className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Target Audience *
+                      </label>
+                      <select
+                        value={newTopicAudience}
+                        onChange={(e) => setNewTopicAudience(e.target.value as TargetAudience)}
+                        className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {TARGET_AUDIENCES.map((aud) => (
+                          <option key={aud} value={aud}>
+                            {formatTargetAudience(aud)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                        Sample Media Link (Audio / Video URL)
+                      </label>
+                      <input
+                        type="url"
+                        value={newTopicMedia}
+                        onChange={(e) => setNewTopicMedia(e.target.value)}
+                        placeholder="https://youtube.com/watch?v=..."
+                        className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Lecture Abstract / Description *
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={newTopicDesc}
+                      onChange={(e) => setNewTopicDesc(e.target.value)}
+                      placeholder="Detailed abstract summarizing the theological argument, methodology, and primary audience appeal..."
+                      className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300 font-medium">
+                      <input
+                        type="checkbox"
+                        checked={newTopicFeatured}
+                        onChange={(e) => setNewTopicFeatured(e.target.checked)}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span>Feature this topic prominently on scholar card</span>
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={handleAddTopic}
+                      className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors"
+                    >
+                      Save Topic to Roster
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* List of current topics */}
+            <div className="space-y-3">
+              {(form.topics || []).length === 0 ? (
+                <div className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 text-center text-xs text-slate-500 dark:text-slate-400">
+                  No speaking topics added yet. Click &ldquo;Add Topic&rdquo; to showcase your keynote addresses.
+                </div>
+              ) : (
+                (form.topics || []).map((topic) => (
+                  <div
+                    key={topic.id}
+                    className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex items-start justify-between gap-3 group hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-800/60">
+                          {formatTargetAudience(topic.target_audience)}
+                        </span>
+                        {topic.is_featured && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            Featured
+                          </span>
+                        )}
+                        {topic.sample_media_url && (
+                          <a
+                            href={topic.sample_media_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-indigo-600 hover:text-indigo-700 flex items-center gap-1 font-medium underline"
+                          >
+                            <Video className="w-3 h-3" />
+                            Sample Recording
+                          </a>
+                        )}
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        {topic.title}
+                      </h4>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">
+                        {topic.description}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteTopic(topic.id)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                      title="Remove topic"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
