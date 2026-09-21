@@ -10,7 +10,6 @@ import {
   GraduationCap,
   ArrowLeft,
   ShieldCheck,
-  CheckCircle2,
   DollarSign,
   Globe,
   ExternalLink,

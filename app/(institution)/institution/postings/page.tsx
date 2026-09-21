@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Plus, Briefcase, Calendar, MapPin, Eye, Edit3, CheckCircle2, Clock } from 'lucide-react';
+import { Plus, Briefcase, Calendar, Eye, Clock } from 'lucide-react';
 import { getAllPublishedPostings, formatOpportunityType } from '@/lib/postings/postings-service';
 
 export const metadata: Metadata = {

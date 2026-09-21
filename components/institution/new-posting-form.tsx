@@ -123,7 +123,7 @@ export function NewPostingForm({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Opportunity Type *
@@ -140,6 +140,22 @@ export function NewPostingForm({
                 <option value="sabbatical_cover">Sabbatical Replacement</option>
                 <option value="guest_lecturer">Guest Lecturer</option>
                 <option value="doctoral_supervision">Doctoral Supervision</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Delivery Format *
+              </label>
+              <select
+                value={deliveryMode}
+                onChange={(e) => setDeliveryMode(e.target.value)}
+                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="in_person">In-Person</option>
+                <option value="online_synchronous">Online Synchronous</option>
+                <option value="online_asynchronous">Online Asynchronous</option>
+                <option value="hybrid">Hybrid / Modular</option>
               </select>
             </div>
 

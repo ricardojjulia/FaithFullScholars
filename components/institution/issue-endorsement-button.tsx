@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { IssueEndorsementModal } from '@/components/institution/issue-endorsement-modal';
 
 interface IssueEndorsementButtonProps {

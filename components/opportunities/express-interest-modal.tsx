@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Send, CheckCircle2, AlertCircle, Loader2, Briefcase, FileText, ShieldCheck } from 'lucide-react';
+import { X, Send, CheckCircle2, AlertCircle, Loader2, Briefcase, ShieldCheck } from 'lucide-react';
 
 interface ExpressInterestModalProps {
   isOpen: boolean;

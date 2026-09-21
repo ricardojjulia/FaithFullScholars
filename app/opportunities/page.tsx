@@ -1,10 +1,9 @@
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Briefcase, Building2, MapPin, Calendar, Clock, GraduationCap, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Briefcase, Building2, MapPin, Calendar, ArrowRight, ShieldCheck } from 'lucide-react';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { getAllPublishedPostings, formatOpportunityType, OpportunityType } from '@/lib/postings/postings-service';
-import { getAllDisciplines, getAllTraditions } from '@/lib/domain/queries';
 
 export const metadata: Metadata = {
   title: 'Academic Opportunities & Faculty Postings | FaithFull Scholars',
@@ -23,15 +22,11 @@ interface OpportunitiesPageProps {
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
   const { type, discipline, tradition } = await searchParams;
 
-  const [postings, disciplines, traditions] = await Promise.all([
-    getAllPublishedPostings({
-      opportunityType: type,
-      disciplineSlug: discipline,
-      traditionSlug: tradition,
-    }),
-    getAllDisciplines(),
-    getAllTraditions(),
-  ]);
+  const postings = await getAllPublishedPostings({
+    opportunityType: type,
+    disciplineSlug: discipline,
+    traditionSlug: tradition,
+  });
 
   const opportunityTypes: { value: OpportunityType | 'all'; label: string }[] = [
     { value: 'all', label: 'All Opportunities' },
