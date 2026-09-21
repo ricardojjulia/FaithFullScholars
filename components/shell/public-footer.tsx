@@ -34,6 +34,11 @@ export function PublicFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/opportunities" className="hover:text-indigo-600">
+                Academic Opportunities & Calls
+              </Link>
+            </li>
+            <li>
               <Link href="/scholars?available=true" className="hover:text-indigo-600">
                 Available for Adjunct Teaching
               </Link>

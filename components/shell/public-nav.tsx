@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Users, BookOpen, Briefcase } from 'lucide-react';
+import { Home, Users, BookOpen, Briefcase, GraduationCap } from 'lucide-react';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
 import { LanguageSwitcher } from './language-switcher';
@@ -60,11 +60,20 @@ export function PublicNav() {
           </Link>
 
           <Link
+            href="/opportunities"
+            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            title="Academic Opportunities & Teaching Calls"
+          >
+            <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
+            <span className="text-[10px] font-medium hidden md:block">Opportunities</span>
+          </Link>
+
+          <Link
             href="/scholars?available=true"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group relative"
             title="Scholars Available for Adjunct Teaching"
           >
-            <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
+            <GraduationCap className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Teaching</span>
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse md:hidden" />
           </Link>

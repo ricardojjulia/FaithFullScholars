@@ -10,6 +10,7 @@ import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { ScholarEndorsementsCard } from '@/components/scholars/scholar-endorsements-card';
 import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
+import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
 
 interface ScholarProfilePageProps {
   params: Promise<{
@@ -48,6 +49,7 @@ export default async function ScholarProfilePage({
   }
 
   const endorsements = await getApprovedEndorsements(scholar.id);
+  const institutionalEndorsements = await getInstitutionalEndorsementsForScholar(scholar.id);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/60 dark:bg-slate-950">
@@ -266,6 +268,7 @@ export default async function ScholarProfilePage({
               scholarId={scholar.id}
               scholarName={scholar.full_name}
               initialEndorsements={endorsements}
+              initialInstitutionalEndorsements={institutionalEndorsements}
             />
           </div>
 

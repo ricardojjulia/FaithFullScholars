@@ -871,6 +871,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Citation-grounded AI institution search & faculty matcher** (`/api/ai/match-faculty`, `components/search/ai-faculty-matcher-modal.tsx`).
 - [x] **Public SEO topic hubs** (`/disciplines`, `/disciplines/[slug]`, `/traditions`, `/traditions/[slug]`, `lib/seo/json-ld.ts`).
 - [x] **Peer endorsements and theological faculty commendations** (`scholar_endorsements`, `lib/endorsements/endorsement-service.ts`, `components/scholars/scholar-endorsements-card.tsx`, `components/scholars/endorse-colleague-modal.tsx`).
+- [x] **Institutional accounts dual-purpose expansion: Academic Postings & Authoritative Endorsements** (`institution_postings`, `institution_endorsements`, `/opportunities`, `/opportunities/[slug]`, `/institution/postings`, `/institution/endorsements`, `lib/postings/`, `lib/endorsements/institutional-endorsement-service.ts`).
 - [ ] Institution subscriptions.
 - [ ] Premium scholar profiles.
 - [ ] Course licensing and syllabus distribution agreements.
