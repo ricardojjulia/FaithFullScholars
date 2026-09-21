@@ -22,6 +22,16 @@ export function InstitutionNav() {
       exact: false,
     },
     {
+      href: '/institution/postings',
+      label: 'Opportunities & Calls',
+      exact: false,
+    },
+    {
+      href: '/institution/endorsements',
+      label: 'Faculty Endorsements',
+      exact: false,
+    },
+    {
       href: '/institution/saved',
       label: t('institution.nav_saved') || 'Shortlisted Scholars',
       exact: false,

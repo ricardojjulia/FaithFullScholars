@@ -42,6 +42,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Institutional Accounts Dual-Purpose Expansion (Academic Postings Marketplace & Authoritative Institutional Endorsements)**:
+  - **Academic Opportunities & Teaching Calls Portal (`/opportunities`, `/opportunities/[slug]`, `/institution/postings`, `/institution/postings/new`)**:
+    - Created dedicated public and institutional surface for theological institutions to post vacancies, adjunct faculty calls, modular intensive lecturer needs, sabbatical replacements, and visiting scholars.
+    - Implemented opportunity categorization (`adjunct`, `modular_intensive`, `full_time_tenure_track`, `visiting_fellow`, `sabbatical_cover`, `guest_lecturer`, `doctoral_supervision`), required degree, delivery mode, academic term, confessional requirements, compensation notes, and application deadlines.
+    - Integrated `JobPosting` Schema.org JSON-LD structured data for Google Jobs / academic job indexing.
+    - Added "Express Interest & Send Dossier" modal allowing verified scholars to transmit their dossier directly to hiring seminaries with one click.
+  - **Authoritative Institutional Endorsements (`/institution/endorsements`, `components/scholars/scholar-endorsements-card.tsx`)**:
+    - Implemented formal institutional endorsements distinguished from peer-to-peer commendations with an authoritative Gold/Amber Institutional Shield, accredited seminary name, verified credential badge, and official seal.
+    - Added institution management portal allowing verified academic partners to issue and manage institutional endorsements for faculty appointments, adjunct instruction, and research fellows.
+    - Added `/api/institution/endorsements` and `/api/postings` endpoints with strict server-side validation and multi-tenant authorization.
+  - **Database & Security Hardening**:
+    - Migration `supabase/migrations/20260920220000_institution_postings_and_endorsements.sql` created `institution_postings` and `institution_endorsements` tables.
+    - Enforced 100% defense-in-depth RLS (`FORCE ROW LEVEL SECURITY`) across all 28 public tables (88 active security policies).
+    - Added foreign key covering indexes and search-path-pinned updated_at triggers.
+    - 0 Supabase Splinter security advisor findings.
+  - **Testing & E2E Verification**:
+    - Added unit test suite `tests/unit/institution-postings.test.ts`.
+    - Added Playwright end-to-end browser test suite `tests/e2e/opportunities.spec.ts`.
 - **Live Staging & Production Deployment Pre-Flight Tooling (`verify:deploy`)**:
   - Implemented `scripts/verify-deployment.ts` (`npm run verify:deploy`) automating comprehensive pre-flight verification for staging and production deployments.
   - Validates critical environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
