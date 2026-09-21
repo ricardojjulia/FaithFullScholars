@@ -516,3 +516,198 @@ export async function getTaxonomies() {
     confessionalStandards: confRes.data || [],
   };
 }
+
+/**
+ * Fetch all theological disciplines with full descriptions.
+ */
+export async function getAllDisciplines() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('disciplines')
+    .select('id, name, slug, category, description')
+    .order('category')
+    .order('name');
+  return data || [];
+}
+
+/**
+ * Fetch a discipline by slug with its approved scholars and public courses.
+ */
+export async function getDisciplineBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data: discipline } = await supabase
+    .from('disciplines')
+    .select('id, name, slug, category, description')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (!discipline) return null;
+
+  const { data: scholarLinks } = await supabase
+    .from('scholar_disciplines')
+    .select(`
+      is_primary,
+      scholar:scholars!inner (
+        id,
+        slug,
+        full_name,
+        title,
+        current_institution,
+        institutional_role,
+        profile_photo_path,
+        profile_status
+      )
+    `)
+    .eq('discipline_id', discipline.id)
+    .eq('scholar.profile_status', 'approved');
+
+  type ScholarLinkRow = {
+    is_primary: boolean;
+    scholar: {
+      id: string;
+      slug: string;
+      full_name: string;
+      title: string | null;
+      current_institution: string | null;
+      institutional_role: string | null;
+      profile_photo_path: string | null;
+      profile_status: string;
+    };
+  };
+
+  const scholars = ((scholarLinks || []) as unknown as ScholarLinkRow[]).map((l) => ({
+    ...l.scholar,
+    is_primary: l.is_primary,
+  }));
+
+  const { data: courses } = await supabase
+    .from('courses')
+    .select(`
+      id,
+      title,
+      slug,
+      description,
+      level,
+      delivery_modes,
+      scholar:scholars!inner (
+        id,
+        slug,
+        full_name,
+        profile_status
+      )
+    `)
+    .eq('primary_discipline_id', discipline.id)
+    .eq('visibility', 'public')
+    .eq('scholar.profile_status', 'approved')
+    .limit(10);
+
+  type RawCourseRow = {
+    id: string;
+    title: string;
+    slug: string;
+    description: string | null;
+    level: string;
+    delivery_modes: string[];
+    scholar: {
+      id: string;
+      slug: string;
+      full_name: string;
+      profile_status: string;
+    } | Array<{
+      id: string;
+      slug: string;
+      full_name: string;
+      profile_status: string;
+    }>;
+  };
+
+  const formattedCourses = ((courses || []) as unknown as RawCourseRow[]).map((c) => ({
+    id: c.id,
+    title: c.title,
+    slug: c.slug,
+    description: c.description,
+    level: c.level,
+    delivery_modes: c.delivery_modes,
+    scholar: Array.isArray(c.scholar) ? c.scholar[0] : c.scholar,
+  }));
+
+  return {
+    discipline,
+    scholars,
+    courses: formattedCourses,
+  };
+}
+
+/**
+ * Fetch all historical theological traditions with descriptions.
+ */
+export async function getAllTraditions() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('traditions')
+    .select('id, name, slug, description')
+    .order('name');
+  return data || [];
+}
+
+/**
+ * Fetch a tradition by slug with its affiliated approved scholars and confessional standards.
+ */
+export async function getTraditionBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data: tradition } = await supabase
+    .from('traditions')
+    .select('id, name, slug, description')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  if (!tradition) return null;
+
+  const { data: scholarLinks } = await supabase
+    .from('scholar_traditions')
+    .select(`
+      is_primary,
+      scholar:scholars!inner (
+        id,
+        slug,
+        full_name,
+        title,
+        current_institution,
+        institutional_role,
+        profile_photo_path,
+        profile_status
+      )
+    `)
+    .eq('tradition_id', tradition.id)
+    .eq('scholar.profile_status', 'approved');
+
+  type TraditionScholarLinkRow = {
+    is_primary: boolean;
+    scholar: {
+      id: string;
+      slug: string;
+      full_name: string;
+      title: string | null;
+      current_institution: string | null;
+      institutional_role: string | null;
+      profile_photo_path: string | null;
+      profile_status: string;
+    };
+  };
+
+  const scholars = ((scholarLinks || []) as unknown as TraditionScholarLinkRow[]).map((l) => ({
+    ...l.scholar,
+    is_primary: l.is_primary,
+  }));
+
+  const { data: confessions } = await supabase
+    .from('confessional_standards')
+    .select('id, name, slug, year, description')
+    .order('year');
+
+  return {
+    tradition,
+    scholars,
+    confessions: confessions || [],
+  };
+}

@@ -869,13 +869,13 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Scholar analytics dashboard** (`/dashboard/analytics`, `lib/analytics/scholar-analytics.ts`).
 - [x] **Shortlist export & search dossier** (`/institution/saved/dossier`, `GET /api/institution/saved-scholars/export`).
 - [x] **Citation-grounded AI institution search & faculty matcher** (`/api/ai/match-faculty`, `components/search/ai-faculty-matcher-modal.tsx`).
+- [x] **Public SEO topic hubs** (`/disciplines`, `/disciplines/[slug]`, `/traditions`, `/traditions/[slug]`, `lib/seo/json-ld.ts`).
+- [x] **Peer endorsements and theological faculty commendations** (`scholar_endorsements`, `lib/endorsements/endorsement-service.ts`, `components/scholars/scholar-endorsements-card.tsx`, `components/scholars/endorse-colleague-modal.tsx`).
 - [ ] Institution subscriptions.
 - [ ] Premium scholar profiles.
-- [ ] Public SEO topic hubs.
 - [ ] Course licensing and syllabus distribution agreements.
 - [ ] Contracts and institutional booking workflows.
 - [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars).
-- [ ] Peer endorsements and theological faculty commendations.
 - [ ] Conference speaker directory and institutional speaking bureau.
 - [ ] Seminary consortium accounts.
 

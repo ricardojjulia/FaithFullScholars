@@ -8,6 +8,8 @@ import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
+import { ScholarEndorsementsCard } from '@/components/scholars/scholar-endorsements-card';
+import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
 
 interface ScholarProfilePageProps {
   params: Promise<{
@@ -44,6 +46,8 @@ export default async function ScholarProfilePage({
   if (!scholar) {
     notFound();
   }
+
+  const endorsements = await getApprovedEndorsements(scholar.id);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/60 dark:bg-slate-950">
@@ -256,6 +260,13 @@ export default async function ScholarProfilePage({
                 </div>
               )}
             </section>
+
+            {/* Peer Endorsements & Faculty Commendations Card (§21) */}
+            <ScholarEndorsementsCard
+              scholarId={scholar.id}
+              scholarName={scholar.full_name}
+              initialEndorsements={endorsements}
+            />
           </div>
 
           {/* Sidebar Column (4 of 12): Doctrinal Stance & Teaching Terms */}

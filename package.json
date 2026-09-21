@@ -13,10 +13,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ci": "vitest run",
+    "test:e2e": "playwright test",
     "audit:rls": "tsx scripts/audit-rls.ts",
     "audit:security": "tsx scripts/audit-security.ts",
     "seed:pilot": "tsx scripts/seed-pilot-cohort.ts",
     "verify:pilot": "tsx scripts/verify-pilot-readiness.ts",
+    "verify:deploy": "tsx scripts/verify-deployment.ts",
     "version:check": "node scripts/check-version.mjs",
     "verify": "npm run version:check && npm run lint && npm run typecheck && npm run test && npm run audit:rls && npm run audit:security && npm run build"
   },
@@ -31,6 +33,7 @@
     "tailwind-merge": "^3.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^22.20.3",
     "@types/pg": "^8.23.1",
