@@ -184,9 +184,14 @@ Runs once Phase 3 is clean and before a PR opens.
 
 ---
 
-## 6. Phase 5: PR Review Gate
+## 6. Phase 5: PR Review & Automated Copilot Review Gates
 
-Before any PR opens, run `pr-review` (`pr-reviewer` subagent) against the full diff. It ranks findings Critical → Important → Minor and cannot merge/approve/close anything. Critical or Important findings block the PR until resolved; Minor findings are the author's call.
+1. **Local Pre-PR Gate (`pr-review`)**: Before any PR opens, run `pr-review` (`pr-reviewer` subagent) against the full diff. It ranks findings Critical → Important → Minor and cannot merge/approve/close anything. Critical or Important findings block the PR until resolved; Minor findings are the author's call.
+2. **Post-PR Automated Copilot Review Gate**: Once the pull request is opened via `gh pr create`, inspect automated GitHub Copilot review comments and inline line annotations (`gh api repos/:owner/:repo/pulls/<pr_number>/comments`). Triage all findings:
+   - **Must-Fix**: Security vulnerabilities, RLS recursion/bypasses, script breakouts/XSS, schema/column drift, or missing authorization.
+   - **Should-Fix**: Accessibility (ARIA, focus/Escape key handling), test assertion rigor, or shared validation helpers.
+   - **False Positives / Deferrals**: Document rationale if intentional architectural choice differs.
+   Push fixes directly to the feature branch, re-run all verification gates (`npm run verify`), and verify zero unresolved actionable comments before merging.
 
 ---
 

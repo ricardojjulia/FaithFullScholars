@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Mandatory GitHub Copilot Pre-Merge Triage Gate**:
+  - Codified automated GitHub Copilot review triage into `AGENTS.md`, `improve-software.md`, and repo-local `pr-review` skills.
+  - Requires all pull requests to inspect automated Copilot review comments and line annotations via `gh api repos/:owner/:repo/pulls/<pr_number>/comments`, triaging and remediating actionable security, RLS, schema, accessibility, and assertion findings prior to merge.
 - **Institutional Accounts Dual-Purpose Expansion (Academic Postings Marketplace & Authoritative Institutional Endorsements)**:
   - **Academic Opportunities & Teaching Calls Portal (`/opportunities`, `/opportunities/[slug]`, `/institution/postings`, `/institution/postings/new`)**:
     - Created dedicated public and institutional surface for theological institutions to post vacancies, adjunct faculty calls, modular intensive lecturer needs, sabbatical replacements, and visiting scholars.
