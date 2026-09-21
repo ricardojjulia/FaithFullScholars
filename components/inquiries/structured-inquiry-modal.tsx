@@ -18,6 +18,7 @@ interface StructuredInquiryModalProps {
   courseTitle?: string | null;
   institutionId?: string;
   defaultInstitutionEmail?: string;
+  defaultOpportunityType?: OpportunityType;
 }
 
 const OPPORTUNITY_OPTIONS: { value: OpportunityType; label: string; desc: string }[] = [
@@ -45,9 +46,10 @@ export function StructuredInquiryModal({
   courseTitle,
   institutionId = 'f2000000-0000-0000-0000-000000000001', // Seed WTS institution as default
   defaultInstitutionEmail = 'academic.dean@wts.edu',
+  defaultOpportunityType = 'adjunct_teaching',
 }: StructuredInquiryModalProps) {
   const { t } = useTranslation();
-  const [opportunityType, setOpportunityType] = useState<OpportunityType>('adjunct_teaching');
+  const [opportunityType, setOpportunityType] = useState<OpportunityType>(defaultOpportunityType);
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>('in_person_semester');
   const [proposedTerm, setProposedTerm] = useState('Fall 2027');
   const [contactEmail, setContactEmail] = useState(defaultInstitutionEmail);
@@ -110,6 +112,8 @@ export function StructuredInquiryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div
+        role="dialog"
+        aria-modal="true"
         className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >

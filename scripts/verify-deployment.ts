@@ -112,6 +112,7 @@ async function verifyDeployment() {
         'scholar_traditions',
         'scholars',
         'search_rate_limits',
+        'speaker_topics',
         'traditions',
       ];
 
@@ -132,7 +133,7 @@ async function verifyDeployment() {
       const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
       const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
 
-      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 28) {
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 29) {
         record(
           'Security (RLS)',
           'Row Level Security Coverage',
@@ -151,7 +152,7 @@ async function verifyDeployment() {
         );
       }
 
-      // Check policy counts (baseline: 80+ granular policies)
+      // Check policy counts (baseline: 85+ granular policies)
       const policyRes = await client.query(`
         SELECT count(*) as total_policies
         FROM pg_policy p
@@ -160,10 +161,10 @@ async function verifyDeployment() {
         WHERE n.nspname = 'public';
       `);
       const policyCount = parseInt(policyRes.rows[0].total_policies, 10);
-      if (policyCount >= 80) {
+      if (policyCount >= 85) {
         record('Security (RLS)', 'Active Security Policies', 'PASS', `${policyCount} granular policies active`);
       } else {
-        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 80 required)`);
+        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 85 required)`);
       }
 
       // --------------------------------------------------------------------------
@@ -205,6 +206,15 @@ async function verifyDeployment() {
         'Institutional Endorsements',
         instEndorsementCount > 0 ? 'PASS' : 'FAIL',
         `institution_endorsements table active (${instEndorsementCount} entries)`
+      );
+
+      const speakerTopicsRes = await client.query("SELECT count(*) FROM speaker_topics;");
+      const speakerTopicsCount = parseInt(speakerTopicsRes.rows[0].count, 10);
+      record(
+        'Speaking Bureau',
+        'Speaker Topics System Table',
+        speakerTopicsCount > 0 ? 'PASS' : 'FAIL',
+        `speaker_topics table active (${speakerTopicsCount} entries)`
       );
     } catch {
       record('Database', 'PostgreSQL Connectivity', 'FAIL', 'Connection error: Unable to connect to target PostgreSQL instance');

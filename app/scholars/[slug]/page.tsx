@@ -9,12 +9,17 @@ import { PublicFooter } from '@/components/shell/public-footer';
 import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { ScholarEndorsementsCard } from '@/components/scholars/scholar-endorsements-card';
+import { ScholarSpeakerTopicsCard } from '@/components/scholars/scholar-speaker-topics-card';
 import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
 import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
+import { getSpeakerTopicsByScholarId } from '@/lib/speakers/speaker-service';
 
 interface ScholarProfilePageProps {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams?: Promise<{
+    action?: string;
   }>;
 }
 
@@ -40,8 +45,10 @@ export async function generateMetadata({
 
 export default async function ScholarProfilePage({
   params,
+  searchParams,
 }: ScholarProfilePageProps) {
   const { slug } = await params;
+  const { action } = searchParams ? await searchParams : { action: undefined };
   const scholar = await getPublicScholarBySlug(slug);
 
   if (!scholar) {
@@ -50,6 +57,7 @@ export default async function ScholarProfilePage({
 
   const endorsements = await getApprovedEndorsements(scholar.id);
   const institutionalEndorsements = await getInstitutionalEndorsementsForScholar(scholar.id);
+  const speakerTopics = await getSpeakerTopicsByScholarId(scholar.id);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/60 dark:bg-slate-950">
@@ -262,6 +270,17 @@ export default async function ScholarProfilePage({
                 </div>
               )}
             </section>
+
+            {/* Speaking Bureau & Keynote Topics (§21 / ADR 0009) */}
+            <ScholarSpeakerTopicsCard
+              scholarId={scholar.id}
+              scholarName={scholar.full_name}
+              travelPreferences={scholar.availability?.travel_preferences}
+              speakingBio={scholar.availability?.speaking_bio}
+              honorariumPolicy={scholar.availability?.honorarium_policy}
+              topics={speakerTopics}
+              initialOpenModal={action === 'invite_speaker'}
+            />
 
             {/* Peer Endorsements & Faculty Commendations Card (§21) */}
             <ScholarEndorsementsCard

@@ -42,6 +42,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Added
+- **Theological Conference Speaker Directory & Institutional Speaking Bureau (ADR 0009)**:
+  - **Speaking Bureau Public Discovery Portal (`/speakers`)**:
+    - Created dedicated public speaking bureau directory for conference committees, seminary chapel coordinators, church pastors, and student ministry leaders to discover verified theological keynote speakers.
+    - Added target audience filter chips: Academic Symposium / Keynote (`academic`), Pastoral / Chapel Address (`pastoral`), Church-Wide / Lay Conference (`church_wide`), and Undergraduate / Student Ministry (`undergraduate`).
+    - Implemented real-time full-text keyword search across speaker names, disciplines, and lecture topic titles/abstracts.
+    - Integrated script-safe Schema.org JSON-LD structured metadata (`CollectionPage`, `ItemList`, `Person`) for search engine indexing.
+  - **Keynote Topics & Speaking Portfolio Architecture (`public.speaker_topics`)**:
+    - Created `public.speaker_topics` table supporting lecture titles, descriptions, target audience enum (`public.speaker_audience`), sample audio/video links (`sample_media_url`), display ordering, and featured topic flags.
+    - Extended `availability_profiles` with `travel_preferences`, `speaking_bio`, and `honorarium_policy`.
+    - Added `<ScholarSpeakerTopicsCard />` to `/scholars/[slug]` rendering keynote topics, travel radius, honorarium policy badges, and a 1-click "Invite to Speak" button pre-configuring the `StructuredInquiryModal` with `conference_speaking`.
+  - **Scholar Dashboard Availability Manager**:
+    - Updated `/dashboard/availability` with speaking bureau settings, travel preferences, honorarium policies, and lecture topics.
+  - **Database Security Hardening & Zero-Splinter Audit**:
+    - Enforced 100% `FORCE ROW LEVEL SECURITY` across all 29 public tables (94 active security policies).
+    - Attached `public.set_updated_at()` trigger and created 3 covering indexes (`idx_speaker_topics_scholar_id`, `idx_speaker_topics_audience`, `idx_speaker_topics_featured`).
+    - Zero Supabase Splinter security findings.
+  - **Verification & Automation**:
+    - Added unit test suite `tests/unit/speaker-bureau.test.ts` (7 tests).
+    - Added database-backed RLS integration suite `tests/integration/speaker-bureau-rls.test.ts` (5 tests).
+    - Added Playwright browser automation suite `tests/e2e/speaker-discovery.spec.ts` (3 tests, total 12 E2E tests).
+    - Updated pre-flight deployment verification tooling (`scripts/verify-deployment.ts`) to 16 checks and 29 tables.
 - **Mandatory GitHub Copilot Pre-Merge Triage Gate**:
   - Codified automated GitHub Copilot review triage into `AGENTS.md`, `improve-software.md`, and repo-local `pr-review` skills.
   - Requires all pull requests to inspect automated Copilot review comments and line annotations via `gh api repos/:owner/:repo/pulls/<pr_number>/comments`, triaging and remediating actionable security, RLS, schema, accessibility, and assertion findings prior to merge.

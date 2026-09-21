@@ -881,7 +881,7 @@ Agents must verify current official CLI documentation before using commands that
 - [ ] Course licensing and syllabus distribution agreements.
 - [ ] Contracts and institutional booking workflows.
 - [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars).
-- [ ] Conference speaker directory and institutional speaking bureau.
+- [x] **Conference speaker directory and institutional speaking bureau (ADR 0009)** (`speaker_topics`, `/speakers`, `lib/speakers/`, `<ScholarSpeakerTopicsCard />`, `/dashboard/availability`).
 - [ ] Seminary consortium accounts.
 
 ## 22. Governing Decisions
