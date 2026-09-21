@@ -239,6 +239,9 @@ export interface AvailabilityProfile {
   preferred_delivery_modes: DeliveryMode[];
   available_terms: string[];
   notes?: string | null;
+  travel_preferences?: string | null;
+  speaking_bio?: string | null;
+  honorarium_policy?: string | null;
   updated_at: string;
 }
 

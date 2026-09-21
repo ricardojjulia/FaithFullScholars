@@ -216,6 +216,29 @@ Exit criteria:
 - [x] Deployment pre-flight script verifies environment, database, taxonomy, faculty, and zero client secret leaks.
 - [x] Full test suite passes: 134 vitest unit/integration tests across 25 suites, 9 Playwright E2E tests, clean Next.js 16 build.
 
+## Phase 9: Theological Conference Speaker Directory & Institutional Speaking Bureau (Completed)
+
+Goal: Expand FaithFull Scholars with a dedicated speaking bureau directory (`/speakers`) and public keynote topic showcase, enabling academic conference committees, seminary chapel coordinators, and pastoral pastors to discover and invite verified confessional scholars for keynotes, retreats, and lectures.
+
+Deliverables:
+
+- **Theological Speaking Bureau Directory** (`/speakers`, `speaker-service.ts`): Public searchable roster of approved faculty open to conference speaking and guest lecturing, with target audience filtering (`academic`, `pastoral`, `church_wide`, `undergraduate`).
+- **Keynote & Lecture Topics Architecture** (`public.speaker_topics`, `SpeakerTopic`): Schema supporting topic titles, target audience categorization, descriptions, display ordering, and sample audio/video links (`sample_media_url`).
+- **Profile Dossier Integration** (`<ScholarSpeakerTopicsCard />`, `/scholars/[slug]`): Distinctive speaking portfolio card highlighting travel reach, honorarium policies, keynote topics, and 1-click "Invite to Speak" structured inquiries.
+- **Scholar Availability Configuration**: Dashboard manager (`/dashboard/availability`) allowing faculty to configure speaking bios, travel radius, honorarium policies, and lecture topics.
+- **Data Layer Security & RLS**: 100% forced Row Level Security on `public.speaker_topics` table (6 policies, 3 covering indexes, `public.set_updated_at()` trigger).
+- **Comprehensive Quality Gates**: 146 vitest tests across 27 suites, 12 Playwright E2E tests across 5 suites, 29/29 tables with 100% RLS coverage, and 16 deployment pre-flight verification checks.
+
+Exit criteria:
+
+- [x] Speaking bureau directory `/speakers` allows public discovery and audience filtering.
+- [x] Keynote topics render on scholar dossiers with sample media recordings and audience badges.
+- [x] 1-Click "Invite to Speak" triggers pre-configured structured inquiry modal.
+- [x] 100% PostgreSQL Row Level Security enforced across all 29 public tables.
+- [x] Splinter security advisor passes with 0 findings across all checks.
+- [x] Playwright E2E tests pass cleanly for speaker discovery and profile cards (12 tests total).
+- [x] Pre-flight deployment script verifies all 16 checks and 29 tables.
+
 ## Pilot Recommendation
 
 Pilot with:

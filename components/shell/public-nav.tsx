@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Home, Users, BookOpen, Briefcase, GraduationCap } from 'lucide-react';
+import { Home, Users, BookOpen, Briefcase, GraduationCap, Mic } from 'lucide-react';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
 import { LanguageSwitcher } from './language-switcher';
@@ -66,6 +66,15 @@ export function PublicNav() {
           >
             <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
             <span className="text-[10px] font-medium hidden md:block">Opportunities</span>
+          </Link>
+
+          <Link
+            href="/speakers"
+            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            title="Theological Conference Speaker Bureau & Keynotes"
+          >
+            <Mic className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
+            <span className="text-[10px] font-medium hidden md:block">Speakers</span>
           </Link>
 
           <Link

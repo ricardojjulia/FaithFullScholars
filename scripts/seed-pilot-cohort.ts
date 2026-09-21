@@ -284,15 +284,30 @@ export async function seedPilotCohort() {
     // 11. Insert Availability Profiles
     await client.query(`
       INSERT INTO public.availability_profiles (
-        scholar_id, is_available_for_hire, opportunity_types, preferred_delivery_modes, available_terms, notes
+        scholar_id, is_available_for_hire, opportunity_types, preferred_delivery_modes, available_terms, notes,
+        travel_preferences, speaking_bio, honorarium_policy
       ) VALUES
+        (
+          'f1000000-0000-0000-0000-000000000001',
+          true,
+          ARRAY['adjunct_teaching', 'online_instruction', 'intensives_modular', 'doctoral_supervision', 'conference_speaking', 'guest_lecturing'],
+          ARRAY['online_sync', 'in_person_modular'],
+          ARRAY['Spring 2027', 'Summer 2027'],
+          'Available for 1–2 week modular intensives or online synchronous seminar instruction in Historical Theology.',
+          'Available for regional, national, and international academic symposia and church conferences. Prefer flights out of PHL.',
+          'Dr. Calvin Edwards is an internationally recognized voice in Post-Reformation Reformed Orthodoxy and Reformed Scholasticism. He has delivered keynotes at the Evangelical Theological Society, World Reformed Fellowship, and numerous pastoral conferences worldwide.',
+          'Standard travel, lodging, and an honorarium commensurate with host institution budget. Reduced or waived honoraria considered for church plants and developing nations.'
+        ),
         (
           'f1000000-0000-0000-0000-000000000003',
           true,
           ARRAY['adjunct_teaching', 'online_instruction', 'intensives_modular', 'guest_lecturing'],
           ARRAY['online_sync', 'in_person_modular'],
           ARRAY['Spring 2027', 'Summer 2027'],
-          'Available for modular intensive Hebrew courses and guest lectures on Old Testament theology.'
+          'Available for modular intensive Hebrew courses and guest lectures on Old Testament theology.',
+          'UK, European, and trans-Atlantic conference lectures.',
+          'Dr. Thomas Cranmer-Davies provides scholarly and homiletical expositions of West Semitic philology and the canonical Psalms of Lament for university chapels and pastoral convocations.',
+          'Institutional travel reimbursement and standard lecturer honorarium.'
         ),
         (
           'f1000000-0000-0000-0000-000000000004',
@@ -300,7 +315,10 @@ export async function seedPilotCohort() {
           ARRAY['adjunct_teaching', 'online_instruction', 'conference_speaking', 'intensives_modular'],
           ARRAY['online_async', 'online_sync'],
           ARRAY['Fall 2026', 'Spring 2027'],
-          'Available for asynchronous and synchronous apologetics modules, modular intensives, and campus seminars.'
+          'Available for asynchronous and synchronous apologetics modules, modular intensives, and campus seminars.',
+          'Regional and national travel throughout the Southeast and Midwest United States.',
+          'Dr. Marcus Aurelius Vance is a dynamic apologist and systematician defending the coherence of Reformed epistemology, biblical inerrancy, and Christian cultural witness.',
+          'Standard travel reimbursement and honorarium; church and collegiate discounts available upon request.'
         ),
         (
           'f1000000-0000-0000-0000-000000000005',
@@ -308,10 +326,21 @@ export async function seedPilotCohort() {
           ARRAY['adjunct_teaching', 'doctoral_supervision', 'curriculum_consulting', 'online_instruction'],
           ARRAY['in_person_semester', 'online_sync'],
           ARRAY['Fall 2026', 'Spring 2027', 'Summer 2027'],
-          'Available for semester-length courses in Christian bioethics and doctoral thesis supervision.'
+          'Available for semester-length courses in Christian bioethics and doctoral thesis supervision.',
+          null,
+          null,
+          null
         )
-      ON CONFLICT (scholar_id) DO NOTHING;
+      ON CONFLICT (scholar_id) DO UPDATE SET
+        opportunity_types = EXCLUDED.opportunity_types,
+        preferred_delivery_modes = EXCLUDED.preferred_delivery_modes,
+        available_terms = EXCLUDED.available_terms,
+        notes = EXCLUDED.notes,
+        travel_preferences = EXCLUDED.travel_preferences,
+        speaking_bio = EXCLUDED.speaking_bio,
+        honorarium_policy = EXCLUDED.honorarium_policy;
     `);
+
 
     // 12. Insert Pilot Institution Academic Opportunities / Postings
     await client.query(`
@@ -401,6 +430,70 @@ export async function seedPilotCohort() {
           'active'
         )
       ON CONFLICT (id) DO NOTHING;
+    `);
+
+    // 14. Insert Speaker Topics (Speaking Bureau)
+    await client.query(`
+      INSERT INTO public.speaker_topics (
+        id, scholar_id, title, description, target_audience, sample_media_url, display_order, is_featured
+      ) VALUES
+        (
+          'a5000000-0000-0000-0000-000000000001',
+          'f1000000-0000-0000-0000-000000000001',
+          'The Architecture of Federal Theology: Covenant and Christ in 17th-Century Reformed Orthodoxy',
+          'A deep examination of the historical and theological development of the covenant of works and covenant of grace among Post-Reformation scholastic dogmaticians, with implications for contemporary confessional identity.',
+          'academic',
+          'https://youtube.com/watch?v=sample-edwards-covenant',
+          1,
+          true
+        ),
+        (
+          'a5000000-0000-0000-0000-000000000002',
+          'f1000000-0000-0000-0000-000000000001',
+          'Holding the Line: Confessional Fidelity in Pastoral Ministry',
+          'Practical lessons from historic Reformed pastors on pastoral stamina, catechism, doctrinal fortitude, and shepherding souls through theological controversy.',
+          'pastoral',
+          'https://vimeo.com/sample-edwards-pastoral',
+          2,
+          false
+        ),
+        (
+          'a5000000-0000-0000-0000-000000000003',
+          'f1000000-0000-0000-0000-000000000004',
+          'Reason, Revelation, and the Radical Gospel: Presuppositional Apologetics on the Secular Campus',
+          'Equipping undergraduate students, campus ministers, and young adults to address modern skepticism through a presuppositional apologetic rooted in the epistemic primacy of Christ.',
+          'undergraduate',
+          'https://youtube.com/watch?v=sample-vance-apologetics',
+          1,
+          true
+        ),
+        (
+          'a5000000-0000-0000-0000-000000000004',
+          'f1000000-0000-0000-0000-000000000004',
+          'Why the World Needs Christian Conviction: Defending Faith in the Public Square',
+          'An accessible, engaging lecture for local congregations on engaging contemporary cultural narratives with courage, clarity, and Christian love.',
+          'church_wide',
+          NULL,
+          2,
+          true
+        ),
+        (
+          'a5000000-0000-0000-0000-000000000005',
+          'f1000000-0000-0000-0000-000000000003',
+          'Praying the Deepest Sorrows: The Hebrew Psalms of Lament for the Hurting Church',
+          'Expository lecture on West Semitic poetic parallelism, the anatomy of grief in the Psalter, and theological care for suffering saints.',
+          'pastoral',
+          NULL,
+          1,
+          false
+        )
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        target_audience = EXCLUDED.target_audience,
+        sample_media_url = EXCLUDED.sample_media_url,
+        display_order = EXCLUDED.display_order,
+        is_featured = EXCLUDED.is_featured;
     `);
 
     await client.query('COMMIT;');
