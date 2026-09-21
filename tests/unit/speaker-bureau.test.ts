@@ -89,4 +89,43 @@ describe('Theological Conference Speaker Bureau & Topics (§21 / ADR 0009)', () 
       expect(formatTargetAudience('undergraduate')).toBe('Undergraduate / Student Ministry');
     });
   });
+
+  describe('Speaker Profile Domain Mapping & Filtering (§21 / ADR 0009)', () => {
+    it('supports discipline_slugs and tradition_slug taxonomy navigation', () => {
+      const sampleSpeaker = {
+        scholar_id: 'test-uuid-1',
+        full_name: 'Dr. Katherine Sonderegger',
+        slug: 'katherine-sonderegger',
+        title: 'Professor of Systematic Theology',
+        avatar_url: '/photos/sonderegger.jpg',
+        institution_name: 'Virginia Theological Seminary',
+        disciplines: ['Systematic Theology'],
+        discipline_slugs: ['systematic-theology'],
+        tradition_name: 'Anglican / Episcopal',
+        tradition_slug: 'anglican',
+        travel_preferences: 'Continental US and UK',
+        speaking_bio: 'Expert on the doctrine of God and divine simplicity.',
+        honorarium_policy: 'Standard academic honorarium requested.',
+        topics: [
+          {
+            id: 'topic-1',
+            scholar_id: 'test-uuid-1',
+            title: 'The Unicity of God',
+            description: 'Exploration of classical theism and scriptural unicity.',
+            target_audience: 'academic' as const,
+            sample_media_url: null,
+            display_order: 1,
+            is_featured: true,
+            created_at: '2026-09-21T00:00:00Z',
+            updated_at: '2026-09-21T00:00:00Z',
+          },
+        ],
+      };
+
+      expect(sampleSpeaker.discipline_slugs).toContain('systematic-theology');
+      expect(sampleSpeaker.tradition_slug).toBe('anglican');
+      expect(sampleSpeaker.topics[0].target_audience).toBe('academic');
+    });
+  });
 });
+

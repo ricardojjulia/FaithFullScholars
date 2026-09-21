@@ -90,8 +90,15 @@ export async function getAllSpeakers(filters?: {
         .map((sd) => sd.disciplines?.name)
         .filter((name): name is string => Boolean(name));
 
+      const disciplineSlugs: string[] = (row.scholar_disciplines || [])
+        .map((sd) => sd.disciplines?.slug)
+        .filter((slug): slug is string => Boolean(slug));
+
       const traditionName: string | null =
         row.scholar_traditions?.[0]?.traditions?.name || null;
+
+      const traditionSlug: string | null =
+        row.scholar_traditions?.[0]?.traditions?.slug || null;
 
       const topics: SpeakerTopic[] = (row.speaker_topics || []).sort(
         (a: SpeakerTopic, b: SpeakerTopic) => a.display_order - b.display_order
@@ -105,7 +112,9 @@ export async function getAllSpeakers(filters?: {
         avatar_url: row.profile_photo_path,
         institution_name: row.current_institution || null,
         disciplines,
+        discipline_slugs: disciplineSlugs,
         tradition_name: traditionName,
+        tradition_slug: traditionSlug,
         travel_preferences: avail?.travel_preferences || null,
         speaking_bio: avail?.speaking_bio || null,
         honorarium_policy: avail?.honorarium_policy || null,
@@ -117,6 +126,20 @@ export async function getAllSpeakers(filters?: {
   if (filters?.audience) {
     speakers = speakers.filter((s) =>
       s.topics.some((t) => t.target_audience === filters.audience)
+    );
+  }
+
+  // In-memory filter for discipline slug
+  if (filters?.disciplineSlug) {
+    speakers = speakers.filter((s) =>
+      s.discipline_slugs?.includes(filters.disciplineSlug!)
+    );
+  }
+
+  // In-memory filter for tradition slug
+  if (filters?.traditionSlug) {
+    speakers = speakers.filter((s) =>
+      s.tradition_slug === filters.traditionSlug
     );
   }
 

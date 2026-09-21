@@ -85,7 +85,9 @@ export interface SpeakerProfile {
   avatar_url: string | null;
   institution_name: string | null;
   disciplines: string[];
+  discipline_slugs?: string[];
   tradition_name: string | null;
+  tradition_slug?: string | null;
   travel_preferences: string | null;
   speaking_bio: string | null;
   honorarium_policy: string | null;

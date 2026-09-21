@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Implemented real-time full-text keyword search across speaker names, disciplines, and lecture topic titles/abstracts.
     - Integrated script-safe Schema.org JSON-LD structured metadata (`CollectionPage`, `ItemList`, `Person`) for search engine indexing.
   - **Keynote Topics & Speaking Portfolio Architecture (`public.speaker_topics`)**:
-    - Created `public.speaker_topics` table supporting lecture titles, descriptions, target audience enum (`public.speaker_audience`), sample audio/video links (`sample_media_url`), display ordering, and featured topic flags.
+    - Created `public.speaker_topics` table supporting lecture titles, descriptions, target audience text check constraint (`'academic'`, `'pastoral'`, `'church_wide'`, `'undergraduate'`), sample audio/video links (`sample_media_url`), display ordering, and featured topic flags.
     - Extended `availability_profiles` with `travel_preferences`, `speaking_bio`, and `honorarium_policy`.
     - Added `<ScholarSpeakerTopicsCard />` to `/scholars/[slug]` rendering keynote topics, travel radius, honorarium policy badges, and a 1-click "Invite to Speak" button pre-configuring the `StructuredInquiryModal` with `conference_speaking`.
   - **Scholar Dashboard Availability Manager**:
