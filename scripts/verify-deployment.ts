@@ -152,6 +152,14 @@ async function verifyDeployment() {
     const endorsementsRes = await client.query("SELECT count(*) FROM scholar_endorsements;");
     const endorsementCount = parseInt(endorsementsRes.rows[0].count, 10);
     record('Faculty', 'Endorsements System Table', 'PASS', `scholar_endorsements table active (${endorsementCount} entries)`);
+
+    const postingsRes = await client.query("SELECT count(*) FROM institution_postings;");
+    const postingsCount = parseInt(postingsRes.rows[0].count, 10);
+    record('Postings', 'Opportunities System Table', 'PASS', `institution_postings table active (${postingsCount} entries)`);
+
+    const instEndorsementsRes = await client.query("SELECT count(*) FROM institution_endorsements;");
+    const instEndorsementCount = parseInt(instEndorsementsRes.rows[0].count, 10);
+    record('Faculty', 'Institutional Endorsements', 'PASS', `institution_endorsements table active (${instEndorsementCount} entries)`);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     record('Database', 'PostgreSQL Connectivity', 'FAIL', `Connection error: ${msg}`);
