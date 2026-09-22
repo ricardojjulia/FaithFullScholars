@@ -799,16 +799,29 @@ Acceptance:
 - Preview deployment passes public, scholar, admin, and institution smoke tests.
 - Production secrets remain server-only.
 
-### Phase 8: Release Hardening & MVP Deployment Preparation (Completed)
+### Phase 8: Platform Expansion & Authoritative Institutional Ecosystem (Completed)
 
-> **Status:** Completed (Strict edge security headers in `next.config.ts`, comprehensive E2E integration test suite across all 4 personas in `tests/integration/e2e-user-journeys.test.ts`, production release readiness checklist in `docs/deployment/release-readiness-checklist.md`, pilot diagnostic inspector in `scripts/verify-pilot-readiness.ts`, and 100% passing automated verification gates with 134 tests across 25 suites, 28/28 PostgreSQL tables RLS enforced, and 9 Playwright browser journeys).
+> **Status:** Completed (Institutional postings marketplace at `/opportunities`, institutional endorsements at `/institution/endorsements`, SEO topic hubs at `/disciplines` and `/traditions`, modern clean typography & SVG iconography, 100% RLS coverage with 88 policies).
 
 1. [x] Configure strict HTTP security headers: CSP with YouTube/Unsplash/Supabase whitelisting, HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and `Permissions-Policy`.
 2. [x] Add comprehensive end-to-end integration tests validating discovery, CV onboarding, revision staging, visual diffs, admin approval, rate limiting, and structured inquiries.
 3. [x] Publish the Production Release Readiness Checklist ([`docs/deployment/release-readiness-checklist.md`](deployment/release-readiness-checklist.md)).
 4. [x] Create the Pilot Cohort Diagnostic Inspector script (`scripts/verify-pilot-readiness.ts`).
-5. [x] Verify 100% RLS across all 28 tables, Splinter security checks, and secret quarantine.
-6. [x] Prepare for controlled academic pilot cohort (20–40 scholars, 3–7 theological institutions).
+5. [x] Implement institutional opportunities marketplace (`institution_postings`, `/opportunities`, `/institution/postings`).
+6. [x] Implement authoritative institutional endorsements (`institution_endorsements`, `/institution/endorsements`).
+7. [x] Verify 100% RLS across all 28 tables, Splinter security checks, and secret quarantine.
+
+### Phase 9: Theological Conference Speaker Directory & Institutional Speaking Bureau (Completed)
+
+> **Status:** Completed (Dedicated public speaking bureau directory at `/speakers`, keynote topics data architecture in `public.speaker_topics`, profile dossier speaking portfolio card `<ScholarSpeakerTopicsCard />`, scholar dashboard manager at `/dashboard/availability`, 1-click structured inquiry workflow, 100% RLS coverage with 94 policies, and full verification: 151 vitest tests across 27 suites, 12 Playwright E2E browser tests, 29/29 tables RLS enforced, 16 deployment pre-flight checks).
+
+1. [x] Create `speaker_topics` table with 6 RLS policies, covering indexes, and updated_at trigger (`supabase/migrations/20260921130000_speaking_bureau.sql`).
+2. [x] Implement `speaker-service.ts` with target audience filtering (`academic`, `pastoral`, `church_wide`, `undergraduate`).
+3. [x] Build public speaking bureau directory (`/speakers`) and speaker card component (`SpeakerCard`).
+4. [x] Add speaking bureau card to scholar profile dossier (`/scholars/[slug]`) and integrate with structured inquiry modal.
+5. [x] Add speaking topic management UI to scholar dashboard (`/dashboard/availability`).
+6. [x] Seed reference speaking topics in `seed.sql` and `scripts/seed-pilot-cohort.ts`.
+7. [x] Extend Playwright E2E tests (`tests/e2e/speaker-discovery.spec.ts`) and deployment pre-flight checks (`scripts/verify-deployment.ts`).
 
 Pilot:
 
@@ -816,7 +829,7 @@ Pilot:
 - 3 to 7 institutions.
 - 6 to 10 disciplines.
 - At least one course or media item per scholar.
-- Focus on adjunct, guest lecture, online course, and curriculum review.
+- Focus on adjunct, guest lecture, online course, curriculum review, and keynote speaking.
 
 ## 19. Verification Commands
 

@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, and **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)** are fully implemented, audited, and verified across all quality gates (134 tests across 25 suites, 9 Playwright E2E browser tests, 28/28 PostgreSQL tables RLS enforced, 0 Splinter security findings, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)**, and **Phase 9 (Theological Conference Speaker Directory & Institutional Speaking Bureau)** are fully implemented, audited, and verified across all quality gates (151 tests across 27 suites, 12 Playwright E2E browser tests, 29/29 PostgreSQL tables RLS enforced with 94 policies, 0 Splinter security findings, 16 deployment pre-flight checks, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -227,7 +227,7 @@ Deliverables:
 - **Profile Dossier Integration** (`<ScholarSpeakerTopicsCard />`, `/scholars/[slug]`): Distinctive speaking portfolio card highlighting travel reach, honorarium policies, keynote topics, and 1-click "Invite to Speak" structured inquiries.
 - **Scholar Availability Configuration**: Dashboard manager (`/dashboard/availability`) allowing faculty to configure speaking bios, travel radius, honorarium policies, and lecture topics.
 - **Data Layer Security & RLS**: 100% forced Row Level Security on `public.speaker_topics` table (6 policies, 3 covering indexes, `public.set_updated_at()` trigger).
-- **Comprehensive Quality Gates**: 146 vitest tests across 27 suites, 12 Playwright E2E tests across 5 suites, 29/29 tables with 100% RLS coverage, and 16 deployment pre-flight verification checks.
+- **Comprehensive Quality Gates**: 151 vitest tests across 27 suites, 12 Playwright E2E tests across 5 suites, 29/29 tables with 100% RLS coverage, and 16 deployment pre-flight verification checks.
 
 Exit criteria:
 
