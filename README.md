@@ -32,7 +32,7 @@ Initial ADRs:
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, Citation-Grounded AI Faculty Matcher, Peer Endorsements, and Theological Conference Speaking Bureau / ADR 0009)**, the **Institutional Accounts Dual-Purpose Expansion (Academic Postings Marketplace & Authoritative Institutional Endorsements)**, the **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Card Elevation)**, the **Modern Edge Vector Iconography Overhaul (`lucide-react`)**, the **SEO Topic Hubs & Schema.org JSON-LD Structured Metadata Engine**, the **Playwright Browser E2E Automation Suite**, and the **Pre-Flight Deployment Verification Tooling** are fully implemented, audited, and verified across all quality gates (146 vitest tests across 27 suites, 12 Playwright E2E tests across 5 suites, 29/29 tables RLS enforced, 0 Splinter security findings, 16 deployment checks).
+- **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, Citation-Grounded AI Faculty Matcher, Peer Endorsements, and Theological Conference Speaking Bureau / ADR 0009)**, the **Institutional Accounts Dual-Purpose Expansion (Academic Postings Marketplace & Authoritative Institutional Endorsements)**, the **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Card Elevation)**, the **Modern Edge Vector Iconography Overhaul (`lucide-react`)**, the **SEO Topic Hubs & Schema.org JSON-LD Structured Metadata Engine**, the **Playwright Browser E2E Automation Suite**, and the **Pre-Flight Deployment Verification Tooling** are fully implemented, audited, and verified across all quality gates (151 vitest tests across 27 suites, 12 Playwright E2E tests across 5 suites, 29/29 tables RLS enforced with 94 policies, 0 Splinter security findings, 16 deployment checks).
 - **Theological Conference Speaker Directory & Institutional Speaking Bureau (ADR 0009):**
   - **Speaking Bureau Directory:** Dedicated public speaking bureau (`/speakers`) featuring verified faculty, keynote topics, target audience chips (`academic`, `pastoral`, `church_wide`, `undergraduate`), and real-time search.
   - **Keynote Topic Showcases:** Canonical lecture and address listings with target audience categorization, descriptions, display ordering, and sample recording media links (`sample_media_url`).
@@ -82,7 +82,7 @@ Initial ADRs:
   npm run verify:deploy
   npm run test:e2e
   ```
-  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (27 suites, 146 tests), `audit:rls` (29/29 tables), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (16 checks), and Playwright E2E browser tests (12 tests).
+  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (27 suites, 151 tests), `audit:rls` (29/29 tables), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (16 checks), and Playwright E2E browser tests (12 tests).
 
 ## Product Shape
 

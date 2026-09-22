@@ -608,19 +608,19 @@ git commit -m "feat: add public course discovery"
 - Test: `tests/unit/cv-parser.test.ts`
 - Test: `tests/integration/cv-onboarding.test.ts`
 
-- [ ] **Step 1: Write parser unit tests**
+- [x] **Step 1: Write parser unit tests**
 
 Test PDF text extraction for contact info, degrees, publications, and suggested disciplines. Ensure parsing errors fail gracefully and return partial drafts.
 
-- [ ] **Step 2: Implement CV parser helper**
+- [x] **Step 2: Implement CV parser helper**
 
 Implement `parseCvDocument(fileBuffer)` extracting structured draft profile fields. Ensure output is strictly labeled as draft suggestions.
 
-- [ ] **Step 3: Implement onboarding wizard**
+- [x] **Step 3: Implement onboarding wizard**
 
 Provide CV upload dropzone. When parsed, populate editable form fields and prompt the scholar to review, correct, and confirm all data.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- cv-parser
@@ -630,7 +630,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/dashboard/onboarding components/forms/cv-upload-parser.tsx lib/profiles/cv-parser.ts tests
@@ -650,19 +650,19 @@ git commit -m "feat: add assisted CV ingestion onboarding"
 - Test: `tests/integration/scholar-profile-edit.test.ts`
 - Test: `tests/integration/profile-revisions.test.ts`
 
-- [ ] **Step 1: Write authorization and revision tests**
+- [x] **Step 1: Write authorization and revision tests**
 
 Test that a scholar can edit only their own profile. Test that saving changes to an approved profile creates an active `draft` revision without mutating the published snapshot (ADR 0005).
 
-- [ ] **Step 2: Implement profile update and revision actions**
+- [x] **Step 2: Implement profile update and revision actions**
 
 Validate required fields, ownership, and save updates into the working draft revision.
 
-- [ ] **Step 3: Render editor**
+- [x] **Step 3: Render editor**
 
 Render fields for name, title, institution, biography, location, disciplines, traditions, confessional standards affirmed, personal doctrinal statement (text or PDF link), links, and contact preference.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- scholar-profile-edit
@@ -672,7 +672,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/dashboard components/forms lib/profiles tests/integration
@@ -691,23 +691,23 @@ git commit -m "feat: add scholar profile editor and revision staging"
 - Test: `tests/unit/media-url-validation.test.ts`
 - Test: `tests/integration/course-management.test.ts`
 
-- [ ] **Step 1: Write URL validation tests**
+- [x] **Step 1: Write URL validation tests**
 
 Test accepted YouTube video URLs, YouTube playlist URLs, website URLs, and rejected unsafe or malformed URLs.
 
-- [ ] **Step 2: Implement validation**
+- [x] **Step 2: Implement validation**
 
 Normalize provider type and reject unsupported URL schemes.
 
-- [ ] **Step 3: Implement course actions**
+- [x] **Step 3: Implement course actions**
 
 Allow scholars to create, edit, and hide their own courses.
 
-- [ ] **Step 4: Render manager**
+- [x] **Step 4: Render manager**
 
 Render course list, course form, media link form, syllabus link, and free preview toggle.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 npm run test -- media-url-validation
@@ -717,7 +717,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/dashboard/courses components/forms lib/courses lib/media tests
@@ -733,19 +733,19 @@ git commit -m "feat: add course and media management"
 - Create: `lib/profiles/availability-actions.ts`
 - Test: `tests/integration/availability-management.test.ts`
 
-- [ ] **Step 1: Write ownership test**
+- [x] **Step 1: Write ownership test**
 
 Test that scholars can update only their own availability profile.
 
-- [ ] **Step 2: Implement availability update action**
+- [x] **Step 2: Implement availability update action**
 
 Validate status, opportunity types, delivery modes, travel willingness, languages, and notes.
 
-- [ ] **Step 3: Render availability form**
+- [x] **Step 3: Render availability form**
 
 Use checkboxes or segmented controls for opportunity types and delivery modes.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- availability-management
@@ -754,7 +754,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/dashboard/availability components/forms lib/profiles tests/integration
@@ -775,23 +775,23 @@ git commit -m "feat: add scholar availability management"
 - Test: `tests/integration/profile-review.test.ts`
 - Test: `tests/integration/revision-review.test.ts`
 
-- [ ] **Step 1: Write workflow and diff tests**
+- [x] **Step 1: Write workflow and diff tests**
 
 Test draft to submitted, submitted to approved, submitted to changes requested, and approved to hidden. Test revision staging: an approved profile with an in-review revision remains publicly visible, and approval promotes the revision to the published snapshot (ADR 0005).
 
-- [ ] **Step 2: Implement submit action**
+- [x] **Step 2: Implement submit action**
 
 Scholars can submit their initial profile or a pending revision when required fields are complete.
 
-- [ ] **Step 3: Implement admin review and promotion actions**
+- [x] **Step 3: Implement admin review and promotion actions**
 
 Admins can approve, request changes with notes, reject, or hide profiles. For existing profiles with submitted revisions, approval promotes the revision data into the live snapshot.
 
-- [ ] **Step 4: Render admin queue and diff viewer**
+- [x] **Step 4: Render admin queue and diff viewer**
 
 Render submitted profiles and revisions, visual diff view comparing published snapshot against submitted changes, decision controls, and review history.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 npm run test -- profile-review
@@ -801,7 +801,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add app/admin components/admin lib/review tests/integration
@@ -817,19 +817,19 @@ git commit -m "feat: add admin profile review and revision diff workflow"
 - Create: `lib/review/report-actions.ts`
 - Test: `tests/integration/report-content.test.ts`
 
-- [ ] **Step 1: Write report tests**
+- [x] **Step 1: Write report tests**
 
 Test public reporting for scholar profiles and admin-only report resolution.
 
-- [ ] **Step 2: Implement report action**
+- [x] **Step 2: Implement report action**
 
 Capture reason, reporter email, URL, notes, and target record.
 
-- [ ] **Step 3: Render admin report queue**
+- [x] **Step 3: Render admin report queue**
 
 Render unresolved reports and resolution controls.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- report-content
@@ -838,7 +838,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add app/admin/reports components/admin lib/review tests/integration
@@ -856,23 +856,23 @@ git commit -m "feat: add content reporting workflow"
 - Create: `app/institution/inquiries/page.tsx`
 - Test: `tests/integration/inquiry-submission.test.ts`
 
-- [ ] **Step 1: Write inquiry tests**
+- [x] **Step 1: Write inquiry tests**
 
 Test that approved institution users can send inquiries to approved scholars, and public anonymous users cannot use the formal inquiry route.
 
-- [ ] **Step 2: Implement inquiry action**
+- [x] **Step 2: Implement inquiry action**
 
 Validate institution, scholar, opportunity type, proposed term, delivery mode, message, and contact email.
 
-- [ ] **Step 3: Add rate-limit hook**
+- [x] **Step 3: Add rate-limit hook**
 
 Add a simple server-side guard that can later be backed by Redis or database counters.
 
-- [ ] **Step 4: Render inquiry form**
+- [x] **Step 4: Render inquiry form**
 
 Render opportunity type, proposed term, delivery mode, message, contact email, and optional course reference.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 ```bash
 npm run test -- inquiry-submission
@@ -881,7 +881,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add components/forms lib/inquiries app/institution tests/integration
@@ -896,19 +896,19 @@ git commit -m "feat: add structured institution inquiries"
 - Create: `lib/inquiries/inquiry-notifications.ts`
 - Test: `tests/unit/inquiry-notifications.test.ts`
 
-- [ ] **Step 1: Write notification test**
+- [x] **Step 1: Write notification test**
 
 Test that notification payloads include scholar name, institution name, opportunity type, proposed term, and safe dashboard link.
 
-- [ ] **Step 2: Implement email abstraction**
+- [x] **Step 2: Implement email abstraction**
 
 Create an email sender interface with a no-op development implementation.
 
-- [ ] **Step 3: Wire inquiry notification**
+- [x] **Step 3: Wire inquiry notification**
 
 Trigger notification after successful inquiry creation.
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 npm run test -- inquiry-notifications
@@ -917,7 +917,7 @@ npm run build
 
 Expected: tests and build pass.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/notifications lib/inquiries tests/unit
@@ -934,7 +934,7 @@ git commit -m "feat: notify scholars about institution inquiries"
 - Modify: `.env.example`
 - Modify: `README.md`
 
-- [ ] **Step 1: Document Vercel project linking**
+- [x] **Step 1: Document Vercel project linking**
 
 Create `docs/deployment/vercel-supabase.md` with:
 
@@ -966,7 +966,7 @@ Required checks:
 - Admin account bootstrap path is documented.
 ```
 
-- [ ] **Step 2: Pull Vercel env locally**
+- [x] **Step 2: Pull Vercel env locally**
 
 ```bash
 vercel pull --yes
@@ -974,7 +974,7 @@ vercel pull --yes
 
 Expected: `.vercel/project.json` exists locally and `.env.local` contains project environment values. Do not commit `.vercel/` or `.env.local`.
 
-- [ ] **Step 3: Verify Supabase migrations against target**
+- [x] **Step 3: Verify Supabase migrations against target**
 
 ```bash
 npx supabase migration list
@@ -982,7 +982,7 @@ npx supabase migration list
 
 Expected: local and remote migration status is visible. Apply pending migrations only after reviewing RLS and storage policies.
 
-- [ ] **Step 4: Build with Vercel settings**
+- [x] **Step 4: Build with Vercel settings**
 
 ```bash
 vercel build
@@ -990,7 +990,7 @@ vercel build
 
 Expected: local Vercel build succeeds with pulled environment variables.
 
-- [ ] **Step 5: Commit docs**
+- [x] **Step 5: Commit docs**
 
 ```bash
 git add docs/deployment/vercel-supabase.md README.md .env.example
