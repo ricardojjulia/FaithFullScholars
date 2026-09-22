@@ -88,13 +88,16 @@ async function verifyDeployment() {
         'accounts',
         'availability_profiles',
         'confessional_standards',
+        'contract_milestones',
         'course_disciplines',
         'courses',
         'credentials',
         'disciplines',
         'inquiries',
+        'institution_contracts',
         'institution_endorsements',
         'institution_postings',
+        'institution_subscriptions',
         'institution_users',
         'institutions',
         'media_links',
@@ -133,7 +136,7 @@ async function verifyDeployment() {
       const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
       const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
 
-      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 29) {
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 32) {
         record(
           'Security (RLS)',
           'Row Level Security Coverage',

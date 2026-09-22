@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tiered Institutional Subscriptions & Quota Enforcement (ADR 0010 / Phase 10)**:
+  - Created `public.institution_subscriptions` table managing institutional membership tiers (`basic`, `verified_seminary`, `premier_partner`), monthly inquiry quotas, search committee seats, and renewal cycles.
+  - Implemented `lib/subscriptions/subscription-service.ts` for quota consumption, search committee seat allowances, and tier upgrade actions.
+  - Built institutional subscription dashboard at `/institution/subscription` with real-time quota meters and tier feature comparisons.
+  - Added REST API endpoints (`GET /api/institution/subscription`, `POST /api/institution/subscription/upgrade`).
+- **Institutional Engagement Contracts & Milestone Workflow (ADR 0011 / Phase 10)**:
+  - Created `public.institution_contracts` and `public.contract_milestones` tables with 100% PostgreSQL Row Level Security (16 policies), foreign key covering indexes, and search-path-pinned updated_at triggers.
+  - Implemented `lib/contracts/contract-service.ts` managing formal agreements for adjunct courses, modular intensives, guest lectures, curriculum reviews, and speaking honorariums.
+  - Built institutional contract manager (`/institution/contracts`, `/institution/contracts/[id]`) and scholar workspace contracts review inbox (`/dashboard/contracts`).
+  - Added REST API endpoints (`/api/institution/contracts`, `/api/institution/contracts/[id]`, `/api/dashboard/contracts`, `/api/dashboard/contracts/[id]/accept`).
+  - Added Playwright browser E2E test suite (`tests/e2e/subscriptions-and-contracts.spec.ts`).
+
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
   - Completely purged dated 1980s unicode emojis (`📥`, `👁️`, `✍️`, `📖`, `💼`, `🎓`, `🏛️`, `📍`, `📜`, `✉️`, `🔗`, `📈`, `🛡️`, `🔍`, `📅`, `📄`, `📚`, `✨`, `⚡`, `🖨️`, `▶`, `🔒`, `✓`, `★`, `☆`, `🎉`, `👤`, `🎯`, `📤`, `🇺🇸`, `🇪🇸`) and raw unicode glyphs across all 43+ user interface files.

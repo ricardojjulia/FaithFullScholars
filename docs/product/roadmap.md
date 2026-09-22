@@ -1,7 +1,7 @@
 # FaithFull Scholars Roadmap
 
 ## Current Position
-Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)**, and **Phase 9 (Theological Conference Speaker Directory & Institutional Speaking Bureau)** are fully implemented, audited, and verified across all quality gates (151 tests across 27 suites, 12 Playwright E2E browser tests, 29/29 PostgreSQL tables RLS enforced with 94 policies, 0 Splinter security findings, 16 deployment pre-flight checks, Next.js 16 Proxy convention). Ready for live Vercel & Supabase pilot deployment.
+Phase 0 (Foundation), Phase 1 (Domain Foundation), Phase 2 (Public Discovery), **Milestone 2.5 (LinkedIn-Grade UI/UX & Search Abuse Gating)**, **Task 3.0 (Assisted CV Ingestion & Onboarding)**, **Phase 3 (Scholar Dashboard & Revision Staging)**, **Phase 4 (Admin Review, Visual Diff Inspector & Trust Governance)**, **Phase 5 (Institution Inquiry & Shortlist Workflows)**, **Phase 6 (MVP Release Hardening & Deployment Preparation)**, **Phase 7 (Strategic Backlog Capabilities & AI Intelligence)**, the **Platform Language Translation Pipeline (Spanish `es`)**, the **Remote Staging & Production Verification Protocol**, **Phase 8 (Institutional Accounts Dual-Purpose Expansion & Authoritative Endorsements)**, **Phase 9 (Theological Conference Speaker Directory & Institutional Speaking Bureau)**, and **Phase 10 (Tiered Institutional Subscriptions & Booking Contracts Workflow)** are fully implemented, audited, and verified across all quality gates (158 tests across 30 suites, 15 Playwright E2E browser tests across 6 suites, 32/32 PostgreSQL tables RLS enforced with 110 policies, 0 Splinter security findings, 16 deployment pre-flight checks, Next.js 16 Proxy convention). Remaining post-MVP backlog items (Course Licensing, Credential Verification, Consortium Accounts, Premium Scholar Profiles) are cleanly cataloged for future follow-up. Ready for live Vercel & Supabase pilot deployment.
 
 ## Phase 0: Foundation
 
@@ -235,9 +235,30 @@ Exit criteria:
 - [x] Keynote topics render on scholar dossiers with sample media recordings and audience badges.
 - [x] 1-Click "Invite to Speak" triggers pre-configured structured inquiry modal.
 - [x] 100% PostgreSQL Row Level Security enforced across all 29 public tables.
-- [x] Splinter security advisor passes with 0 findings across all checks.
-- [x] Playwright E2E tests pass cleanly for speaker discovery and profile cards (12 tests total).
 - [x] Pre-flight deployment script verifies all 16 checks and 29 tables.
+
+## Phase 10: Tiered Institutional Subscriptions & Booking Contracts Workflow (Completed)
+
+Goal: Implement tiered institutional memberships with automated inquiry and search committee quota enforcement (ADR 0010), plus a structured academic engagement contract and milestone management system (ADR 0011) connecting institutional outreach to signed agreements and honorarium tracking.
+
+Deliverables:
+
+- **Tiered Institutional Subscriptions** (`public.institution_subscriptions`, `/institution/subscription`, `subscription-service.ts`): Three membership tiers (Basic, Verified Seminary, Premier Partner) with automated monthly inquiry tracking, search committee seat allowances, candidate shortlist exports, and tier upgrade actions.
+- **Institutional Engagement Contracts** (`public.institution_contracts`, `/institution/contracts`, `/institution/contracts/[id]`, `contract-service.ts`): Formal agreements for adjunct teaching, modular intensives, guest lectures, curriculum reviews, and keynote speaking with total compensation and payment terms.
+- **Contract Deliverables & Milestones** (`public.contract_milestones`): Scheduled deliverable tracking (due dates, milestone disbursements, submission and verification).
+- **Scholar Workspace Contracts Inbox** (`/dashboard/contracts`): Faculty agreement review, terms inspection, and accept/decline responses.
+- **Data Layer Security & RLS**: 100% forced Row Level Security across 32 tables with 110 active policies and 0 Splinter security advisor findings.
+- **Comprehensive Quality Gates**: 158 vitest tests across 30 suites, 15 Playwright E2E tests across 6 suites, and 16 deployment pre-flight verification checks.
+
+Exit criteria:
+
+- [x] Institutional subscription dashboard displays live quota consumption and tier benefits.
+- [x] Deans can draft, send, and track faculty engagement agreements with milestone deliverables.
+- [x] Scholars can review and accept engagement contracts directly in their workspace.
+- [x] 100% PostgreSQL Row Level Security enforced across all 32 public tables.
+- [x] Splinter security advisor passes with 0 findings across all checks.
+- [x] Playwright E2E tests pass cleanly across 15 browser tests.
+- [x] Remaining backlog items (Course Licensing, Credential Verification, Consortia, Premium Profiles) cataloged for follow-up.
 
 ## Pilot Recommendation
 

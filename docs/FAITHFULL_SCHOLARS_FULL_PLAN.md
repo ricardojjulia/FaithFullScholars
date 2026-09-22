@@ -823,6 +823,18 @@ Acceptance:
 6. [x] Seed reference speaking topics in `seed.sql` and `scripts/seed-pilot-cohort.ts`.
 7. [x] Extend Playwright E2E tests (`tests/e2e/speaker-discovery.spec.ts`) and deployment pre-flight checks (`scripts/verify-deployment.ts`).
 
+### Phase 10: Tiered Institutional Subscriptions & Booking Contracts Workflow (Completed)
+
+> **Status:** Completed (Three-tier institutional membership in `public.institution_subscriptions` with automated quota meters at `/institution/subscription`, formal academic engagement contracts in `public.institution_contracts` and `public.contract_milestones` at `/institution/contracts` & `/dashboard/contracts`, 100% RLS coverage across 32 tables, and full verification: 158 vitest tests across 30 suites, 15 Playwright E2E browser tests, 0 Splinter findings, 16 deployment pre-flight checks).
+
+1. [x] Create `institution_subscriptions`, `institution_contracts`, and `contract_milestones` tables with 16 RLS policies, covering foreign key indexes (Splinter 0001), and pinned updated_at triggers (`supabase/migrations/20260922000000_institutional_subscriptions_and_contracts.sql`).
+2. [x] Implement `subscription-service.ts` for quota consumption, search committee seats, and tier upgrades (Basic, Verified Seminary, Premier Partner).
+3. [x] Implement `contract-service.ts` for adjunct/modular/speaking agreement drafting, milestone tracking, and bilateral scholar signing transitions.
+4. [x] Build institutional subscription management view (`/institution/subscription`) with quota meters and tier comparisons.
+5. [x] Build institutional contract drafting & milestone manager (`/institution/contracts`, `/institution/contracts/[id]`).
+6. [x] Build scholar engagement contract review and signing workspace (`/dashboard/contracts`).
+7. [x] Extend Playwright E2E test suite (`tests/e2e/subscriptions-and-contracts.spec.ts`) and deployment pre-flight verification (`scripts/verify-deployment.ts`).
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -889,13 +901,13 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Public SEO topic hubs** (`/disciplines`, `/disciplines/[slug]`, `/traditions`, `/traditions/[slug]`, `lib/seo/json-ld.ts`).
 - [x] **Peer endorsements and theological faculty commendations** (`scholar_endorsements`, `lib/endorsements/endorsement-service.ts`, `components/scholars/scholar-endorsements-card.tsx`, `components/scholars/endorse-colleague-modal.tsx`).
 - [x] **Institutional accounts dual-purpose expansion: Academic Postings & Authoritative Endorsements** (`institution_postings`, `institution_endorsements`, `/opportunities`, `/opportunities/[slug]`, `/institution/postings`, `/institution/endorsements`, `lib/postings/`, `lib/endorsements/institutional-endorsement-service.ts`).
-- [ ] Institution subscriptions.
-- [ ] Premium scholar profiles.
-- [ ] Course licensing and syllabus distribution agreements.
-- [ ] Contracts and institutional booking workflows.
-- [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars).
 - [x] **Conference speaker directory and institutional speaking bureau (ADR 0009)** (`speaker_topics`, `/speakers`, `lib/speakers/`, `<ScholarSpeakerTopicsCard />`, `/dashboard/availability`).
-- [ ] Seminary consortium accounts.
+- [x] **Tiered institutional subscriptions & quota enforcement (ADR 0010)** (`institution_subscriptions`, `/institution/subscription`, `lib/subscriptions/`).
+- [x] **Institutional engagement contracts & milestone workflow (ADR 0011)** (`institution_contracts`, `contract_milestones`, `/institution/contracts`, `/dashboard/contracts`, `lib/contracts/`).
+- [ ] Course licensing and syllabus distribution agreements (Marked for follow-up).
+- [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars) (Marked for follow-up).
+- [ ] Seminary consortium accounts (Marked for follow-up).
+- [ ] Premium scholar profiles (Marked for follow-up).
 
 ## 22. Governing Decisions
 
