@@ -18,7 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented `lib/contracts/contract-service.ts` managing formal agreements for adjunct courses, modular intensives, guest lectures, curriculum reviews, and speaking honorariums.
   - Built institutional contract manager (`/institution/contracts`, `/institution/contracts/[id]`) and scholar workspace contracts review inbox (`/dashboard/contracts`).
   - Added REST API endpoints (`/api/institution/contracts`, `/api/institution/contracts/[id]`, `/api/dashboard/contracts`, `/api/dashboard/contracts/[id]/accept`).
-  - Added Playwright browser E2E test suite (`tests/e2e/subscriptions-and-contracts.spec.ts`).
+- **Automated Self-Service Signup, Login, CAPTCHA & Role-Based Onboarding**:
+  - Implemented `/login` and `/signup` authentication pages with role selection (Scholar vs. Seminary Dean), password recovery (`/forgot-password`), and password visibility toggles.
+  - Built Cloudflare Turnstile CAPTCHA client component (`<TurnstileCaptcha />`) and server verification utility (`lib/auth/captcha.ts`) with seamless test-mode bypass.
+  - Implemented Supabase SSR PKCE callback handler (`/auth/callback`) and server signout actions (`/auth/signout`, `signOutAction`).
+  - Connected `UserMenu` in universal navigation shell to display active authenticated user identity, role badges, and functional Sign Out.
+  - Added Playwright browser E2E test suite (`tests/e2e/auth-journeys.spec.ts`) validating login, signup role switching, and session management.
 
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
