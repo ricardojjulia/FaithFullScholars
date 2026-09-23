@@ -118,8 +118,19 @@ describe('Security Guardrails & Multi-Tenant PostgreSQL RLS Isolation', () => {
       VALUES 
         ($1, $2, 'Dr. Marcus Vance', 'test-guardrail-marcus-vance', 'approved'),
         ($3, $4, 'Dr. Timothy Keller-Mock', 'test-guardrail-timothy-keller-mock', 'draft')
-      ON CONFLICT (id) DO NOTHING;
+      ON CONFLICT (id) DO UPDATE SET profile_status = EXCLUDED.profile_status;
     `, [SCHOLAR_A_ID, AUTH_SCHOLAR_A, SCHOLAR_B_ID, AUTH_SCHOLAR_B]);
+
+    // Seed Revision for Scholar A and link it
+    const revAId = '01999999-0000-0000-0000-00000000000a';
+    await db.query(`
+      INSERT INTO public.scholar_profile_revisions (id, scholar_id, revision_number, status, snapshot_data)
+      VALUES ($1, $2, 1, 'approved', '{"full_name": "Dr. Marcus Vance"}'::jsonb)
+      ON CONFLICT (id) DO NOTHING;
+    `, [revAId, SCHOLAR_A_ID]);
+    await db.query(`
+      UPDATE public.scholars SET published_revision_id = $1 WHERE id = $2;
+    `, [revAId, SCHOLAR_A_ID]);
 
     // 4. Seed Subscriptions
     await db.query(`
@@ -165,25 +176,27 @@ describe('Security Guardrails & Multi-Tenant PostgreSQL RLS Isolation', () => {
 
   it('enforces multi-tenant isolation: Scholar A cannot access Scholar B private draft revisions', async () => {
     // Insert draft revision for Scholar B
-    await db.query(`
+    const draftRevResult = await db.query(`
       INSERT INTO public.scholar_profile_revisions (
         id, scholar_id, revision_number, status, snapshot_data
       ) VALUES (
         gen_random_uuid(), $1, 1, 'draft', '{"bio": "Confidential draft bio update"}'
-      );
+      ) RETURNING id;
     `, [SCHOLAR_B_ID]);
+
+    const draftRevId = draftRevResult.rows[0].id;
 
     // Query scoped to Scholar A's boundary
     const scopedToA = await db.query(
-      'SELECT * FROM public.scholar_profile_revisions WHERE scholar_id = $1',
-      [SCHOLAR_A_ID]
+      'SELECT * FROM public.scholar_profile_revisions WHERE id = $1 AND scholar_id = $2',
+      [draftRevId, SCHOLAR_A_ID]
     );
     expect(scopedToA.rows.length).toBe(0);
 
     // Query scoped to Scholar B's boundary
     const scopedToB = await db.query(
-      'SELECT * FROM public.scholar_profile_revisions WHERE scholar_id = $1',
-      [SCHOLAR_B_ID]
+      'SELECT * FROM public.scholar_profile_revisions WHERE id = $1 AND scholar_id = $2',
+      [draftRevId, SCHOLAR_B_ID]
     );
     expect(scopedToB.rows.length).toBe(1);
     expect(scopedToB.rows[0].scholar_id).toBe(SCHOLAR_B_ID);
