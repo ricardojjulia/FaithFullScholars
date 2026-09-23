@@ -601,4 +601,206 @@ INSERT INTO public.speaker_topics (
   )
 ON CONFLICT (id) DO NOTHING;
 
+-- 15. Tiered Institutional Subscriptions (ADR 0010)
+INSERT INTO public.institution_subscriptions (
+  id, institution_id, tier, billing_cycle, status, seats_limit, monthly_inquiry_limit, inquiries_used_current_month
+) VALUES
+  (
+    'b7000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000001', -- Westminster Theological Seminary
+    'premier_partner',
+    'annual',
+    'active',
+    10,
+    99999,
+    2
+  ),
+  (
+    'b7000000-0000-0000-0000-000000000002',
+    'e1000000-0000-0000-0000-000000000002', -- Reformed Theological Seminary
+    'verified_seminary',
+    'annual',
+    'active',
+    3,
+    25,
+    1
+  ),
+  (
+    'b7000000-0000-0000-0000-000000000003',
+    'e1000000-0000-0000-0000-000000000003', -- Southern Baptist Theological Seminary
+    'verified_seminary',
+    'monthly',
+    'active',
+    3,
+    25,
+    0
+  ),
+  (
+    'b7000000-0000-0000-0000-000000000004',
+    'e1000000-0000-0000-0000-000000000004', -- Trinity Evangelical Divinity School
+    'basic',
+    'monthly',
+    'active',
+    1,
+    5,
+    0
+  )
+ON CONFLICT (institution_id) DO UPDATE SET
+  tier = EXCLUDED.tier,
+  billing_cycle = EXCLUDED.billing_cycle,
+  status = EXCLUDED.status,
+  seats_limit = EXCLUDED.seats_limit,
+  monthly_inquiry_limit = EXCLUDED.monthly_inquiry_limit;
+
+-- 16. Institutional Engagement Contracts (ADR 0011)
+INSERT INTO public.institution_contracts (
+  id, institution_id, scholar_id, opportunity_type, title, scope_of_work,
+  start_date, end_date, total_compensation_amount, currency, payment_terms, status, created_by
+) VALUES
+  (
+    'c7000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000001', -- Westminster
+    'f1000000-0000-0000-0000-000000000001', -- Dr. Calvin Edwards
+    'modular_intensive',
+    'Post-Reformation Reformed Scholasticism & Federal Theology Doctoral Seminar',
+    'One-week residential modular doctoral seminar (ThM/PhD) in Glenside, PA, including 30 hours of instructional seminar sessions, syllabus preparation, reading list curation, and grading of 8 seminar papers.',
+    '2026-10-15',
+    '2026-10-22',
+    6500.00,
+    'USD',
+    'Net 30 days upon milestone completion; travel reimbursement up to $800 upon receipt submission.',
+    'offered',
+    'a1000000-0000-0000-0000-000000000004' -- recruiter@wts.edu
+  ),
+  (
+    'c7000000-0000-0000-0000-000000000002',
+    'e1000000-0000-0000-0000-000000000002', -- RTS
+    'f1000000-0000-0000-0000-000000000004', -- Dr. Marcus Vance
+    'speaking_engagement',
+    'Annual Bavinck Lectures on Epistemology & Christian Apologetics',
+    'Three-part keynote lecture series on Christian Epistemology and Presuppositional Apologetics at RTS Orlando chapel and evening symposium, including moderated panel discussion.',
+    '2026-11-05',
+    '2026-11-07',
+    3500.00,
+    'USD',
+    'Full honorarium disbursed upon conclusion of keynote series; lodging provided at seminary guest suite.',
+    'accepted',
+    'a1000000-0000-0000-0000-000000000001'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  scope_of_work = EXCLUDED.scope_of_work,
+  status = EXCLUDED.status,
+  total_compensation_amount = EXCLUDED.total_compensation_amount;
+
+-- 17. Contract Milestones (ADR 0011)
+INSERT INTO public.contract_milestones (
+  id, contract_id, title, description, due_date, compensation_amount, status, display_order, completed_at
+) VALUES
+  (
+    'd7000000-0000-0000-0000-000000000001',
+    'c7000000-0000-0000-0000-000000000001',
+    'Syllabus & Reading List Finalization',
+    'Deliver final syllabus with primary source reading assignments and discussion questions.',
+    '2026-09-30',
+    1500.00,
+    'verified',
+    1,
+    now()
+  ),
+  (
+    'd7000000-0000-0000-0000-000000000002',
+    'c7000000-0000-0000-0000-000000000001',
+    'Conduct 30-Hour Modular Seminar Instruction',
+    'Deliver residential doctoral lectures and seminars on campus in Glenside, PA.',
+    '2026-10-22',
+    3500.00,
+    'pending',
+    2,
+    NULL
+  ),
+  (
+    'd7000000-0000-0000-0000-000000000003',
+    'c7000000-0000-0000-0000-000000000001',
+    'Grading & Evaluative Rubrics Submission',
+    'Submit final grades and qualitative feedback for all doctoral seminar papers.',
+    '2026-11-15',
+    1500.00,
+    'pending',
+    3,
+    NULL
+  ),
+  (
+    'd7000000-0000-0000-0000-000000000004',
+    'c7000000-0000-0000-0000-000000000002',
+    'Keynote Manuscript & Outline Submission',
+    'Submit manuscripts and slides for three Bavinck keynote lectures.',
+    '2026-10-20',
+    1000.00,
+    'verified',
+    1,
+    now()
+  ),
+  (
+    'd7000000-0000-0000-0000-000000000005',
+    'c7000000-0000-0000-0000-000000000002',
+    'Delivery of 3 Keynote Lectures and Moderated Panel',
+    'Deliver keynote addresses at RTS Orlando chapel and evening symposium.',
+    '2026-11-07',
+    2500.00,
+    'pending',
+    2,
+    NULL
+  )
+ON CONFLICT (id) DO UPDATE SET
+  title = EXCLUDED.title,
+  compensation_amount = EXCLUDED.compensation_amount,
+  status = EXCLUDED.status;
+
+-- 18. Seminary Consortia & Multi-Campus System Accounts (ADR 0012)
+INSERT INTO public.consortiums (
+  id, name, slug, description, website, lead_institution_id
+) VALUES
+  (
+    'c8000000-0000-0000-0000-000000000001',
+    'Association of Reformed Theological Seminaries (ARTS)',
+    'association-of-reformed-theological-seminaries',
+    'A dedicated academic consortium of confessional Reformed seminaries cooperating in graduate theological education, cross-campus visiting faculty appointments, and shared curricular resources.',
+    'https://artseminaries.org',
+    'e1000000-0000-0000-0000-000000000001' -- Westminster Theological Seminary
+  )
+ON CONFLICT (slug) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  website = EXCLUDED.website;
+
+INSERT INTO public.consortium_members (
+  id, consortium_id, institution_id, role, status
+) VALUES
+  (
+    'e8000000-0000-0000-0000-000000000001',
+    'c8000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000001', -- Westminster
+    'lead',
+    'active'
+  ),
+  (
+    'e8000000-0000-0000-0000-000000000002',
+    'c8000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000002', -- RTS
+    'member',
+    'active'
+  ),
+  (
+    'e8000000-0000-0000-0000-000000000003',
+    'c8000000-0000-0000-0000-000000000001',
+    'e1000000-0000-0000-0000-000000000003', -- SBTS
+    'affiliate',
+    'active'
+  )
+ON CONFLICT (consortium_id, institution_id) DO UPDATE SET
+  role = EXCLUDED.role,
+  status = EXCLUDED.status;
+
+
 

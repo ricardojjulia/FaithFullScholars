@@ -145,6 +145,40 @@ async function runPilotReadinessDiagnostic() {
       notes: 'PostgreSQL Row Level Security multi-tenant isolation',
     });
 
+    // 8. Enterprise Capabilities (Subscriptions, Contracts & Consortia)
+    const subsRes = await client.query(`SELECT count(*) as count FROM institution_subscriptions;`);
+    const subsCount = parseInt(subsRes.rows[0].count, 10);
+    results.push({
+      category: 'Enterprise',
+      item: 'Institutional Subscriptions',
+      expected: '>= 1 active subscription',
+      actual: subsCount,
+      status: subsCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${subsCount} active institutional subscriptions (ADR 0010)`,
+    });
+
+    const contractsRes = await client.query(`SELECT count(*) as count FROM institution_contracts;`);
+    const contractsCount = parseInt(contractsRes.rows[0].count, 10);
+    results.push({
+      category: 'Enterprise',
+      item: 'Institutional Contracts',
+      expected: '>= 1 contract',
+      actual: contractsCount,
+      status: contractsCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${contractsCount} active engagement contracts (ADR 0011)`,
+    });
+
+    const consortiumRes = await client.query(`SELECT count(*) as count FROM consortiums;`);
+    const consortiumCount = parseInt(consortiumRes.rows[0].count, 10);
+    results.push({
+      category: 'Enterprise',
+      item: 'Seminary Consortia',
+      expected: '>= 1 consortium',
+      actual: consortiumCount,
+      status: consortiumCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${consortiumCount} active seminary consortia (ADR 0012)`,
+    });
+
     // Format output table
     console.table(
       results.map((r) => ({

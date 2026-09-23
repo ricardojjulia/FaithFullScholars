@@ -9,7 +9,8 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { getInstitutionSubscription } from '@/lib/subscriptions/subscription-service';
 import {
   matchFacultyWithGemini,
   CandidateForMatching,
@@ -201,6 +202,60 @@ export async function POST(req: NextRequest) {
         { error: 'Search query is too short. Please describe the academic discipline, degree, or confessional standard required.' },
         { status: 400 }
       );
+    }
+
+    // Authorization & Tier Gating: Authenticated Institution or Admin required
+    const authClient = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please sign in to access AI faculty matching.' },
+        { status: 401 }
+      );
+    }
+
+    const { data: instUser } = await authClient
+      .from('institution_users')
+      .select('institution_id')
+      .eq('account_id', user.id)
+      .maybeSingle();
+
+    const { data: account } = await authClient
+      .from('accounts')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    const isAdmin = account?.role === 'admin';
+
+    if (!instUser && !isAdmin) {
+      return NextResponse.json(
+        { error: 'Institutional account required. AI faculty matching is reserved for accredited seminary and university partners.' },
+        { status: 403 }
+      );
+    }
+
+    if (!isAdmin && instUser) {
+      const subscription = await getInstitutionSubscription(instUser.institution_id);
+      if (!subscription || subscription.status !== 'active') {
+        return NextResponse.json(
+          { error: 'An active institutional subscription is required to access AI faculty matching.' },
+          { status: 403 }
+        );
+      }
+      if (subscription.tier === 'basic') {
+        return NextResponse.json(
+          {
+            error: 'AI Faculty Matcher requires a Verified Seminary or Premier Partner subscription.',
+            upgradeUrl: '/institution/subscription',
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Attempt to query database for approved scholars

@@ -74,6 +74,7 @@ export function UserMenu() {
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-label="User account and profile menu"
         className="flex flex-col items-center justify-center text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg"
@@ -88,7 +89,11 @@ export function UserMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div
+          role="menu"
+          aria-label="User navigation menu"
+          className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl p-3 z-50 animate-in fade-in slide-in-from-top-1 duration-150"
+        >
           {auth.isLoggedIn ? (
             <div className="pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
@@ -241,6 +246,14 @@ export function UserMenu() {
             >
               <span>Subscriptions & Quotas</span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Plans</span>
+            </Link>
+            <Link
+              href="/institution/consortium"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>Seminary Consortium</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Sister Campuses</span>
             </Link>
 
             <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />

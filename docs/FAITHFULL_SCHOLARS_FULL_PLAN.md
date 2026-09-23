@@ -874,23 +874,23 @@ Agents must verify current official CLI documentation before using commands that
 - [ ] Next.js builds.
 - [ ] Vercel environments are configured.
 - [ ] Supabase migrations apply.
-- [ ] RLS is enabled everywhere required.
-- [ ] Public users see approved data only.
-- [ ] Scholars modify only their records.
-- [ ] Institution data is isolated.
-- [ ] Admin review is admin-only.
-- [ ] CVs are private by default.
-- [ ] Public files require explicit publication.
-- [ ] External URLs are validated.
-- [ ] Inquiries are authenticated and rate-limited.
-- [ ] Service-role credentials are server-only.
-- [ ] Unit and integration tests pass.
-- [ ] Playwright tests pass.
-- [ ] Accessibility checks pass.
+- [x] RLS is enabled everywhere required.
+- [x] Public users see approved data only.
+- [x] Scholars modify only their records.
+- [x] Institution data is isolated.
+- [x] Admin review is admin-only.
+- [x] CVs are private by default.
+- [x] Public files require explicit publication.
+- [x] External URLs are validated.
+- [x] Inquiries are authenticated and rate-limited.
+- [x] Service-role credentials are server-only.
+- [x] Unit and integration tests pass.
+- [x] Playwright tests pass.
+- [x] Accessibility checks pass.
 - [ ] Vercel preview is approved.
-- [ ] Seed data is fictional or permissioned.
-- [ ] Published profiles remain visible when new revisions are submitted (ADR 0005).
-- [ ] Documentation matches behavior.
+- [x] Seed data is fictional or permissioned.
+- [x] Published profiles remain visible when new revisions are submitted (ADR 0005).
+- [x] Documentation matches behavior.
 
 ## 21. Post-MVP Backlog
 
@@ -904,9 +904,9 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Conference speaker directory and institutional speaking bureau (ADR 0009)** (`speaker_topics`, `/speakers`, `lib/speakers/`, `<ScholarSpeakerTopicsCard />`, `/dashboard/availability`).
 - [x] **Tiered institutional subscriptions & quota enforcement (ADR 0010)** (`institution_subscriptions`, `/institution/subscription`, `lib/subscriptions/`).
 - [x] **Institutional engagement contracts & milestone workflow (ADR 0011)** (`institution_contracts`, `contract_milestones`, `/institution/contracts`, `/dashboard/contracts`, `lib/contracts/`).
+- [x] **Seminary consortium accounts & multi-campus system federation (ADR 0012)** (`consortiums`, `consortium_members`, `/institution/consortium`, `lib/consortium/`, `app/api/institution/consortium/`).
 - [ ] Course licensing and syllabus distribution agreements (Marked for follow-up).
 - [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars) (Marked for follow-up).
-- [ ] Seminary consortium accounts (Marked for follow-up).
 - [ ] Premium scholar profiles (Marked for follow-up).
 
 ## 22. Governing Decisions

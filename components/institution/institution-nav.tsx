@@ -38,12 +38,17 @@ export function InstitutionNav() {
     },
     {
       href: '/institution/contracts',
-      label: 'Contracts',
+      label: t('institution.nav_contracts') || 'Contracts',
       exact: false,
     },
     {
       href: '/institution/subscription',
-      label: 'Subscription',
+      label: t('institution.nav_subscription') || 'Subscription',
+      exact: false,
+    },
+    {
+      href: '/institution/consortium',
+      label: t('institution.nav_consortium') || 'Consortium',
       exact: false,
     },
     {
