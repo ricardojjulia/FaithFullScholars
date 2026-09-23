@@ -88,6 +88,8 @@ async function verifyDeployment() {
         'accounts',
         'availability_profiles',
         'confessional_standards',
+        'consortium_members',
+        'consortiums',
         'contract_milestones',
         'course_disciplines',
         'courses',
@@ -136,7 +138,7 @@ async function verifyDeployment() {
       const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
       const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
 
-      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 32) {
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 34) {
         record(
           'Security (RLS)',
           'Row Level Security Coverage',
@@ -155,7 +157,7 @@ async function verifyDeployment() {
         );
       }
 
-      // Check policy counts (baseline: 85+ granular policies)
+      // Check policy counts (baseline: 110+ granular policies)
       const policyRes = await client.query(`
         SELECT count(*) as total_policies
         FROM pg_policy p
@@ -164,10 +166,10 @@ async function verifyDeployment() {
         WHERE n.nspname = 'public';
       `);
       const policyCount = parseInt(policyRes.rows[0].total_policies, 10);
-      if (policyCount >= 85) {
+      if (policyCount >= 110) {
         record('Security (RLS)', 'Active Security Policies', 'PASS', `${policyCount} granular policies active`);
       } else {
-        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 85 required)`);
+        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 110 required)`);
       }
 
       // --------------------------------------------------------------------------
@@ -218,6 +220,42 @@ async function verifyDeployment() {
         'Speaker Topics System Table',
         speakerTopicsCount > 0 ? 'PASS' : 'FAIL',
         `speaker_topics table active (${speakerTopicsCount} entries)`
+      );
+
+      const subscriptionsRes = await client.query("SELECT count(*) FROM institution_subscriptions;");
+      const subscriptionsCount = parseInt(subscriptionsRes.rows[0].count, 10);
+      record(
+        'Enterprise',
+        'Subscriptions System Table',
+        subscriptionsCount > 0 ? 'PASS' : 'FAIL',
+        `institution_subscriptions table active (${subscriptionsCount} memberships)`
+      );
+
+      const contractsRes = await client.query("SELECT count(*) FROM institution_contracts;");
+      const contractsCount = parseInt(contractsRes.rows[0].count, 10);
+      record(
+        'Enterprise',
+        'Contracts System Table',
+        contractsCount > 0 ? 'PASS' : 'FAIL',
+        `institution_contracts table active (${contractsCount} contracts)`
+      );
+
+      const milestonesRes = await client.query("SELECT count(*) FROM contract_milestones;");
+      const milestonesCount = parseInt(milestonesRes.rows[0].count, 10);
+      record(
+        'Enterprise',
+        'Milestones System Table',
+        milestonesCount > 0 ? 'PASS' : 'FAIL',
+        `contract_milestones table active (${milestonesCount} milestones)`
+      );
+
+      const consortiumsRes = await client.query("SELECT count(*) FROM consortiums;");
+      const consortiumsCount = parseInt(consortiumsRes.rows[0].count, 10);
+      record(
+        'Enterprise',
+        'Consortiums System Table',
+        consortiumsCount > 0 ? 'PASS' : 'FAIL',
+        `consortiums table active (${consortiumsCount} consortia)`
       );
     } catch {
       record('Database', 'PostgreSQL Connectivity', 'FAIL', 'Connection error: Unable to connect to target PostgreSQL instance');

@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Seminary Consortia & Multi-Campus System Accounts (ADR 0012 / Phase 11)**:
+  - Created `public.consortiums` and `public.consortium_members` tables with 100% PostgreSQL Row Level Security (7 policies), covering foreign key indexes (Splinter 0001), and pinned search-path triggers (Splinter 0011).
+  - Implemented `lib/consortium/consortium-service.ts` with atomic rollback guarantees, member institution invitations, and sister campus discovery.
+  - Built collaborative Dean portal workspace at `/institution/consortium` rendering system leads, sister campuses, and direct candidate discovery links, with clean empty-state isolation preventing cross-institution data leakage.
+  - Added REST API endpoints (`GET /api/institution/consortium`, `POST /api/institution/consortium`, `POST /api/institution/consortium/members`, `DELETE /api/institution/consortium/members`) with strict UUID/role validation and sanitized 500 error handlers.
+  - Integrated "Consortium" navigation tab in `InstitutionNav` with full i18n support (`en`/`es`), "Seminary Consortium" item in `UserMenu`, and "Seminary Consortia & Systems" in `PublicFooter` (reporting 34/34 RLS tables).
+  - Added comprehensive test suites: unit tests (`tests/unit/consortium-service.test.ts`), service integration tests (`tests/integration/consortium-management.test.ts`), API route integration tests (`tests/integration/consortium-api.test.ts`), AI matcher tier authorization tests (`tests/integration/ai-faculty-matcher-auth.test.ts`), and Playwright E2E browser tests (`tests/e2e/subscriptions-and-contracts.spec.ts`).
+- **Institutional AI Matcher Security Hardening**:
+  - Hardened `POST /api/ai/match-faculty` to require authenticated user sessions, verified institutional affiliation, and active paid subscription tier (`verified_seminary` or `premier_partner`).
+- **Pilot Fixture Reconciliation & Pre-Flight Tooling Expansion**:
+  - Reconciled enterprise subscriptions, contracts, milestones, and consortia fixtures across `supabase/seed.sql` and `scripts/seed-pilot-cohort.ts`.
+  - Expanded `scripts/verify-deployment.ts` and `scripts/verify-pilot-readiness.ts` to assert 34 tables, 110+ RLS policies, and enterprise relation integrity.
 - **Tiered Institutional Subscriptions & Quota Enforcement (ADR 0010 / Phase 10)**:
   - Created `public.institution_subscriptions` table managing institutional membership tiers (`basic`, `verified_seminary`, `premier_partner`), monthly inquiry quotas, search committee seats, and renewal cycles.
   - Implemented `lib/subscriptions/subscription-service.ts` for quota consumption, search committee seat allowances, and tier upgrade actions.

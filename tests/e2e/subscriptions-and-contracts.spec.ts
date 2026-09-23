@@ -35,4 +35,14 @@ test.describe('Tiered Subscriptions & Engagement Contracts', () => {
     await expect(page.locator('h1')).toContainText('Institutional Engagement Contracts');
     await expect(page.locator('text=View Inquiries Inbox')).toBeVisible();
   });
+
+  test('renders seminary consortia and multi-campus systems workspace', async ({ page }) => {
+    await page.goto('/institution/consortium');
+    await page.waitForLoadState('domcontentloaded');
+
+    // Verify consortium workspace heading
+    await expect(page.locator('h1')).toContainText('Seminary Consortia & Multi-Campus Systems');
+    await expect(page.locator('text=Federated Academic Collaboration')).toBeVisible();
+    await expect(page.locator('text=Affiliated Consortia & Systems')).toBeVisible();
+  });
 });

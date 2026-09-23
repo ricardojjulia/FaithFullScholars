@@ -91,6 +91,11 @@ export function PublicFooter() {
                 Subscriptions & Quota Management
               </Link>
             </li>
+            <li>
+              <Link href="/institution/consortium" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Seminary Consortia & Systems
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -120,7 +125,7 @@ export function PublicFooter() {
               </Link>
             </li>
             <li className="pt-2 text-slate-400 text-[11px]">
-              PostgreSQL Row Level Security Enforced (32/32 tables)
+              PostgreSQL Row Level Security Enforced (34/34 tables)
             </li>
           </ul>
         </div>
