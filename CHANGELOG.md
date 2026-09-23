@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Tiered Institutional Subscriptions & Quota Enforcement (ADR 0010 / Phase 10)**:
+  - Created `public.institution_subscriptions` table managing institutional membership tiers (`basic`, `verified_seminary`, `premier_partner`), monthly inquiry quotas, search committee seats, and renewal cycles.
+  - Implemented `lib/subscriptions/subscription-service.ts` for quota consumption, search committee seat allowances, and tier upgrade actions.
+  - Built institutional subscription dashboard at `/institution/subscription` with real-time quota meters and tier feature comparisons.
+  - Added REST API endpoints (`GET /api/institution/subscription`, `POST /api/institution/subscription/upgrade`).
+- **Institutional Engagement Contracts & Milestone Workflow (ADR 0011 / Phase 10)**:
+  - Created `public.institution_contracts` and `public.contract_milestones` tables with 100% PostgreSQL Row Level Security (16 policies), foreign key covering indexes, and search-path-pinned updated_at triggers.
+  - Implemented `lib/contracts/contract-service.ts` managing formal agreements for adjunct courses, modular intensives, guest lectures, curriculum reviews, and speaking honorariums.
+  - Built institutional contract manager (`/institution/contracts`, `/institution/contracts/[id]`) and scholar workspace contracts review inbox (`/dashboard/contracts`).
+  - Added REST API endpoints (`/api/institution/contracts`, `/api/institution/contracts/[id]`, `/api/dashboard/contracts`, `/api/dashboard/contracts/[id]/accept`).
+- **Automated Self-Service Signup, Login, CAPTCHA & Role-Based Onboarding**:
+  - Implemented `/login` and `/signup` authentication pages with role selection (Scholar vs. Seminary Dean), password recovery (`/forgot-password`), and password visibility toggles.
+  - Built Cloudflare Turnstile CAPTCHA client component (`<TurnstileCaptcha />`) and server verification utility (`lib/auth/captcha.ts`) with seamless test-mode bypass.
+  - Implemented Supabase SSR PKCE callback handler (`/auth/callback`) and server signout actions (`/auth/signout`, `signOutAction`).
+  - Connected `UserMenu` in universal navigation shell to display active authenticated user identity, role badges, and functional Sign Out.
+  - Added Playwright browser E2E test suite (`tests/e2e/auth-journeys.spec.ts`) validating login, signup role switching, and session management.
+- **Universal Persistent Navigation & Unified Shell**:
+  - Mounted `<PublicNav />` across all application workspace layouts (`/dashboard/*`, `/institution/*`, `/admin/*`) with stacked two-tier header hierarchy (`h-16 top-0` universal bar above `h-12 top-16` workspace sub-nav).
+  - Consolidated `/institution/contracts` and `/institution/subscription` into `app/(institution)/institution/` so all institutional views inherit the unified portal shell.
+  - Expanded `UserMenu` and `PublicFooter` with direct navigation matrices across Faculty Directory, Courses, Speaking Bureau, Opportunities, Contracts Inbox, Institutional Portals, and System Diagnostics.
+
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
   - Completely purged dated 1980s unicode emojis (`📥`, `👁️`, `✍️`, `📖`, `💼`, `🎓`, `🏛️`, `📍`, `📜`, `✉️`, `🔗`, `📈`, `🛡️`, `🔍`, `📅`, `📄`, `📚`, `✨`, `⚡`, `🖨️`, `▶`, `🔒`, `✓`, `★`, `☆`, `🎉`, `👤`, `🎯`, `📤`, `🇺🇸`, `🇪🇸`) and raw unicode glyphs across all 43+ user interface files.

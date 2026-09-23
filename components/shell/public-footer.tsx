@@ -20,37 +20,42 @@ export function PublicFooter() {
 
         <div>
           <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-            Discovery
+            Academic Discovery
           </h4>
           <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
             <li>
-              <Link href="/scholars" className="hover:text-indigo-600">
-                All Faculty Directory
+              <Link href="/scholars" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Faculty Directory
               </Link>
             </li>
             <li>
-              <Link href="/courses" className="hover:text-indigo-600">
+              <Link href="/courses" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 Course Catalog & Syllabi
               </Link>
             </li>
             <li>
-              <Link href="/opportunities" className="hover:text-indigo-600">
-                Academic Opportunities & Calls
+              <Link href="/speakers" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Theological Speaking Bureau
               </Link>
             </li>
             <li>
-              <Link href="/scholars?available=true" className="hover:text-indigo-600">
+              <Link href="/opportunities" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Academic Postings Marketplace
+              </Link>
+            </li>
+            <li>
+              <Link href="/scholars?available=true" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 Available for Adjunct Teaching
               </Link>
             </li>
             <li>
-              <Link href="/disciplines" className="hover:text-indigo-600">
-                Theological Disciplines
+              <Link href="/disciplines" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Disciplines Hub
               </Link>
             </li>
             <li>
-              <Link href="/traditions" className="hover:text-indigo-600">
-                Theological Traditions
+              <Link href="/traditions" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Traditions Hub
               </Link>
             </li>
           </ul>
@@ -58,40 +63,64 @@ export function PublicFooter() {
 
         <div>
           <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-            Standards & Faith
+            Portals & Contracts
           </h4>
           <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
             <li>
-              <Link href="/#trust" className="hover:text-indigo-600">
-                Admin Review Model
+              <Link href="/dashboard" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Scholar Workspace Overview
               </Link>
             </li>
             <li>
-              <Link href="/scholars?confession=westminster-confession" className="hover:text-indigo-600">
+              <Link href="/dashboard/contracts" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Scholar Contracts Inbox
+              </Link>
+            </li>
+            <li>
+              <Link href="/institution" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Institution Portal
+              </Link>
+            </li>
+            <li>
+              <Link href="/institution/contracts" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Institutional Engagement Contracts
+              </Link>
+            </li>
+            <li>
+              <Link href="/institution/subscription" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Subscriptions & Quota Management
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
+            Platform & Standards
+          </h4>
+          <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+            <li>
+              <Link href="/admin/reviews" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                Admin Review & Trust Model
+              </Link>
+            </li>
+            <li>
+              <Link href="/dev/status" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                System Health Diagnostics
+              </Link>
+            </li>
+            <li>
+              <Link href="/scholars?confession=westminster-confession" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 Westminster Confession
               </Link>
             </li>
             <li>
-              <Link href="/scholars?confession=1689-london-baptist" className="hover:text-indigo-600">
+              <Link href="/scholars?confession=1689-london-baptist" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 1689 Baptist Confession
               </Link>
             </li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="text-xs font-semibold text-slate-900 dark:text-white uppercase tracking-wider mb-3">
-            Governance
-          </h4>
-          <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
-            <li>
-              <span className="text-slate-500">Row Level Security Enforced</span>
-            </li>
-            <li>
-              <span className="text-slate-500">ATS / ABHE Compliant Rigor</span>
-            </li>
-            <li>
-              <span className="text-slate-500">Draft vs. Live Revision Staging (ADR 0005)</span>
+            <li className="pt-2 text-slate-400 text-[11px]">
+              PostgreSQL Row Level Security Enforced (32/32 tables)
             </li>
           </ul>
         </div>

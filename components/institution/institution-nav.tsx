@@ -37,6 +37,16 @@ export function InstitutionNav() {
       exact: false,
     },
     {
+      href: '/institution/contracts',
+      label: 'Contracts',
+      exact: false,
+    },
+    {
+      href: '/institution/subscription',
+      label: 'Subscription',
+      exact: false,
+    },
+    {
       href: '/institution/profile',
       label: t('institution.nav_profile') || 'Institution Profile',
       exact: false,
