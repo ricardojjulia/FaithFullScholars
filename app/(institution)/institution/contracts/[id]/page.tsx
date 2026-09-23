@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { getContractById } from '@/lib/contracts/contract-service';
 import { formatContractType, formatContractStatus } from '@/lib/contracts/types';
 import Link from 'next/link';
-import { FileText, Calendar, DollarSign, User, Building, CheckCircle2, Clock, ChevronLeft } from 'lucide-react';
+import { Calendar, DollarSign, User, Building, ChevronLeft } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Contract Agreement & Milestones | FaithFull Scholars',

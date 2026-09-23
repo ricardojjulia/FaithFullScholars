@@ -61,4 +61,21 @@ test.describe('Authentication & Role Onboarding Journeys', () => {
     await page.waitForURL('**/login');
     await expect(page.locator('h1')).toContainText('Sign in to your account');
   });
+
+  test('universal navigation bar allows navigation from dashboard profile to faculty directory & courses', async ({ page }) => {
+    await page.goto('/dashboard/profile');
+    await page.waitForLoadState('domcontentloaded');
+
+    // Verify PublicNav top navigation bar links are present
+    const facultyLink = page.locator('a[href="/scholars"]').first();
+    await expect(facultyLink).toBeVisible();
+
+    const coursesLink = page.locator('a[href="/courses"]').first();
+    await expect(coursesLink).toBeVisible();
+
+    // Click Faculty Directory link and verify navigation
+    await facultyLink.click();
+    await page.waitForURL('**/scholars');
+    await expect(page.locator('h1')).toContainText(/Theological Faculty Network/i);
+  });
 });

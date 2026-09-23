@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import {
   InstitutionContract,
-  ContractMilestone,
   CreateContractInput,
   ContractStatus,
 } from './types';

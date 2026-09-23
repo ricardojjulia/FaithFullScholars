@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   formatContractType,
   formatContractStatus,
-  OpportunityContractType,
-  ContractStatus,
 } from '@/lib/contracts/types';
 
 describe('Institutional Engagement Contracts (ADR 0011)', () => {

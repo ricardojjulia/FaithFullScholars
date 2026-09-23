@@ -156,7 +156,10 @@ export function UserMenu() {
             </div>
           )}
 
-          <div className="py-2 space-y-1 text-xs text-slate-600 dark:text-slate-400">
+          <div className="py-2 space-y-1 text-xs text-slate-600 dark:text-slate-400 max-h-[70vh] overflow-y-auto">
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Academic Discovery
+            </div>
             <Link
               href="/scholars"
               onClick={() => setIsOpen(false)}
@@ -179,7 +182,7 @@ export function UserMenu() {
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Speaking Bureau</span>
-              <span className="text-[10px] text-purple-600 font-semibold">Keynotes</span>
+              <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Keynotes</span>
             </Link>
             <Link
               href="/opportunities"
@@ -187,34 +190,78 @@ export function UserMenu() {
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Academic Postings</span>
-              <span className="text-[10px] text-emerald-600 font-semibold">Calls</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Calls</span>
             </Link>
 
-            <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
-
+            <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Faculty Workspace
+            </div>
             <Link
               href="/dashboard"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Scholar Workspace</span>
-              <span className="text-[10px] text-indigo-600 font-semibold">Faculty</span>
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Overview</span>
             </Link>
+            <Link
+              href="/dashboard/contracts"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>Contracts Inbox</span>
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Agreements</span>
+            </Link>
+
+            <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Institution Portal
+            </div>
             <Link
               href="/institution"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Institution Portal</span>
-              <span className="text-[10px] text-emerald-600 font-semibold">Seminary</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Seminary</span>
             </Link>
+            <Link
+              href="/institution/contracts"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>Engagement Contracts</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Drafts & Active</span>
+            </Link>
+            <Link
+              href="/institution/subscription"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>Subscriptions & Quotas</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Plans</span>
+            </Link>
+
+            <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
+            <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              Platform & Health
+            </div>
             <Link
               href="/admin/reviews"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
             >
               <span>Admin Trust Hub</span>
-              <span className="text-[10px] text-amber-600 font-semibold">Moderation</span>
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Moderation</span>
+            </Link>
+            <Link
+              href="/dev/status"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>System Health</span>
+              <span className="text-[10px] text-teal-600 dark:text-teal-400 font-semibold">Diagnostics</span>
             </Link>
           </div>
 

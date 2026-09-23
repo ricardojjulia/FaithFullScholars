@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getInstitutionContracts } from '@/lib/contracts/contract-service';
 import { formatContractType, formatContractStatus } from '@/lib/contracts/types';
 import Link from 'next/link';
-import { FileText, Plus, Calendar, DollarSign, UserCheck, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
+import { FileText, Plus, Calendar, DollarSign, UserCheck } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Faculty Engagement Contracts | Institution Portal',

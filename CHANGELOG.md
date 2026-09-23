@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented Supabase SSR PKCE callback handler (`/auth/callback`) and server signout actions (`/auth/signout`, `signOutAction`).
   - Connected `UserMenu` in universal navigation shell to display active authenticated user identity, role badges, and functional Sign Out.
   - Added Playwright browser E2E test suite (`tests/e2e/auth-journeys.spec.ts`) validating login, signup role switching, and session management.
+- **Universal Persistent Navigation & Unified Shell**:
+  - Mounted `<PublicNav />` across all application workspace layouts (`/dashboard/*`, `/institution/*`, `/admin/*`) with stacked two-tier header hierarchy (`h-16 top-0` universal bar above `h-12 top-16` workspace sub-nav).
+  - Consolidated `/institution/contracts` and `/institution/subscription` into `app/(institution)/institution/` so all institutional views inherit the unified portal shell.
+  - Expanded `UserMenu` and `PublicFooter` with direct navigation matrices across Faculty Directory, Courses, Speaking Bureau, Opportunities, Contracts Inbox, Institutional Portals, and System Diagnostics.
 
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:

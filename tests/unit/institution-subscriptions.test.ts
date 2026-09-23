@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TIER_CONFIG, formatTierName, SubscriptionTier } from '@/lib/subscriptions/types';
+import { TIER_CONFIG, formatTierName } from '@/lib/subscriptions/types';
 
 describe('Tiered Institutional Subscriptions (ADR 0010)', () => {
   it('defines 3 distinct subscription tiers with expected feature allowances', () => {

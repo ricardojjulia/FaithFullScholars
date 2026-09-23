@@ -1,9 +1,13 @@
 import Link from 'next/link';
+import { PublicNav } from '@/components/shell/public-nav';
 import { Inbox, FileText, BarChart3, Eye } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+      {/* Universal Top Application Bar */}
+      <PublicNav />
+
       {/* Dashboard Sub-Header */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-30 shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">

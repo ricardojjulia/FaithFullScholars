@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getScholarContracts } from '@/lib/contracts/contract-service';
 import { formatContractType, formatContractStatus } from '@/lib/contracts/types';
 import Link from 'next/link';
-import { FileText, Building2, Calendar, DollarSign, CheckCircle2, Clock } from 'lucide-react';
+import { FileText, Building2, Calendar, DollarSign } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Engagement Contracts | Scholar Workspace',
