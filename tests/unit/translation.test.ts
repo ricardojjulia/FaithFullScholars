@@ -57,7 +57,7 @@ describe('Internationalization & Language Translation (Phase 4 & Skill)', () => 
     }
   });
 
-  it('correctly provides dignified theological Spanish terminology', () => {
+  it('correctly provides dignified theological Spanish terminology across all core namespaces', () => {
     expect(esMessages.directory.confession).toBe('Confesión Histórica');
     expect(esMessages.directory.discipline).toBe('Disciplina Teológica');
     expect(esMessages.profile.faith_statement_title).toBe('Declaración Personal de Fe');
@@ -65,5 +65,18 @@ describe('Internationalization & Language Translation (Phase 4 & Skill)', () => 
     expect(esMessages.profile.full_subscription).toBe('Suscripción Plena');
     expect(esMessages.profile.with_exceptions).toBe('Con Excepciones Declaradas');
     expect(esMessages.nav.brand_sub).toBe('Red Académica Teológica');
+    expect(esMessages.speakers.title).toBe('Buró de Conferencistas Teológicos');
+    expect(esMessages.opportunities.title).toBe('Oportunidades Académicas y Convocatorias');
+    expect(esMessages.contracts.title).toBe('Contratos de Vinculación Docente');
+    expect(esMessages.subscriptions.title).toBe('Gestión de Suscripciones Institucionales y Cuotas');
+    expect(esMessages.footer.discovery_title).toBe('Exploración Académica');
+    expect(esMessages.user_menu.academic_discovery).toBe('Exploración Académica');
+  });
+
+  it('contains over 100 translation keys in both languages with full symmetry', () => {
+    const enKeys = getAllKeys(enMessages);
+    const esKeys = getAllKeys(esMessages);
+    expect(enKeys.length).toBeGreaterThanOrEqual(100);
+    expect(esKeys.length).toBe(enKeys.length);
   });
 });

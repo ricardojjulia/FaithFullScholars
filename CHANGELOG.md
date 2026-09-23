@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Full-Scope Multi-Journey Testing & 100% i18n Translation Parity**:
+  - Expanded translation dictionaries (`en.json` and `es.json`) across 17 namespaces (`nav`, `user_menu`, `search`, `directory`, `courses`, `speakers`, `opportunities`, `contracts`, `subscriptions`, `profile`, `dashboard`, `onboarding`, `admin`, `inquiry`, `institution`, `footer`, `common`) achieving 100% symmetric key parity and eliminating language mixing in the UI.
+  - Wired `PublicNav`, `UserMenu`, and `PublicFooter` to dynamic `useTranslation()` context.
+  - Authored comprehensive platform testing standard in `docs/testing/TESTING_GUIDELINES.md` documenting requirements across Unit, Integration, Playwright E2E, and Database RLS Security testing layers.
+  - Implemented multi-tenant PostgreSQL RLS security test suite (`tests/integration/security-guardrails-and-rls.test.ts`) asserting cross-tenant contract isolation, scholar draft seclusion, inquiry quota enforcement, public approved status boundaries, and ID tampering defenses.
+  - Implemented full Playwright browser E2E test suites for all major user journeys:
+    - `tests/e2e/translation-and-locale.spec.ts`: Live language switching (EN/ES) and zero UI language mixing.
+    - `tests/e2e/scholar-full-journey.spec.ts`: Scholar registration, profile editor, and contracts inbox.
+    - `tests/e2e/institution-full-journey.spec.ts`: Seminary registration, faculty directory filtering, opportunities, and quota management.
+    - `tests/e2e/admin-full-journey.spec.ts`: Moderation reviews, institution management, triage, and system diagnostics.
+  - Updated translation unit test suite (`tests/unit/translation.test.ts`) to validate all 17 namespaces against regressions.
 - **Seminary Consortia & Multi-Campus System Accounts (ADR 0012 / Phase 11)**:
   - Created `public.consortiums` and `public.consortium_members` tables with 100% PostgreSQL Row Level Security (7 policies), covering foreign key indexes (Splinter 0001), and pinned search-path triggers (Splinter 0011).
   - Implemented `lib/consortium/consortium-service.ts` with atomic rollback guarantees, member institution invitations, and sister campus discovery.
