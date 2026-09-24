@@ -179,6 +179,30 @@ async function runPilotReadinessDiagnostic() {
       notes: `${consortiumCount} active seminary consortia (ADR 0012)`,
     });
 
+    const licensingRes = await client.query(`SELECT count(*) as count FROM course_licensing_agreements;`);
+    const licensingCount = parseInt(licensingRes.rows[0].count, 10);
+    results.push({
+      category: 'Enterprise',
+      item: 'Course Licensing Agreements',
+      expected: '>= 1 agreement',
+      actual: licensingCount,
+      status: licensingCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${licensingCount} active course licensing agreements (ADR 0013)`,
+    });
+
+    const accreditedInstRes = await client.query(`
+      SELECT count(*) as count FROM institutions WHERE accreditation_status = 'accredited';
+    `);
+    const accreditedCount = parseInt(accreditedInstRes.rows[0].count, 10);
+    results.push({
+      category: 'Pilot Cohort',
+      item: 'Accredited Institutions (ATS/ABHE)',
+      expected: '>= 1 accredited institution',
+      actual: accreditedCount,
+      status: accreditedCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${accreditedCount} institutions with verified accreditation badges (ADR 0013)`,
+    });
+
     // Format output table
     console.table(
       results.map((r) => ({

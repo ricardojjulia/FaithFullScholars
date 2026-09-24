@@ -92,6 +92,7 @@ async function verifyDeployment() {
         'consortiums',
         'contract_milestones',
         'course_disciplines',
+        'course_licensing_agreements',
         'courses',
         'credentials',
         'disciplines',
@@ -138,7 +139,7 @@ async function verifyDeployment() {
       const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
       const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
 
-      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 34) {
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 35) {
         record(
           'Security (RLS)',
           'Row Level Security Coverage',
@@ -256,6 +257,15 @@ async function verifyDeployment() {
         'Consortiums System Table',
         consortiumsCount > 0 ? 'PASS' : 'FAIL',
         `consortiums table active (${consortiumsCount} consortia)`
+      );
+
+      const licensingRes = await client.query("SELECT count(*) FROM course_licensing_agreements;");
+      const licensingCount = parseInt(licensingRes.rows[0].count, 10);
+      record(
+        'Enterprise',
+        'Course Licensing System Table',
+        licensingCount > 0 ? 'PASS' : 'FAIL',
+        `course_licensing_agreements table active (${licensingCount} agreements)`
       );
     } catch {
       record('Database', 'PostgreSQL Connectivity', 'FAIL', 'Connection error: Unable to connect to target PostgreSQL instance');
