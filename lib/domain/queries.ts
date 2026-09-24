@@ -45,6 +45,7 @@ export interface PublicScholarCard {
   location: string | null;
   biography: string | null;
   profile_photo_path: string | null;
+  profile_tier?: 'standard' | 'distinguished_fellow';
   disciplines: Array<{ name: string; slug: string; is_primary: boolean }>;
   traditions: Array<{ name: string; slug: string; is_primary: boolean }>;
   confessions: Array<{ name: string; slug: string; adherence_level: string }>;
@@ -116,6 +117,7 @@ interface PublicScholarDbRow {
   location: string | null;
   biography: string | null;
   profile_photo_path: string | null;
+  profile_tier?: string | null;
   scholar_disciplines?: ScholarDisciplineJoin[] | null;
   scholar_traditions?: ScholarTraditionJoin[] | null;
   scholar_confessions?: ScholarConfessionJoin[] | null;
@@ -142,6 +144,7 @@ export async function getPublicScholars(
       location,
       biography,
       profile_photo_path,
+      profile_tier,
       scholar_disciplines (
         is_primary,
         disciplines (id, name, slug)
@@ -223,6 +226,7 @@ export async function getPublicScholars(
       location: row.location,
       biography: row.biography,
       profile_photo_path: row.profile_photo_path,
+      profile_tier: (row.profile_tier as 'standard' | 'distinguished_fellow') || 'standard',
       disciplines,
       traditions,
       confessions,

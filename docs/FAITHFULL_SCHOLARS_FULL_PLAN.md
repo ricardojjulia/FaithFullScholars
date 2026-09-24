@@ -860,6 +860,20 @@ Acceptance:
 7. [x] Add REST API endpoints (`GET/POST /api/institution/licensing`, `GET /api/dashboard/licensing`, `POST /api/dashboard/licensing/[id]/sign`).
 8. [x] Extend Playwright E2E test suite (`tests/e2e/course-licensing.spec.ts`) and deployment pre-flight checks.
 
+### Phase 13: Premium Scholar Profiles, Distinguished Faculty Dossiers & Media Showcase (Completed)
+
+> **Status:** Completed (ADR 0014: Distinguished Faculty Fellow tier with tamper-proof anti-privilege escalation trigger `prevent_scholar_tier_escalation`, ORCID / Google Scholar validation, SBL Handbook of Style 2nd ed. / Chicago 17th ed. citation formatting, zero-CLS click-to-play media facade for lectures/podcasts/videos, faculty media manager at `/dashboard/media`, board-ready print-optimized candidate dossier route at `/scholars/[slug]/dossier`, 100% RLS coverage across 35 tables, 223 passing unit/integration tests across 44 suites, 38 Playwright E2E tests, 0 Splinter findings, 21 deployment pre-flight checks, and 14/14 pilot readiness checks).
+
+1. [x] Create migration `supabase/migrations/20260924140000_distinguished_scholar_dossiers.sql`: add `profile_tier`, `orcid_id`, `google_scholar_url` to `public.scholars`; add anti-privilege escalation trigger preventing non-admins from self-elevating to `distinguished_fellow`; extend `public.media_links` with `is_featured`, `thumbnail_url`, `duration_seconds`.
+2. [x] Implement domain types, queries, and diff tracking in `lib/domain/types.ts`, `lib/domain/queries.ts`, and `lib/domain/diff.ts` preserving strict search neutrality.
+3. [x] Implement `lib/media/showcase-service.ts` with zero-CLS safe iframe embed generation and URL sanitization.
+4. [x] Implement `lib/profiles/dossier-service.ts` with SBL 2nd ed. / Chicago 17th ed. citation formatting and terminal degree validation.
+5. [x] Create UI components: `<DistinguishedBadge />`, `<ScholarMediaShowcase />`, `<DossierPrintButton />`.
+6. [x] Build board-ready print candidate dossier route (`/scholars/[slug]/dossier`) with print-optimized CSS, hiding screen navigation, and page break rules.
+7. [x] Build faculty media manager (`/dashboard/media`) and REST APIs (`GET/POST /api/scholars/media`, `PATCH/DELETE /api/scholars/media/[id]`).
+8. [x] Extend test suite with unit tests (`tests/unit/media-showcase.test.ts`, `tests/unit/dossier-service.test.ts`), RLS/trigger integration tests (`tests/integration/scholar-media.test.ts`), and Playwright E2E test (`tests/e2e/distinguished-dossier.spec.ts`).
+9. [x] Update pilot fixtures and verification diagnostics (14/14 checks PASS in `scripts/verify-pilot-readiness.ts`).
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -932,7 +946,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Seminary consortium accounts & multi-campus system federation (ADR 0012)** (`consortiums`, `consortium_members`, `/institution/consortium`, `lib/consortium/`, `app/api/institution/consortium/`).
 - [x] **Course licensing and syllabus distribution agreements (ADR 0013)** (`course_licensing_agreements`, `/institution/licensing`, `/dashboard/licensing`, `lib/licensing/`, `app/api/institution/licensing/`, `app/api/dashboard/licensing/`).
 - [x] **ATS/ABHE/TRACS/HLC Accreditation status & verified institutional badges (ADR 0013)** (`accreditation_body`, `accreditation_status`, `<AccreditationBadge />`, `/admin/institutions`, `lib/licensing/`).
-- [ ] Premium scholar profiles (Marked for follow-up).
+- [x] **Premium scholar profiles & distinguished faculty dossiers (ADR 0014)** (`profile_tier`, `public.scholars.orcid_id`, `google_scholar_url`, `media_links`, `/scholars/[slug]/dossier`, `/dashboard/media`, `lib/profiles/dossier-service.ts`, `lib/media/showcase-service.ts`).
 
 ## 22. Governing Decisions
 

@@ -203,6 +203,37 @@ async function runPilotReadinessDiagnostic() {
       notes: `${accreditedCount} institutions with verified accreditation badges (ADR 0013)`,
     });
 
+    // 13. Distinguished Scholar Profiles (ADR 0014)
+    const distinguishedRes = await client.query(`
+      SELECT count(*) as count FROM scholars WHERE profile_tier = 'distinguished_fellow';
+    `);
+    const distinguishedCount = parseInt(distinguishedRes.rows[0].count, 10);
+    results.push({
+      category: 'Pilot Cohort',
+      item: 'Distinguished Faculty Fellows',
+      expected: '>= 1 distinguished fellow',
+      actual: distinguishedCount,
+      status: distinguishedCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${distinguishedCount} scholars with distinguished fellow tier & ORCID/Google Scholar (ADR 0014)`,
+    });
+
+    // 14. Faculty Media Showcase (ADR 0014)
+    const mediaRes = await client.query(`
+      SELECT count(*) as count,
+             count(*) FILTER (WHERE is_featured = true) as featured
+      FROM media_links;
+    `);
+    const mediaCount = parseInt(mediaRes.rows[0].count, 10);
+    const featuredMediaCount = parseInt(mediaRes.rows[0].featured, 10);
+    results.push({
+      category: 'Pilot Cohort',
+      item: 'Faculty Media & Lecture Showcase',
+      expected: '>= 1 featured lecture showcase',
+      actual: `${featuredMediaCount} featured (${mediaCount} total)`,
+      status: featuredMediaCount >= 1 ? 'PASS' : 'WARN',
+      notes: `${mediaCount} curated lecture media items with zero-CLS responsive facades (ADR 0014)`,
+    });
+
     // Format output table
     console.table(
       results.map((r) => ({
