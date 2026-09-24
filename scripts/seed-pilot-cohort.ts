@@ -760,8 +760,13 @@ export async function seedPilotCohort() {
         )
       ON CONFLICT (id) DO UPDATE SET
         license_type = EXCLUDED.license_type,
+        term_duration = EXCLUDED.term_duration,
         royalty_amount = EXCLUDED.royalty_amount,
-        status = EXCLUDED.status;
+        permitted_students_count = EXCLUDED.permitted_students_count,
+        status = EXCLUDED.status,
+        custom_terms = EXCLUDED.custom_terms,
+        signed_by_scholar_at = EXCLUDED.signed_by_scholar_at,
+        signed_by_institution_at = EXCLUDED.signed_by_institution_at;
     `);
 
     await client.query('COMMIT;');
