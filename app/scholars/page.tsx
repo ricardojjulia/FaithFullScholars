@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { GraduationCap, Lock, Search } from 'lucide-react';
+import { Lock, Search } from 'lucide-react';
 import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/lib/domain/queries';
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
 import { ScholarRecommendationsRail } from '@/components/scholars/scholar-recommendations-rail';
-import { AiMatcherTriggerButton } from '@/components/scholars/ai-matcher-trigger-button';
+import { ScholarDirectoryHeader } from '@/components/scholars/scholar-directory-header';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
@@ -25,8 +25,6 @@ interface ScholarsPageProps {
     page?: string;
   }>;
 }
-
-import { ScholarDirectoryHeader } from '@/components/scholars/scholar-directory-header';
 
 export default async function ScholarsPage({ searchParams }: ScholarsPageProps) {
   const params = await searchParams;

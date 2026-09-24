@@ -104,10 +104,10 @@ export function SpeakerCard({ speaker }: SpeakerCardProps) {
                         ? t('speakers.pastoral')
                         : topic.target_audience === 'academic'
                         ? t('speakers.academic')
-                        : topic.target_audience === 'general'
-                        ? t('speakers.general')
-                        : topic.target_audience === 'youth'
-                        ? t('speakers.youth')
+                        : topic.target_audience === 'church_wide'
+                        ? t('speakers.church_wide')
+                        : topic.target_audience === 'undergraduate'
+                        ? t('speakers.undergraduate')
                         : formatTargetAudience(topic.target_audience)}
                     </span>
                   </div>
