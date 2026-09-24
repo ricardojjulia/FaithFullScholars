@@ -45,12 +45,18 @@ INSERT INTO public.confessional_standards (id, name, slug, year, tradition_affin
 ON CONFLICT (slug) DO NOTHING;
 
 -- 4. Sample Institutions
-INSERT INTO public.institutions (id, name, slug, website, institution_type, status, contact_email, location) VALUES
-  ('e1000000-0000-0000-0000-000000000001', 'Westminster Theological Seminary', 'westminster-theological-seminary', 'https://www.wts.edu', 'seminary', 'approved', 'academics@wts.edu', 'Glenside, PA'),
-  ('e1000000-0000-0000-0000-000000000002', 'Reformed Theological Seminary', 'reformed-theological-seminary', 'https://rts.edu', 'seminary', 'approved', 'dean@rts.edu', 'Orlando, FL'),
-  ('e1000000-0000-0000-0000-000000000003', 'Southern Baptist Theological Seminary', 'sbts', 'https://www.sbts.edu', 'seminary', 'approved', 'faculty@sbts.edu', 'Louisville, KY'),
-  ('e1000000-0000-0000-0000-000000000004', 'Trinity Evangelical Divinity School', 'teds', 'https://www.tiu.edu/divinity', 'seminary', 'approved', 'provost@tiu.edu', 'Deerfield, IL')
-ON CONFLICT (slug) DO NOTHING;
+INSERT INTO public.institutions (
+  id, name, slug, website, institution_type, status, contact_email, location,
+  accreditation_body, accreditation_status, accreditation_verified_at
+) VALUES
+  ('e1000000-0000-0000-0000-000000000001', 'Westminster Theological Seminary', 'westminster-theological-seminary', 'https://www.wts.edu', 'seminary', 'approved', 'academics@wts.edu', 'Glenside, PA', 'ATS', 'accredited', now() - interval '180 days'),
+  ('e1000000-0000-0000-0000-000000000002', 'Reformed Theological Seminary', 'reformed-theological-seminary', 'https://rts.edu', 'seminary', 'approved', 'dean@rts.edu', 'Orlando, FL', 'ATS', 'accredited', now() - interval '150 days'),
+  ('e1000000-0000-0000-0000-000000000003', 'Southern Baptist Theological Seminary', 'sbts', 'https://www.sbts.edu', 'seminary', 'approved', 'faculty@sbts.edu', 'Louisville, KY', 'ATS', 'accredited', now() - interval '200 days'),
+  ('e1000000-0000-0000-0000-000000000004', 'Trinity Evangelical Divinity School', 'teds', 'https://www.tiu.edu/divinity', 'seminary', 'approved', 'provost@tiu.edu', 'Deerfield, IL', 'ATS', 'accredited', now() - interval '120 days')
+ON CONFLICT (slug) DO UPDATE SET
+  accreditation_body = EXCLUDED.accreditation_body,
+  accreditation_status = EXCLUDED.accreditation_status,
+  accreditation_verified_at = EXCLUDED.accreditation_verified_at;
 
 -- 5. Sample Auth Users (Supabase Auth)
 INSERT INTO auth.users (
@@ -1210,6 +1216,48 @@ UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-0000
 UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-00000000000c' WHERE id = 'f1000000-0000-0000-0000-00000000000c';
 UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-00000000000d' WHERE id = 'f1000000-0000-0000-0000-00000000000d';
 UPDATE public.scholars SET published_revision_id = '01000000-0000-0000-0000-00000000000e' WHERE id = 'f1000000-0000-0000-0000-00000000000e';
+
+-- 20. Sample Course Licensing Agreements (ADR 0013)
+INSERT INTO public.course_licensing_agreements (
+  id, course_id, scholar_id, institution_id, consortium_id,
+  license_type, term_duration, royalty_amount, permitted_students_count,
+  status, custom_terms, signed_by_scholar_at, signed_by_institution_at
+) VALUES
+  (
+    '05000000-0000-0000-0000-000000000001',
+    '02000000-0000-0000-0000-000000000002', -- Johannine Exegesis
+    'f1000000-0000-0000-0000-000000000002', -- Dr. Sarah MacArthur
+    'e1000000-0000-0000-0000-000000000001', -- Westminster
+    'c8000000-0000-0000-0000-000000000001', -- ARTS Consortium
+    'full_course_curriculum',
+    '1_academic_year',
+    3500.00,
+    30,
+    'active',
+    'Includes 12 lecture outlines, Greek parsing reading guides, and 3 guest modular Q&A seminars.',
+    now() - interval '10 days',
+    now() - interval '10 days'
+  ),
+  (
+    '05000000-0000-0000-0000-000000000002',
+    '02000000-0000-0000-0000-000000000001', -- Post-Reformation Scholasticism
+    'f1000000-0000-0000-0000-000000000001', -- Dr. Calvin Edwards
+    'e1000000-0000-0000-0000-000000000002', -- Reformed Theological Seminary
+    NULL,
+    'syllabus_only',
+    '1_semester',
+    850.00,
+    20,
+    'requested',
+    'Syllabus and bibliography adoption for upcoming Master of Divinity intensive cohort.',
+    NULL,
+    now() - interval '2 days'
+  )
+ON CONFLICT (id) DO UPDATE SET
+  license_type = EXCLUDED.license_type,
+  royalty_amount = EXCLUDED.royalty_amount,
+  status = EXCLUDED.status;
+
 
 
 

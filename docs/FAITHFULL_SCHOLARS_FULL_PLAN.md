@@ -905,8 +905,8 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Tiered institutional subscriptions & quota enforcement (ADR 0010)** (`institution_subscriptions`, `/institution/subscription`, `lib/subscriptions/`).
 - [x] **Institutional engagement contracts & milestone workflow (ADR 0011)** (`institution_contracts`, `contract_milestones`, `/institution/contracts`, `/dashboard/contracts`, `lib/contracts/`).
 - [x] **Seminary consortium accounts & multi-campus system federation (ADR 0012)** (`consortiums`, `consortium_members`, `/institution/consortium`, `lib/consortium/`, `app/api/institution/consortium/`).
-- [ ] Course licensing and syllabus distribution agreements (Marked for follow-up).
-- [ ] Credential-verification partnerships (ATS/ABHE accreditation registrars) (Marked for follow-up).
+- [x] **Course licensing and syllabus distribution agreements (ADR 0013)** (`course_licensing_agreements`, `/institution/licensing`, `/dashboard/licensing`, `lib/licensing/`, `app/api/institution/licensing/`, `app/api/dashboard/licensing/`).
+- [x] **ATS/ABHE/TRACS/HLC Accreditation status & verified institutional badges (ADR 0013)** (`accreditation_body`, `accreditation_status`, `<AccreditationBadge />`, `/admin/institutions`, `lib/licensing/`).
 - [ ] Premium scholar profiles (Marked for follow-up).
 
 ## 22. Governing Decisions
