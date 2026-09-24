@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Sparkles, X, GraduationCap, ScrollText, BookOpen, FileSpreadsheet, Briefcase, Building2, Search, Check, ArrowRight } from 'lucide-react';
 import { FacultyMatchResult } from '@/lib/ai/gemini-faculty-matcher';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 
 interface AiFacultyMatcherModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const SAMPLE_PROMPTS = [
 ];
 
 export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModalProps) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<FacultyMatchResult[]>([]);
@@ -90,13 +92,13 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-800/80 border border-indigo-700/60 text-amber-300 text-xs font-semibold shadow-2xs">
               <Sparkles className="w-3.5 h-3.5 text-amber-300 stroke-[2]" />
-              <span>Citation-Grounded AI Faculty Matcher</span>
+              <span>{t('ai_matcher.modal_badge')}</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight text-white">
-              Search Committee Candidate Matcher
+              {t('ai_matcher.modal_title')}
             </h2>
             <p className="text-xs text-indigo-200 max-w-xl leading-relaxed">
-              Describe your institutional position, required doctorate, confessional standard, or course delivery mode in natural language.
+              {t('ai_matcher.modal_subtitle')}
             </p>
           </div>
 
@@ -124,7 +126,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="e.g., Cambridge Ph.D. in New Testament subscribing to Westminster Confession for modular term..."
+                placeholder={t('ai_matcher.prompt_placeholder')}
                 className="w-full pl-4 pr-10 py-3 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-850 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-hidden focus:ring-2 focus:ring-indigo-600 shadow-2xs"
               />
               {query && (
@@ -133,7 +135,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
                   onClick={() => setQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs"
                 >
-                  Clear
+                  {t('search.clear')}
                 </button>
               )}
             </div>
@@ -141,17 +143,17 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
             <button
               type="submit"
               disabled={isLoading || !query.trim()}
-              className="px-6 py-3 bg-indigo-900 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold rounded-2xl shadow-xs transition-all flex items-center gap-2 shrink-0"
+              className="px-6 py-3 bg-indigo-900 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold rounded-2xl shadow-xs transition-all flex items-center gap-2 shrink-0 cursor-pointer"
             >
               {isLoading ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Evaluating...</span>
+                  <span>{t('ai_matcher.matching_in_progress')}</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-amber-300 stroke-[2]" />
-                  <span>Match Candidates</span>
+                  <span>{t('ai_matcher.find_matches')}</span>
                 </>
               )}
             </button>
