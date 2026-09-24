@@ -218,6 +218,14 @@ export function UserMenu() {
               <span>{t('user_menu.contracts_inbox') || 'Contracts Inbox'}</span>
               <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Agreements</span>
             </Link>
+            <Link
+              href="/dashboard/licensing"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>{t('user_menu.course_licensing') || 'Course Licensing'}</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Royalties</span>
+            </Link>
 
             <div className="my-1.5 border-t border-slate-100 dark:border-slate-800" />
             <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -238,6 +246,14 @@ export function UserMenu() {
             >
               <span>{t('user_menu.engagement_contracts') || 'Engagement Contracts'}</span>
               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Drafts & Active</span>
+            </Link>
+            <Link
+              href="/institution/licensing"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>{t('user_menu.syllabi_licensing') || 'Syllabi Licensing'}</span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Curriculum</span>
             </Link>
             <Link
               href="/institution/subscription"

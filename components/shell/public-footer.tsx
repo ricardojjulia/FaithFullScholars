@@ -82,6 +82,11 @@ export function PublicFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/dashboard/licensing" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                {t('footer.course_licensing') || 'Curriculum Licensing & Royalties'}
+              </Link>
+            </li>
+            <li>
               <Link href="/institution" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 {t('footer.institution_portal') || 'Institution Portal'}
               </Link>
@@ -89,6 +94,11 @@ export function PublicFooter() {
             <li>
               <Link href="/institution/contracts" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
                 {t('footer.engagement_contracts') || 'Institutional Engagement Contracts'}
+              </Link>
+            </li>
+            <li>
+              <Link href="/institution/licensing" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                {t('footer.syllabi_licensing') || 'Syllabus Licensing & Adoptions'}
               </Link>
             </li>
             <li>

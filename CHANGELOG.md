@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Course Licensing, Syllabus Distribution Agreements & ATS/ABHE Accreditation Badges (ADR 0013 / Post-MVP Backlog §21)**:
+  - Created `public.course_licensing_agreements` table with 100% PostgreSQL Row Level Security (6 policies), covering foreign key indexes (Splinter 0001), and pinned search-path updated_at triggers (Splinter 0011).
+  - Extended `public.institutions` with `accreditation_body`, `accreditation_status`, and `accreditation_verified_at` for institutional vetting.
+  - Implemented `lib/licensing/licensing-service.ts` managing syllabus distribution requests, institutional licensing terms, and scholar counter-signatures with automatic 85/15 royalty revenue splits.
+  - Built institutional licensing portal (`app/(institution)/institution/licensing/page.tsx`), scholar licensing dashboard (`app/dashboard/licensing/page.tsx`), syllabus license modal (`components/licensing/course-licensing-modal.tsx`), and authoritative accreditation badge component (`components/accreditation/accreditation-badge.tsx`).
+  - Added REST API endpoints (`GET/POST /api/institution/licensing`, `GET /api/dashboard/licensing`, `POST /api/dashboard/licensing/[id]/sign`).
+  - Added 100% symmetric i18n translation key parity across EN/ES dictionaries for `licensing` namespace.
+  - Added comprehensive test suites: unit tests (`tests/unit/course-licensing.test.ts`), integration tests with PostgreSQL RLS verification (`tests/integration/course-licensing-and-rls.test.ts`), and Playwright E2E browser tests (`tests/e2e/course-licensing.spec.ts`).
 - **Full-Scope Multi-Journey Testing & 100% i18n Translation Parity**:
   - Expanded translation dictionaries (`en.json` and `es.json`) across 17 namespaces (`nav`, `user_menu`, `search`, `directory`, `courses`, `speakers`, `opportunities`, `contracts`, `subscriptions`, `profile`, `dashboard`, `onboarding`, `admin`, `inquiry`, `institution`, `footer`, `common`) achieving 100% symmetric key parity and eliminating language mixing in the UI.
   - Wired `PublicNav`, `UserMenu`, and `PublicFooter` to dynamic `useTranslation()` context.
