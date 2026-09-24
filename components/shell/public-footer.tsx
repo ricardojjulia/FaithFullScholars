@@ -140,7 +140,7 @@ export function PublicFooter() {
               </Link>
             </li>
             <li className="pt-2 text-slate-400 text-[11px]">
-              {t('footer.rls_notice') || 'PostgreSQL Row Level Security Enforced (32/32 tables)'}
+              {t('footer.rls_notice') || 'PostgreSQL Row Level Security Enforced (35/35 tables)'}
             </li>
           </ul>
         </div>

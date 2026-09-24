@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Pilot Fixture Reconciliation, Deployment Verification & Master Plan Synchronization**:
+  - Synchronized `scripts/seed-pilot-cohort.ts` with institutional accreditation attributes (`accreditation_body = 'ATS'`, `accreditation_status = 'accredited'`) and course licensing agreement fixtures (ADR 0013).
+  - Updated `scripts/verify-deployment.ts` with `course_licensing_agreements` in expected table inventory (35/35 tables) and Enterprise pre-flight check.
+  - Updated `scripts/verify-pilot-readiness.ts` to assert course licensing agreements and accredited institutions count.
+  - Updated `components/shell/public-footer.tsx` fallback badge to reflect 35/35 PostgreSQL RLS tables.
+  - Synchronized `docs/FAITHFULL_SCHOLARS_FULL_PLAN.md` with Phase 11 (Consortia) and Phase 12 (Licensing & Accreditation) in Section 18 Execution Plan, and completed items in Section 20 Release Checklist.
 - **Course Licensing, Syllabus Distribution Agreements & ATS/ABHE Accreditation Badges (ADR 0013 / Post-MVP Backlog §21)**:
   - Created `public.course_licensing_agreements` table with 100% PostgreSQL Row Level Security (6 policies), covering foreign key indexes (Splinter 0001), and pinned search-path updated_at triggers (Splinter 0011).
   - Extended `public.institutions` with `accreditation_body`, `accreditation_status`, and `accreditation_verified_at` for institutional vetting.

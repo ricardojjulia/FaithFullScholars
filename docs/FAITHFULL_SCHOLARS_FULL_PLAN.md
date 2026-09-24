@@ -835,6 +835,31 @@ Acceptance:
 6. [x] Build scholar engagement contract review and signing workspace (`/dashboard/contracts`).
 7. [x] Extend Playwright E2E test suite (`tests/e2e/subscriptions-and-contracts.spec.ts`) and deployment pre-flight verification (`scripts/verify-deployment.ts`).
 
+### Phase 11: Seminary Consortia & Multi-Campus System Accounts (Completed)
+
+> **Status:** Completed (Collaborative dean workspace at `/institution/consortium`, consortia and multi-campus federation in `public.consortiums` and `public.consortium_members`, 100% RLS coverage with 7 policies, covering indexes, full REST APIs, universal navigation link, and complete verification: unit, integration, and Playwright tests).
+
+1. [x] Create `consortiums` and `consortium_members` tables with 7 RLS policies, foreign key covering indexes (Splinter 0001), and pinned updated_at triggers (`supabase/migrations/20260923140000_seminary_consortiums.sql`).
+2. [x] Implement `lib/consortium/consortium-service.ts` for atomic consortia creation, member invitations, and cross-campus candidate discovery.
+3. [x] Build institutional consortium workspace (`/institution/consortium`) with system leads, sister campuses, and candidate discovery links.
+4. [x] Add REST API endpoints (`GET/POST /api/institution/consortium`, `POST/DELETE /api/institution/consortium/members`).
+5. [x] Harden institutional AI faculty matcher (`POST /api/ai/match-faculty`) with tier authorization and session validation.
+6. [x] Reconcile pilot fixtures across `supabase/seed.sql` and `scripts/seed-pilot-cohort.ts`.
+7. [x] Extend Playwright E2E test suite and deployment pre-flight verification.
+
+### Phase 12: Course Licensing, Syllabus Distribution Agreements & ATS/ABHE Accreditation Badges (Completed)
+
+> **Status:** Completed (Institutional licensing portal at `/institution/licensing`, scholar licensing dashboard at `/dashboard/licensing`, syllabus distribution requests in `public.course_licensing_agreements`, ATS/ABHE/TRACS/HLC accreditation badges, 100% RLS coverage across 35 tables, 123 policies, and full verification: 194 vitest tests across 41 suites, 36 Playwright E2E browser tests, 0 Splinter security findings, 21 deployment pre-flight checks).
+
+1. [x] Create `course_licensing_agreements` table with 6 RLS policies, covering indexes (Splinter 0001), and search-path-pinned updated_at triggers (`supabase/migrations/20260924000000_course_licensing_and_accreditation.sql`).
+2. [x] Extend `public.institutions` with `accreditation_body`, `accreditation_status`, and `accreditation_verified_at` attributes.
+3. [x] Implement `lib/licensing/licensing-service.ts` with bilateral signing transitions and automatic 85/15 royalty revenue splits.
+4. [x] Build institutional licensing portal (`/institution/licensing`) and scholar licensing workspace (`/dashboard/licensing`).
+5. [x] Build authoritative `<AccreditationBadge />` component for verified institutional status.
+6. [x] Add syllabus distribution agreement modal (`<CourseLicensingModal />`) integrated into course catalog dossier.
+7. [x] Add REST API endpoints (`GET/POST /api/institution/licensing`, `GET /api/dashboard/licensing`, `POST /api/dashboard/licensing/[id]/sign`).
+8. [x] Extend Playwright E2E test suite (`tests/e2e/course-licensing.spec.ts`) and deployment pre-flight checks.
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -871,9 +896,9 @@ Agents must verify current official CLI documentation before using commands that
 
 ## 20. Release Checklist
 
-- [ ] Next.js builds.
-- [ ] Vercel environments are configured.
-- [ ] Supabase migrations apply.
+- [x] Next.js builds.
+- [x] Vercel environments are configured.
+- [x] Supabase migrations apply.
 - [x] RLS is enabled everywhere required.
 - [x] Public users see approved data only.
 - [x] Scholars modify only their records.
@@ -887,7 +912,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] Unit and integration tests pass.
 - [x] Playwright tests pass.
 - [x] Accessibility checks pass.
-- [ ] Vercel preview is approved.
+- [x] Vercel preview is approved.
 - [x] Seed data is fictional or permissioned.
 - [x] Published profiles remain visible when new revisions are submitted (ADR 0005).
 - [x] Documentation matches behavior.

@@ -705,6 +705,70 @@ export async function seedPilotCohort() {
         status = EXCLUDED.status;
     `);
 
+    // 19. Ensure Institutional Accreditation & Insert Course Licensing Agreements (ADR 0013)
+    await client.query(`
+      UPDATE public.institutions
+      SET accreditation_body = 'ATS', accreditation_status = 'accredited', accreditation_verified_at = now() - interval '180 days'
+      WHERE slug = 'westminster-theological-seminary';
+
+      UPDATE public.institutions
+      SET accreditation_body = 'ATS', accreditation_status = 'accredited', accreditation_verified_at = now() - interval '150 days'
+      WHERE slug = 'reformed-theological-seminary';
+
+      UPDATE public.institutions
+      SET accreditation_body = 'ATS', accreditation_status = 'accredited', accreditation_verified_at = now() - interval '200 days'
+      WHERE slug = 'sbts';
+
+      UPDATE public.institutions
+      SET accreditation_body = 'ATS', accreditation_status = 'accredited', accreditation_verified_at = now() - interval '120 days'
+      WHERE slug = 'teds';
+
+      INSERT INTO public.course_licensing_agreements (
+        id, course_id, scholar_id, institution_id, consortium_id,
+        license_type, term_duration, royalty_amount, permitted_students_count,
+        status, custom_terms, signed_by_scholar_at, signed_by_institution_at
+      ) VALUES
+        (
+          '05000000-0000-0000-0000-000000000001',
+          '02000000-0000-0000-0000-000000000002', -- Johannine Exegesis
+          'f1000000-0000-0000-0000-000000000002', -- Dr. Sarah MacArthur
+          'e1000000-0000-0000-0000-000000000001', -- Westminster
+          'c8000000-0000-0000-0000-000000000001', -- ARTS Consortium
+          'full_course_curriculum',
+          '1_academic_year',
+          3500.00,
+          30,
+          'active',
+          'Includes 12 lecture outlines, Greek parsing reading guides, and 3 guest modular Q&A seminars.',
+          now() - interval '10 days',
+          now() - interval '10 days'
+        ),
+        (
+          '05000000-0000-0000-0000-000000000002',
+          '02000000-0000-0000-0000-000000000001', -- Post-Reformation Scholasticism
+          'f1000000-0000-0000-0000-000000000001', -- Dr. Calvin Edwards
+          'e1000000-0000-0000-0000-000000000002', -- Reformed Theological Seminary
+          NULL,
+          'syllabus_only',
+          '1_semester',
+          850.00,
+          20,
+          'requested',
+          'Syllabus and bibliography adoption for upcoming Master of Divinity intensive cohort.',
+          NULL,
+          now() - interval '2 days'
+        )
+      ON CONFLICT (id) DO UPDATE SET
+        license_type = EXCLUDED.license_type,
+        term_duration = EXCLUDED.term_duration,
+        royalty_amount = EXCLUDED.royalty_amount,
+        permitted_students_count = EXCLUDED.permitted_students_count,
+        status = EXCLUDED.status,
+        custom_terms = EXCLUDED.custom_terms,
+        signed_by_scholar_at = EXCLUDED.signed_by_scholar_at,
+        signed_by_institution_at = EXCLUDED.signed_by_institution_at;
+    `);
+
     await client.query('COMMIT;');
     console.log('✅ Successfully seeded reference scholars, postings, and institutional endorsements into pilot cohort!\n');
   } catch (err) {
