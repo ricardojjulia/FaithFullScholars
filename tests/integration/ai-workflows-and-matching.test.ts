@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { extractCvWithGemini } from '@/lib/ai/gemini-cv-extractor';
-import { parseCvText } from '@/lib/profiles/cv-parser';
 import pg from 'pg';
 
 describe('Track B: AI-Assisted CV Ingestion & Faculty Matcher Intelligence', () => {
