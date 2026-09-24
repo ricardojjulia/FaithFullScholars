@@ -71,6 +71,23 @@ describe('Distinguished Scholar Dossiers & Media Showcase Integration (ADR 0014)
       expect(threw).toBe(true);
     });
 
+    it('prevents authenticated scholar from inserting new scholar with profile_tier = distinguished_fellow', async () => {
+      let threw = false;
+      try {
+        await scholarClient.query(`
+          INSERT INTO public.scholars (
+            account_id, slug, full_name, profile_tier
+          ) VALUES (
+            $1, 'rogue-scholar', 'Dr. Rogue', 'distinguished_fellow'
+          );
+        `, [scholar1AccountId]);
+      } catch (err: unknown) {
+        threw = true;
+        expect((err as Error).message).toContain('Unauthorized: only platform administrators');
+      }
+      expect(threw).toBe(true);
+    });
+
     it('allows admin / platform superuser to set distinguished_fellow status', async () => {
       const res = await adminClient.query(`
         UPDATE public.scholars

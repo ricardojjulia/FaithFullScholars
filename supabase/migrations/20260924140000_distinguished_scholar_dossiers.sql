@@ -36,9 +36,15 @@ SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
 BEGIN
-  IF NEW.profile_tier IS DISTINCT FROM OLD.profile_tier THEN
-    IF (COALESCE(auth.role(), '') IN ('authenticated', 'anon')) AND NOT (public.is_admin()) THEN
-      RAISE EXCEPTION 'Unauthorized: only platform administrators can modify scholar profile_tier';
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.profile_tier <> 'standard' AND (COALESCE(auth.role(), '') IN ('authenticated', 'anon')) AND NOT (public.is_admin()) THEN
+      RAISE EXCEPTION 'Unauthorized: only platform administrators can assign scholar profile_tier';
+    END IF;
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF NEW.profile_tier IS DISTINCT FROM OLD.profile_tier THEN
+      IF (COALESCE(auth.role(), '') IN ('authenticated', 'anon')) AND NOT (public.is_admin()) THEN
+        RAISE EXCEPTION 'Unauthorized: only platform administrators can modify scholar profile_tier';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
@@ -47,7 +53,7 @@ $$;
 
 DROP TRIGGER IF EXISTS trg_prevent_scholar_tier_escalation ON public.scholars;
 CREATE TRIGGER trg_prevent_scholar_tier_escalation
-  BEFORE UPDATE ON public.scholars
+  BEFORE INSERT OR UPDATE ON public.scholars
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_scholar_tier_escalation();
 

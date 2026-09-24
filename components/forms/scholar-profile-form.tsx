@@ -238,6 +238,34 @@ export function ScholarProfileForm({
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
             />
           </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              ORCID Researcher ID
+            </label>
+            <input
+              type="text"
+              value={formData.orcid_id || ''}
+              onChange={(e) => updateField('orcid_id', e.target.value)}
+              placeholder="e.g. 0000-0002-1825-0097"
+              pattern="^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$"
+              title="Must be a valid 16-character ORCID identifier (e.g. 0000-0002-1825-0097)"
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Google Scholar Citations URL
+            </label>
+            <input
+              type="url"
+              value={formData.google_scholar_url || ''}
+              onChange={(e) => updateField('google_scholar_url', e.target.value)}
+              placeholder="https://scholar.google.com/citations?user=..."
+              className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+            />
+          </div>
         </div>
 
         <div>

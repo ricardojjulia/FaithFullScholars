@@ -86,6 +86,8 @@ export async function processRevisionReview(
     if (snapshot.doctrinal_statement_text !== undefined) {
       scholarUpdates.doctrinal_statement_text = snapshot.doctrinal_statement_text;
     }
+    if (snapshot.orcid_id !== undefined) scholarUpdates.orcid_id = snapshot.orcid_id;
+    if (snapshot.google_scholar_url !== undefined) scholarUpdates.google_scholar_url = snapshot.google_scholar_url;
 
     const { error: updateScholarErr } = await supabase
       .from('scholars')
