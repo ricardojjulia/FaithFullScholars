@@ -1,10 +1,15 @@
+'use client';
+
 import Link from 'next/link';
 import { Home, Users, BookOpen, Briefcase, GraduationCap, Mic } from 'lucide-react';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
 import { LanguageSwitcher } from './language-switcher';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 
 export function PublicNav() {
+  const { t } = useTranslation();
+
   return (
     <header className="border-b border-slate-200/90 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sticky top-0 z-40 shadow-xs">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -19,7 +24,7 @@ export function PublicNav() {
                 FaithFull <span className="text-indigo-600 dark:text-indigo-400 font-semibold">Scholars</span>
               </span>
               <span className="text-[9px] text-slate-500 uppercase tracking-widest font-semibold">
-                Theological Faculty Network
+                {t('nav.brand_sub') || 'Theological Faculty Network'}
               </span>
             </div>
           </Link>
@@ -35,55 +40,55 @@ export function PublicNav() {
           <Link
             href="/"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
-            title="Home Feed"
+            title={t('nav.home') || 'Home Feed'}
           >
             <Home className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Home</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.home') || 'Home'}</span>
           </Link>
 
           <Link
             href="/scholars"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
-            title="Faculty Network Directory"
+            title={t('nav.directory') || 'Faculty Network Directory'}
           >
             <Users className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Directory</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.directory') || 'Directory'}</span>
           </Link>
 
           <Link
             href="/courses"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
-            title="Course Syllabi & Lecture Showcase"
+            title={t('nav.courses') || 'Course Syllabi & Lecture Showcase'}
           >
             <BookOpen className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Courses</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.courses') || 'Courses'}</span>
           </Link>
 
           <Link
             href="/opportunities"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
-            title="Academic Opportunities & Teaching Calls"
+            title={t('nav.opportunities') || 'Academic Opportunities & Teaching Calls'}
           >
             <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Opportunities</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.opportunities') || 'Opportunities'}</span>
           </Link>
 
           <Link
             href="/speakers"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
-            title="Theological Conference Speaker Bureau & Keynotes"
+            title={t('nav.speakers') || 'Theological Conference Speaker Bureau & Keynotes'}
           >
             <Mic className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Speakers</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.speakers') || 'Speakers'}</span>
           </Link>
 
           <Link
             href="/scholars?available=true"
             className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group relative"
-            title="Scholars Available for Adjunct Teaching"
+            title={t('nav.teaching') || 'Scholars Available for Adjunct Teaching'}
           >
             <GraduationCap className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
-            <span className="text-[10px] font-medium hidden md:block">Teaching</span>
+            <span className="text-[10px] font-medium hidden md:block">{t('nav.teaching') || 'Teaching'}</span>
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse md:hidden" />
           </Link>
 
@@ -100,7 +105,7 @@ export function PublicNav() {
             href="/scholars"
             className="hidden sm:inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-xl bg-indigo-900 hover:bg-indigo-800 text-white shadow-xs transition-colors whitespace-nowrap ml-1"
           >
-            Browse All
+            {t('nav.browse_all') || 'Browse All'}
           </Link>
         </nav>
       </div>
