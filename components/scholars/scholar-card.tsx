@@ -1,10 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import { Building2, MapPin, ScrollText, ArrowRight } from 'lucide-react';
 import { PublicScholarCard } from '@/lib/domain/queries';
 import { formatOpportunityType } from '@/lib/domain/taxonomies';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 import { DistinguishedBadge } from './distinguished-badge';
 
 export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
+  const { t } = useTranslation();
   const primaryDiscipline = scholar.disciplines.find((d) => d.is_primary) || scholar.disciplines[0];
   const primaryTradition = scholar.traditions.find((t) => t.is_primary) || scholar.traditions[0];
 
@@ -40,7 +44,7 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
                 )}
               </div>
               <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
-                {scholar.title || scholar.institutional_role || 'Theological Scholar'}
+                {scholar.title || scholar.institutional_role || t('directory.theological_scholar')}
               </p>
             </div>
           </div>
@@ -48,7 +52,7 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
           {scholar.is_available_for_hire && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 shrink-0">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Available
+              {t('common.available')}
             </span>
           )}
         </div>
@@ -108,14 +112,14 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
         <div className="text-[11px] text-slate-500">
           {scholar.opportunity_types.length > 0 ? (
             <span>
-              Opportunities:{' '}
+              {t('directory.open_for')}{' '}
               <strong className="text-slate-700 dark:text-slate-300">
                 {formatOpportunityType(scholar.opportunity_types[0])}
                 {scholar.opportunity_types.length > 1 && ` +${scholar.opportunity_types.length - 1}`}
               </strong>
             </span>
           ) : (
-            <span>Teaching & Research</span>
+            <span>{t('directory.theological_scholar')}</span>
           )}
         </div>
 
@@ -123,7 +127,7 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
           href={`/scholars/${scholar.slug}`}
           className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 flex items-center gap-1.5 transition-colors group/link"
         >
-          <span>View Profile</span>
+          <span>{t('directory.view_profile')}</span>
           <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/link:translate-x-0.5" />
         </Link>
       </div>

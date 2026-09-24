@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 
 interface TaxonomyOption {
   id: string;
@@ -26,6 +27,7 @@ export function ScholarFilters({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [discipline, setDiscipline] = useState(searchParams.get('discipline') || '');
@@ -84,7 +86,7 @@ export function ScholarFilters({
       <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <h3 className="font-display font-bold text-sm tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
-          <span>Filter Faculty</span>
+          <span>{t('directory.filters_title')}</span>
         </h3>
         {hasActiveFilters && (
           <button
@@ -92,7 +94,7 @@ export function ScholarFilters({
             onClick={handleReset}
             className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
           >
-            Clear All
+            {t('directory.clear_filters')}
           </button>
         )}
       </div>
@@ -100,7 +102,7 @@ export function ScholarFilters({
       {/* Search Input */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          Keyword Search
+          {t('directory.keyword_search')}
         </label>
         <div className="flex gap-2">
           <input
@@ -110,7 +112,7 @@ export function ScholarFilters({
             onKeyDown={(e) => {
               if (e.key === 'Enter') applyFilters({ search });
             }}
-            placeholder="Name, bio, institution..."
+            placeholder={t('directory.search_input_placeholder')}
             className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button
@@ -118,7 +120,7 @@ export function ScholarFilters({
             onClick={() => applyFilters({ search })}
             className="px-3 py-2 bg-indigo-900 text-white rounded-xl text-xs font-semibold hover:bg-indigo-800 transition-colors"
           >
-            Search
+            {t('directory.search_button')}
           </button>
         </div>
       </div>
@@ -126,7 +128,7 @@ export function ScholarFilters({
       {/* Discipline Select */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          Theological Discipline
+          {t('directory.discipline_label')}
         </label>
         <select
           value={discipline}
@@ -136,7 +138,7 @@ export function ScholarFilters({
           }}
           className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          <option value="">All Disciplines</option>
+          <option value="">{t('directory.all_disciplines')}</option>
           {disciplines.map((d) => (
             <option key={d.slug} value={d.slug}>
               {d.name}
@@ -148,7 +150,7 @@ export function ScholarFilters({
       {/* Tradition Select */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          Theological Tradition
+          {t('directory.tradition_label')}
         </label>
         <select
           value={tradition}
@@ -158,7 +160,7 @@ export function ScholarFilters({
           }}
           className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          <option value="">All Traditions</option>
+          <option value="">{t('directory.all_traditions')}</option>
           {traditions.map((t) => (
             <option key={t.slug} value={t.slug}>
               {t.name}
@@ -170,7 +172,7 @@ export function ScholarFilters({
       {/* Confessional Standard Select */}
       <div>
         <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-          Confessional Affirmation
+          {t('directory.confession_label')}
         </label>
         <select
           value={confession}
@@ -180,7 +182,7 @@ export function ScholarFilters({
           }}
           className="w-full text-xs px-3 py-2 rounded-xl bg-slate-50 border border-slate-300 dark:bg-slate-800 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
-          <option value="">All Confessions</option>
+          <option value="">{t('directory.all_confessions')}</option>
           {confessionalStandards.map((c) => (
             <option key={c.slug} value={c.slug}>
               {c.name} {c.year ? `(${c.year})` : ''}
@@ -201,13 +203,13 @@ export function ScholarFilters({
             }}
             className="w-4 h-4 rounded border-slate-300 text-indigo-900 focus:ring-indigo-500"
           />
-          <span>Available for Teaching / Speaking</span>
+          <span>{t('directory.available_for_hire_toggle')}</span>
         </label>
       </div>
 
       {isPending && (
         <div className="text-[11px] text-indigo-600 dark:text-indigo-400 text-center animate-pulse">
-          Updating faculty directory...
+          {t('directory.updating_directory')}
         </div>
       )}
     </div>
