@@ -219,6 +219,14 @@ export function UserMenu() {
               <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Agreements</span>
             </Link>
             <Link
+              href="/dashboard/media"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"
+            >
+              <span>{t('user_menu.media_lectures') || 'Media & Lectures'}</span>
+              <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Showcase</span>
+            </Link>
+            <Link
               href="/dashboard/licensing"
               onClick={() => setIsOpen(false)}
               className="flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors"

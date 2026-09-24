@@ -42,6 +42,14 @@ export function validateRevisionData(data: Partial<RevisionSnapshotData>): { val
     errors.push('Institution name cannot exceed 150 characters.');
   }
 
+  if (data.orcid_id && !/^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/.test(data.orcid_id)) {
+    errors.push('Invalid ORCID format. Expected format: 0000-0000-0000-0000.');
+  }
+
+  if (data.google_scholar_url && !/^https:\/\/scholar\.google\.[a-z.]+\/citations\?.*user=/.test(data.google_scholar_url)) {
+    errors.push('Invalid Google Scholar URL. Must be an official author citations profile.');
+  }
+
   return {
     valid: errors.length === 0,
     errors
@@ -64,6 +72,8 @@ export function buildDraftSnapshot(
     location: updates.location ?? existingSnapshot?.location ?? null,
     timezone: updates.timezone ?? existingSnapshot?.timezone ?? 'America/New_York',
     doctrinal_statement_text: updates.doctrinal_statement_text ?? existingSnapshot?.doctrinal_statement_text ?? null,
+    orcid_id: updates.orcid_id !== undefined ? updates.orcid_id : existingSnapshot?.orcid_id ?? null,
+    google_scholar_url: updates.google_scholar_url !== undefined ? updates.google_scholar_url : existingSnapshot?.google_scholar_url ?? null,
     credentials: updates.credentials ?? existingSnapshot?.credentials ?? [],
     publications: updates.publications ?? existingSnapshot?.publications ?? [],
     disciplines: updates.disciplines ?? existingSnapshot?.disciplines ?? [],

@@ -19,6 +19,7 @@ export interface Account {
 export type ProfileStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'hidden';
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'flagged';
 export type RevisionStatus = 'draft' | 'submitted' | 'changes_requested' | 'approved' | 'superseded';
+export type ProfileTier = 'standard' | 'distinguished_fellow';
 
 export interface ScholarProfile {
   id: string;
@@ -37,6 +38,9 @@ export interface ScholarProfile {
   doctrinal_statement_path?: string | null;
   profile_status: ProfileStatus;
   verification_status: VerificationStatus;
+  profile_tier: ProfileTier;
+  orcid_id?: string | null;
+  google_scholar_url?: string | null;
   published_revision_id?: string | null;
   draft_revision_id?: string | null;
   created_at: string;
@@ -52,6 +56,9 @@ export interface RevisionSnapshotData {
   location?: string | null;
   timezone?: string | null;
   doctrinal_statement_text?: string | null;
+  profile_tier?: ProfileTier;
+  orcid_id?: string | null;
+  google_scholar_url?: string | null;
   credentials?: Array<{
     degree: string;
     field_of_study: string;
@@ -206,6 +213,7 @@ export interface CourseShowcase {
 export type MediaType =
   | 'youtube_video'
   | 'youtube_playlist'
+  | 'vimeo_video'
   | 'podcast'
   | 'audio_lecture'
   | 'article_link';
@@ -219,6 +227,9 @@ export interface MediaLink {
   url: string;
   description?: string | null;
   display_order: number;
+  is_featured?: boolean;
+  thumbnail_url?: string | null;
+  duration_seconds?: number | null;
   created_at: string;
 }
 

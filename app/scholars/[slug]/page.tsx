@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { BookOpen, GraduationCap, Library, BookMarked, Calendar, Star, ShieldCheck } from 'lucide-react';
+import { BookOpen, GraduationCap, Library, BookMarked, Calendar, Star, ShieldCheck, Printer } from 'lucide-react';
 import { getPublicScholarBySlug } from '@/lib/domain/queries';
 import { formatOpportunityType, formatDeliveryMode } from '@/lib/domain/taxonomies';
 import { PublicNav } from '@/components/shell/public-nav';
@@ -10,6 +10,7 @@ import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { ScholarEndorsementsCard } from '@/components/scholars/scholar-endorsements-card';
 import { ScholarSpeakerTopicsCard } from '@/components/scholars/scholar-speaker-topics-card';
+import { ScholarMediaShowcase } from '@/components/scholars/scholar-media-showcase';
 import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
 import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
 import { getSpeakerTopicsByScholarId } from '@/lib/speakers/speaker-service';
@@ -271,6 +272,14 @@ export default async function ScholarProfilePage({
               )}
             </section>
 
+            {/* Media & Lecture Showcase (Phase 13 / ADR 0014) */}
+            {scholar.media_links && scholar.media_links.length > 0 && (
+              <ScholarMediaShowcase
+                mediaLinks={scholar.media_links}
+                scholarName={scholar.full_name}
+              />
+            )}
+
             {/* Speaking Bureau & Keynote Topics (§21 / ADR 0009) */}
             <ScholarSpeakerTopicsCard
               scholarId={scholar.id}
@@ -293,6 +302,23 @@ export default async function ScholarProfilePage({
 
           {/* Sidebar Column (4 of 12): Doctrinal Stance & Teaching Terms */}
           <div className="lg:col-span-4 space-y-6">
+            {/* Search Committee Dossier Banner */}
+            <div className="card-crisp p-5 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent border-amber-200 dark:border-amber-900/60 space-y-3">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-300 font-semibold text-sm">
+                <Printer className="w-4 h-4" />
+                <span>Search Committee Dossier</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Review or print an authoritative, SBL/Chicago formatted candidate binder for academic search committees, provosts, and accreditation reviews.
+              </p>
+              <Link
+                href={`/scholars/${scholar.slug}/dossier`}
+                className="inline-flex items-center justify-center w-full px-4 py-2 rounded-xl text-xs font-semibold bg-amber-900 hover:bg-amber-800 text-white dark:bg-amber-400 dark:hover:bg-amber-300 dark:text-slate-950 transition-colors shadow-2xs"
+              >
+                Inspect Printable Dossier →
+              </Link>
+            </div>
+
             {/* Doctrinal Alignment Card (ADR 0001) */}
             <ScholarDoctrinalCard scholar={scholar} />
 

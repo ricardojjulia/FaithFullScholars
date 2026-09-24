@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Building2, MapPin, ScrollText, ArrowRight } from 'lucide-react';
 import { PublicScholarCard } from '@/lib/domain/queries';
 import { formatOpportunityType } from '@/lib/domain/taxonomies';
+import { DistinguishedBadge } from './distinguished-badge';
 
 export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
   const primaryDiscipline = scholar.disciplines.find((d) => d.is_primary) || scholar.disciplines[0];
@@ -27,12 +28,17 @@ export function ScholarCard({ scholar }: { scholar: PublicScholarCard }) {
               {initials}
             </div>
             <div>
-              <Link
-                href={`/scholars/${scholar.slug}`}
-                className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-1"
-              >
-                {scholar.full_name}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/scholars/${scholar.slug}`}
+                  className="font-display font-bold text-base tracking-tight text-slate-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors line-clamp-1"
+                >
+                  {scholar.full_name}
+                </Link>
+                {scholar.profile_tier === 'distinguished_fellow' && (
+                  <DistinguishedBadge size="sm" showLabel={false} />
+                )}
+              </div>
               <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">
                 {scholar.title || scholar.institutional_role || 'Theological Scholar'}
               </p>

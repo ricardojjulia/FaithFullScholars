@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, MapPin, ScrollText, Send, Share2, Check } from 'lucide-react';
+import { Building2, MapPin, ScrollText, Send, Share2, Check, Printer, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { StructuredInquiryModal } from '@/lib/../components/inquiries/structured-inquiry-modal';
 import { ShortlistButton } from '@/lib/../components/inquiries/shortlist-button';
+import { DistinguishedBadge } from './distinguished-badge';
 
 interface ScholarProfileHeroProps {
   scholar: FullPublicScholarProfile;
@@ -64,6 +66,9 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
                 <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
                   {scholar.full_name}
                 </h1>
+                {scholar.profile_tier === 'distinguished_fellow' && (
+                  <DistinguishedBadge size="default" />
+                )}
                 {scholar.verification_status === 'verified' && (
                   <span
                     title="Platform Verified Theological Faculty"
@@ -116,6 +121,32 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
               <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 stroke-[1.75]" />
               <span>{scholar.confessions.length} Confessional Affirmation{scholar.confessions.length === 1 ? '' : 's'}</span>
             </span>
+
+            {scholar.orcid_id && (
+              <a
+                href={`https://orcid.org/${scholar.orcid_id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[#a6ce39] hover:underline font-mono"
+                title="ORCID Academic Record"
+              >
+                <span>ORCID: {scholar.orcid_id}</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+
+            {scholar.google_scholar_url && (
+              <a
+                href={scholar.google_scholar_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                title="Google Scholar Citations"
+              >
+                <span>Google Scholar</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
           </div>
         </div>
 
@@ -129,6 +160,15 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             <Send className="w-3.5 h-3.5 stroke-[2]" />
             <span>Send Institutional Inquiry</span>
           </button>
+
+          <Link
+            href={`/scholars/${scholar.slug}/dossier`}
+            className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100/80 text-amber-900 border border-amber-300/80 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 dark:text-amber-200 dark:border-amber-800 transition-colors flex items-center gap-1.5"
+            title="Search Committee Dossier (Printable Portfolio)"
+          >
+            <Printer className="w-3.5 h-3.5 stroke-[1.75]" />
+            <span>Board Dossier</span>
+          </Link>
 
           <ShortlistButton
             scholarId={scholar.id}

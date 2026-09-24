@@ -769,6 +769,62 @@ export async function seedPilotCohort() {
         signed_by_institution_at = EXCLUDED.signed_by_institution_at;
     `);
 
+    // 16. Seed Distinguished Scholar Dossier & Media Showcase (ADR 0014)
+    await client.query(`
+      UPDATE public.scholars
+      SET profile_tier = 'distinguished_fellow',
+          orcid_id = '0000-0002-1825-0097',
+          google_scholar_url = 'https://scholar.google.com/citations?user=calvin-edwards'
+      WHERE id = 'f1000000-0000-0000-0000-000000000001';
+
+      INSERT INTO public.media_links (
+        id, scholar_id, course_id, media_type, url, title, description, display_order, is_featured, duration_seconds
+      ) VALUES
+        (
+          'c2000000-0000-0000-0000-000000000001',
+          'f1000000-0000-0000-0000-000000000001',
+          '02000000-0000-0000-0000-000000000001',
+          'youtube_video',
+          'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          'The Federal Principle in 17th Century Reformed Dogmatics',
+          'Plenary inaugural lecture delivered at the Westminster Theological Conference on Post-Reformation Scholasticism.',
+          1,
+          true,
+          3240
+        ),
+        (
+          'c2000000-0000-0000-0000-000000000002',
+          'f1000000-0000-0000-0000-000000000001',
+          NULL,
+          'vimeo_video',
+          'https://vimeo.com/76979871',
+          'Francis Turretin and the Latin Disputation Tradition',
+          'Doctoral seminar masterclass reviewing scholastic methodology and theological definitions.',
+          2,
+          false,
+          2700
+        ),
+        (
+          'c2000000-0000-0000-0000-000000000003',
+          'f1000000-0000-0000-0000-000000000001',
+          NULL,
+          'podcast',
+          'https://open.spotify.com/episode/7G0K9lKkL8F8N0e3gX5Y9Z',
+          'The Covenant of Works and Historic Presbyterianism',
+          'Theology roundtable discussion on the Westminster Standards and contemporary debates in Reformed dogmatics.',
+          3,
+          false,
+          3600
+        )
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        url = EXCLUDED.url,
+        media_type = EXCLUDED.media_type,
+        description = EXCLUDED.description,
+        is_featured = EXCLUDED.is_featured,
+        duration_seconds = EXCLUDED.duration_seconds;
+    `);
+
     await client.query('COMMIT;');
     console.log('✅ Successfully seeded reference scholars, postings, and institutional endorsements into pilot cohort!\n');
   } catch (err) {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { UploadCloud, Eye, FileEdit, BookOpen, Briefcase } from 'lucide-react';
+import { UploadCloud, Eye, FileEdit, BookOpen, Briefcase, Video } from 'lucide-react';
 
 export default function DashboardOverviewPage() {
   return (
@@ -128,7 +128,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Quick Action Panels */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp flex flex-col justify-between space-y-4">
           <div>
             <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center mb-3 shadow-2xs">
@@ -166,6 +166,26 @@ export default function DashboardOverviewPage() {
             className="w-full text-center py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors"
           >
             Manage Courses →
+          </Link>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp flex flex-col justify-between space-y-4">
+          <div>
+            <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 flex items-center justify-center mb-3 shadow-2xs">
+              <Video className="w-5 h-5 text-indigo-700 dark:text-indigo-400 stroke-[1.75]" />
+            </div>
+            <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
+              Media & Lectures
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              Curate videos, homilies, conference lectures, and podcasts with responsive click-to-play showcases for search committees.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/media"
+            className="w-full text-center py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-colors"
+          >
+            Manage Media Showcase →
           </Link>
         </div>
 

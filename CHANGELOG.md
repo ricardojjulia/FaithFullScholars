@@ -8,7 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Pilot Fixture Reconciliation, Deployment Verification & Master Plan Synchronization**:
+- **Premium Scholar Profiles, Distinguished Faculty Dossiers & Media Showcase (ADR 0014 / Phase 13)**:
+  - Created migration `supabase/migrations/20260924140000_distinguished_scholar_dossiers.sql`:
+    - Added `profile_tier` (`standard`, `distinguished_fellow`), `orcid_id`, and `google_scholar_url` with strict regex check constraints to `public.scholars`.
+    - Added PostgreSQL anti-privilege escalation trigger `prevent_scholar_tier_escalation` on `public.scholars BEFORE UPDATE` preventing non-admin authenticated users from self-elevating their tier.
+    - Extended `public.media_links` with `is_featured`, `thumbnail_url`, and `duration_seconds` with expanded check constraint for `vimeo_video`.
+    - Maintained 100% PostgreSQL Row Level Security enforcement across all 35 public tables.
+  - Implemented `lib/media/showcase-service.ts` providing zero-CLS safe iframe embed generation and URL validation for YouTube, Vimeo, Spotify, SoundCloud, podcasts, and audio lectures.
+  - Implemented `lib/profiles/dossier-service.ts` providing SBL Handbook of Style 2nd ed. / Chicago 17th ed. citation formatting and board-ready candidate dossier data loader.
+  - Created UI components:
+    - `<DistinguishedBadge />`: Restrained Oxford navy and burnished gold academic seal.
+    - `<ScholarMediaShowcase />`: Zero-CLS click-to-play media facade with poster preview and no-autoplay embed player.
+    - `<DossierPrintButton />`: Dedicated client-side print button triggering `window.print()`.
+  - Built board-ready print candidate dossier route at `/scholars/[slug]/dossier` with `@media print` CSS optimization, hidden screen navigation, and ATS search committee formatting.
+  - Built scholar workspace media management portal at `/dashboard/media` and REST API endpoints (`GET/POST /api/scholars/media`, `PATCH/DELETE /api/scholars/media/[id]`).
+  - Added comprehensive test suites:
+    - Unit tests: `tests/unit/media-showcase.test.ts` (13 tests) and `tests/unit/dossier-service.test.ts` (10 tests).
+    - Integration tests: `tests/integration/scholar-media.test.ts` (6 tests) verifying RLS, media ownership isolation, and anti-privilege escalation defense.
+    - Playwright E2E browser tests: `tests/e2e/distinguished-dossier.spec.ts` (2 tests).
+  - Seeded pilot cohort with Dr. Calvin Edwards as Distinguished Faculty Fellow with ORCID, Google Scholar, and 3 curated media links, passing all 14 pilot readiness checks in `scripts/verify-pilot-readiness.ts`.
   - Synchronized `scripts/seed-pilot-cohort.ts` with institutional accreditation attributes (`accreditation_body = 'ATS'`, `accreditation_status = 'accredited'`) and course licensing agreement fixtures (ADR 0013).
   - Updated `scripts/verify-deployment.ts` with `course_licensing_agreements` in expected table inventory (35/35 tables) and Enterprise pre-flight check.
   - Updated `scripts/verify-pilot-readiness.ts` to assert course licensing agreements and accredited institutions count.

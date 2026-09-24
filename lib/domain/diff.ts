@@ -37,6 +37,8 @@ export function computeRevisionDiff(
     { key: 'location', label: 'Location' },
     { key: 'timezone', label: 'Timezone' },
     { key: 'doctrinal_statement_text', label: 'Personal Doctrinal Statement' },
+    { key: 'orcid_id', label: 'ORCID Identifier' },
+    { key: 'google_scholar_url', label: 'Google Scholar Profile URL' },
   ];
 
   for (const { key, label } of scalarFields) {
