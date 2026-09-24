@@ -1,9 +1,14 @@
+'use client';
+
 import Link from 'next/link';
 import { Check, ArrowRight } from 'lucide-react';
 import { PublicCourseCard } from '@/lib/domain/queries';
 import { formatDeliveryMode } from '@/lib/domain/taxonomies';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 
 export function CourseCard({ course }: { course: PublicCourseCard }) {
+  const { t } = useTranslation();
+
   return (
     <div className="card-crisp p-6 flex flex-col justify-between">
       <div>
@@ -17,7 +22,13 @@ export function CourseCard({ course }: { course: PublicCourseCard }) {
             <span />
           )}
           <span className="text-[10px] font-medium text-slate-500 uppercase">
-            {course.level}
+            {course.level === 'undergraduate'
+              ? t('courses.undergraduate')
+              : course.level === 'graduate'
+              ? t('courses.graduate')
+              : course.level === 'doctoral'
+              ? t('courses.doctoral')
+              : course.level}
           </span>
         </div>
 
@@ -31,7 +42,7 @@ export function CourseCard({ course }: { course: PublicCourseCard }) {
 
         {/* Instructor */}
         <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 mb-3">
-          <span>Instructor:</span>
+          <span>{t('courses.instructor')}:</span>
           <Link
             href={`/scholars/${course.scholar.slug}`}
             className="font-medium text-indigo-700 dark:text-indigo-400 hover:underline"
@@ -69,17 +80,17 @@ export function CourseCard({ course }: { course: PublicCourseCard }) {
           {course.public_preview_enabled ? (
             <>
               <Check className="w-3 h-3 stroke-[2.5] mr-1 text-emerald-600 dark:text-emerald-400" />
-              <span>Syllabus Available</span>
+              <span>{t('courses.view_syllabus')}</span>
             </>
           ) : (
-            'Course Catalog'
+            t('courses.title')
           )}
         </span>
         <Link
           href={`/courses/${course.slug}`}
           className="text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:underline flex items-center gap-1 group"
         >
-          <span>Inspect Syllabus</span>
+          <span>{t('courses.view_syllabus')}</span>
           <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform stroke-[2]" />
         </Link>
       </div>

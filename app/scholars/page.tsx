@@ -1,11 +1,11 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { GraduationCap, Lock, Search } from 'lucide-react';
+import { Lock, Search } from 'lucide-react';
 import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/lib/domain/queries';
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
 import { ScholarRecommendationsRail } from '@/components/scholars/scholar-recommendations-rail';
-import { AiMatcherTriggerButton } from '@/components/scholars/ai-matcher-trigger-button';
+import { ScholarDirectoryHeader } from '@/components/scholars/scholar-directory-header';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
@@ -50,28 +50,8 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
       <PublicNav />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8">
-        {/* Page Banner Header */}
-        <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-900 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-300 text-xs font-semibold mb-1 shadow-2xs">
-              <GraduationCap className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 stroke-[2]" />
-              <span>Verified Faculty Directory</span>
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Theological Faculty Network
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-0.5">
-              Accredited professors, adjunct faculty, and doctoral supervisors with verified confessional alignment.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3 self-start sm:self-auto">
-            <AiMatcherTriggerButton />
-            <div className="text-xs text-slate-500 font-medium bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
-              Showing <strong className="text-slate-900 dark:text-white">{scholars.length}</strong> verified faculty
-            </div>
-          </div>
-        </div>
+        {/* Dynamic Page Banner Header */}
+        <ScholarDirectoryHeader totalCount={scholars.length} />
 
         {/* LinkedIn-Style 3-Column Balanced Desktop Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

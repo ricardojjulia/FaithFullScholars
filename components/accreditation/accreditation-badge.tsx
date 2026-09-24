@@ -1,5 +1,8 @@
+'use client';
+
 import React from 'react';
 import { AccreditationBody, AccreditationStatus } from '@/lib/licensing/types';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 
 interface AccreditationBadgeProps {
   body?: AccreditationBody | string | null;
@@ -14,6 +17,8 @@ export function AccreditationBadge({
   showDetails = true,
   className = '',
 }: AccreditationBadgeProps) {
+  const { t } = useTranslation();
+
   if (!body || body === 'none' || !status || status === 'none') {
     return null;
   }
@@ -29,13 +34,22 @@ export function AccreditationBadge({
 
   const dotColor = isATS ? 'bg-emerald-500' : isABHE ? 'bg-blue-500' : 'bg-indigo-500';
 
+  const statusLabel =
+    status === 'accredited'
+      ? t('accreditation.accredited')
+      : status === 'candidate'
+      ? t('accreditation.candidate')
+      : status === 'applicant'
+      ? t('accreditation.applicant')
+      : status;
+
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeBg} ${className}`}
-      title={`Accredited by ${body} (${status})`}
+      title={`${body} (${statusLabel})`}
     >
       <span className={`w-2 h-2 rounded-full ${dotColor} animate-pulse`} />
-      <span>{body} {showDetails ? (status === 'accredited' ? 'Accredited' : status) : ''}</span>
+      <span>{body} {showDetails ? statusLabel : ''}</span>
       <svg
         className="w-3.5 h-3.5 ml-0.5 text-current opacity-80"
         fill="currentColor"

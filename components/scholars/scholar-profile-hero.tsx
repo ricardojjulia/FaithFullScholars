@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { StructuredInquiryModal } from '@/lib/../components/inquiries/structured-inquiry-modal';
 import { ShortlistButton } from '@/lib/../components/inquiries/shortlist-button';
+import { useTranslation } from '@/lib/i18n/i18n-context';
 import { DistinguishedBadge } from './distinguished-badge';
 
 interface ScholarProfileHeroProps {
@@ -13,6 +14,7 @@ interface ScholarProfileHeroProps {
 }
 
 export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [showInquiryModal, setShowInquiryModal] = useState(false);
 
@@ -41,7 +43,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
         <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#e0e7ff_1px,transparent_1px)] [background-size:16px_16px]" />
         <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2">
           <span className="px-3 py-1 rounded-full text-[11px] font-semibold bg-white/10 text-white/90 backdrop-blur-md border border-white/20">
-            Theological Higher Ed
+            {t('nav.brand_sub')}
           </span>
         </div>
       </div>
@@ -55,7 +57,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
               {initials}
               {scholar.availability?.is_available_for_hire && (
                 <span
-                  title="Open to Adjunct & Modular Teaching"
+                  title={t('profile.available_badge')}
                   className="absolute bottom-2 right-2 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 animate-pulse"
                 />
               )}
@@ -71,16 +73,16 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
                 )}
                 {scholar.verification_status === 'verified' && (
                   <span
-                    title="Platform Verified Theological Faculty"
+                    title={t('profile.verified')}
                     className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-900"
                   >
                     <Check className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />
-                    <span>Verified Faculty</span>
+                    <span>{t('profile.verified')}</span>
                   </span>
                 )}
               </div>
               <p className="text-sm sm:text-base font-medium text-slate-700 dark:text-slate-300 mt-0.5">
-                {scholar.title || scholar.institutional_role || 'Theological Scholar'}
+                {scholar.title || scholar.institutional_role || t('directory.theological_scholar')}
               </p>
             </div>
           </div>
@@ -90,7 +92,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             <div className="self-start sm:self-auto shrink-0">
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-900 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800">
                 <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                Available for Adjunct / Modular Teaching
+                {t('profile.available_badge')}
               </span>
             </div>
           )}
@@ -119,7 +121,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
 
             <span className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-400 font-medium">
               <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0 stroke-[1.75]" />
-              <span>{scholar.confessions.length} Confessional Affirmation{scholar.confessions.length === 1 ? '' : 's'}</span>
+              <span>{scholar.confessions.length} {t('profile.affirmed_confessions')}</span>
             </span>
 
             {scholar.orcid_id && (
@@ -158,7 +160,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             className="px-5 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
           >
             <Send className="w-3.5 h-3.5 stroke-[2]" />
-            <span>Send Institutional Inquiry</span>
+            <span>{t('inquiry.send_inquiry')}</span>
           </button>
 
           <Link
@@ -181,7 +183,7 @@ export function ScholarProfileHero({ scholar }: ScholarProfileHeroProps) {
             className="px-4 py-2.5 rounded-xl text-xs font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5 cursor-pointer"
           >
             <Share2 className="w-3.5 h-3.5 stroke-[1.75]" />
-            <span>{copied ? 'Link Copied!' : 'Share Profile'}</span>
+            <span>{copied ? 'Link Copied!' : t('profile.share')}</span>
           </button>
         </div>
       </div>
