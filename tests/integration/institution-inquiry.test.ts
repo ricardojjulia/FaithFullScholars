@@ -41,13 +41,15 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
   const testApprovedInstId = 'f2888888-0000-0000-0000-000000000088';
   const testPendingInstId = 'f2888888-0000-0000-0000-000000000089';
 
+  const testRevisionId = '01888888-0000-0000-0000-000000000088';
+
   let createdInquiryId: string;
 
   beforeAll(async () => {
     client = new Client({ connectionString: dbUrl });
     await client.connect();
 
-    // 1. Create Scholar Auth User, Account, and Scholar
+    // 1. Create Scholar Auth User, Account, Scholar, and Published Revision
     await client.query(`
       INSERT INTO auth.users (
         id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -70,10 +72,27 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
       INSERT INTO public.scholars (
         id, account_id, slug, full_name, profile_status, current_institution
       ) VALUES (
-        $1, $2, 'dr-inquiry-scholar', 'Dr. Jonathan Inquiries', 'approved', 'Reformed Seminary'
+        $1, $2, 'dr-inquiry-scholar', 'Dr. Jonathan Inquiries', 'draft', 'Reformed Seminary'
       )
       ON CONFLICT (id) DO NOTHING
     `, [testScholarId, testAccountId]);
+
+    await client.query(`
+      INSERT INTO public.scholar_profile_revisions (
+        id, scholar_id, revision_number, status, snapshot_data, submitted_at, reviewed_at
+      ) VALUES (
+        $1, $2, 1, 'approved',
+        '{"full_name": "Dr. Jonathan Inquiries", "title": "Professor of Systematic Theology"}'::jsonb,
+        now(), now()
+      )
+      ON CONFLICT (id) DO NOTHING
+    `, [testRevisionId, testScholarId]);
+
+    await client.query(`
+      UPDATE public.scholars
+      SET profile_status = 'approved', published_revision_id = $1
+      WHERE id = $2
+    `, [testRevisionId, testScholarId]);
 
     // 2. Create Course
     await client.query(`
@@ -136,6 +155,8 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
     await client.query(`DELETE FROM public.saved_scholars WHERE institution_id = $1`, [testApprovedInstId]);
     await client.query(`DELETE FROM public.saved_courses WHERE institution_id = $1`, [testApprovedInstId]);
     await client.query(`DELETE FROM public.courses WHERE id = $1`, [testCourseId]);
+    await client.query(`UPDATE public.scholars SET published_revision_id = NULL WHERE id = $1`, [testScholarId]);
+    await client.query(`DELETE FROM public.scholar_profile_revisions WHERE scholar_id = $1`, [testScholarId]);
     await client.query(`DELETE FROM public.scholars WHERE id = $1`, [testScholarId]);
     await client.query(`DELETE FROM public.institution_users WHERE account_id = $1`, [testInstAccountId]);
     await client.query(`DELETE FROM public.institutions WHERE id IN ($1, $2)`, [testApprovedInstId, testPendingInstId]);

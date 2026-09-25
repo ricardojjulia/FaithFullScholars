@@ -53,6 +53,9 @@ describe('Phase 1 Domain Foundation & RLS Integration Tests', () => {
       FROM public.scholars s
       LEFT JOIN public.scholar_profile_revisions r ON r.id = s.published_revision_id
       WHERE s.profile_status = 'approved'
+        AND s.slug NOT LIKE 'test-%'
+        AND s.slug NOT LIKE 'dr-inquiry%'
+        AND s.slug NOT LIKE 'admin-review%'
     `);
 
     expect(scholarRes.rows.length).toBeGreaterThanOrEqual(2);

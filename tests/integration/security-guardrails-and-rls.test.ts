@@ -116,7 +116,7 @@ describe('Security Guardrails & Multi-Tenant PostgreSQL RLS Isolation', () => {
     await db.query(`
       INSERT INTO public.scholars (id, account_id, full_name, slug, profile_status)
       VALUES 
-        ($1, $2, 'Dr. Marcus Vance', 'test-guardrail-marcus-vance', 'approved'),
+        ($1, $2, 'Dr. Marcus Vance', 'test-guardrail-marcus-vance', 'draft'),
         ($3, $4, 'Dr. Timothy Keller-Mock', 'test-guardrail-timothy-keller-mock', 'draft')
       ON CONFLICT (id) DO UPDATE SET profile_status = EXCLUDED.profile_status;
     `, [SCHOLAR_A_ID, AUTH_SCHOLAR_A, SCHOLAR_B_ID, AUTH_SCHOLAR_B]);
@@ -129,7 +129,7 @@ describe('Security Guardrails & Multi-Tenant PostgreSQL RLS Isolation', () => {
       ON CONFLICT (id) DO NOTHING;
     `, [revAId, SCHOLAR_A_ID]);
     await db.query(`
-      UPDATE public.scholars SET published_revision_id = $1 WHERE id = $2;
+      UPDATE public.scholars SET profile_status = 'approved', published_revision_id = $1 WHERE id = $2;
     `, [revAId, SCHOLAR_A_ID]);
 
     // 4. Seed Subscriptions

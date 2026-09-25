@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Integration Test Concurrency & ADR 0005 Test Fixture Isolation**:
+  - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
+    - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
+    - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
+    - Staged scholar initial state as `draft` in `tests/integration/security-guardrails-and-rls.test.ts` and `tests/integration/admin-review.test.ts` before atomic elevation to `approved` alongside `published_revision_id`, eliminating transient zero-revision windows during test setup.
+
 ### Added
 - **Premium Scholar Profiles, Distinguished Faculty Dossiers & Media Showcase (ADR 0014 / Phase 13)**:
   - Created migration `supabase/migrations/20260924140000_distinguished_scholar_dossiers.sql`:
