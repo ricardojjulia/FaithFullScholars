@@ -8,9 +8,10 @@ This protocol defines the repeatable cycle of auditing code (the 4-agent audit C
 
 **The `pr-review` gate applies to every PR regardless of size** — it is separate from, and does not replace, the Council mandate above.
 
-The Council is five agents, not four:
-- **Agents 1–4:** read-only audit — data/API, routes/pages, UX/shell, feature/competitive.
-- **Agent 5 — Documenter:** write role. Runs after synthesis and after factory execution verifies cleanly. Updates the planning doc, `CHANGELOG.md`, README/docs, finalizes ADRs, commits the Council's own output, and writes memory/handoff notes.
+The Council is six agents:
+- **Agents 1–4:** read-only baseline audit — data/API, routes/pages, UX/shell, feature/competitive.
+- **Agent 5 — The Wildcard (Innovation & Improvement Catalyst):** read-only lateral thinker. Operates either as a random callout to think outside the box and challenge orthodoxies, or via direct invitation to propose high-impact software improvements that get fed into the Council synthesis for consideration and approval.
+- **Agent 6 — Documenter:** write role. Runs after synthesis and after factory execution verifies cleanly. Updates the planning doc, `CHANGELOG.md`, README/docs, finalizes ADRs, commits the Council's own output, and writes memory/handoff notes.
 
 Do not let audits run and stop at "findings noted" with no Documenter step — that is how planning docs and changelogs silently drift out of sync with what actually shipped.
 
@@ -20,21 +21,23 @@ Do not let audits run and stop at "findings noted" with no Documenter step — t
 
 ```mermaid
 graph TD
-    A[Trigger council review] --> B[Run 4-Agent Council Audit]
-    B --> C[Synthesize Consensus and Findings]
+    A[Trigger council review] --> B[Run Agents 1-4 Baseline Audits]
+    A --> W[Spawn Agent 5 Wildcard: Innovation & Lateral Thinking]
+    B --> C[Synthesize Consensus, Findings & Wildcard Proposals]
+    W --> C
     C --> D[Generate ADRs and Change Management Plan]
     D --> E[Create prompts for the Software Factory]
     E --> F[Execute via feature-factory / build-with-tests]
     F --> G[Run Verification: lint, test, audit:rls, build]
-    G --> H[Documenter Closes the Loop]
+    G --> H[Agent 6 Documenter Closes the Loop]
     H --> I[pr-review Gate]
     I --> J[Open PR referencing Council + Documenter sign-off]
 ```
 
-1. **Audit (Council):** spawn 4 read-only agents in parallel with the prompts below, using `/Users/rjulia/programs/FaithFullScholars` as the repo root and FaithFull Scholars specifics (scholars, institutions, admins, courses, availability, confessional standards, and inquiry workflows).
-2. **Synthesize:** group findings into cross-agent consensus, list architectural decisions, outline sequence of work.
+1. **Audit (Council):** spawn read-only agents in parallel with the prompts below (Agents 1–4 baseline audits plus Agent 5 Wildcard), using `/Users/rjulia/programs/FaithFullScholars` as the repo root and FaithFull Scholars specifics (scholars, institutions, admins, courses, availability, confessional standards, and inquiry workflows).
+2. **Synthesize:** group findings into cross-agent consensus, evaluate Wildcard innovation proposals, list architectural decisions, outline sequence of work.
 3. **ADRs:** draft an ADR under `docs/adr/` for any new boundary, role-access pattern, integration contract, or data-exposure rule the Council identifies.
-4. **Change Management:** turn agreed findings into concrete, sequenced implementation prompts.
+4. **Change Management:** turn agreed findings and approved Wildcard ideas into concrete, sequenced implementation prompts.
 5. **Software Factory Execution:** hand prompts to `feature-factory` / `build-with-tests`.
 6. **Verification:** once lint, test, RLS audit (`npm run audit:rls`), and build are clean, proceed — not before. A red result routes back to the builder, not forward to Documenter.
 7. **Documentation Close-Out (Documenter):** update plan, changelog, docs, ADRs, memory.
@@ -122,6 +125,28 @@ Read first: `docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`, `docs/product/master-plan.md
 Return concise structured markdown, 500–700 words.
 ```
 
+### Agent 5 — The Wildcard: Innovation & Lateral Thinking Catalyst
+
+```
+You are Council Agent 5 (The Wildcard) for FaithFull Scholars. Your job is lateral thinking, product innovation, and challenging assumptions. READ-ONLY — do not edit any files.
+
+Repo root: /Users/rjulia/programs/FaithFullScholars
+
+Activation Mode: [MODE A: Random Callout / Outside-the-Box Provocateur | MODE B: Direct Improvement Challenge]
+
+Provide a structured innovation brief covering:
+
+1. Assumption Challenging / Unorthodox Perspective — Identify 1–2 unspoken assumptions in the current design or architecture that might be limiting the product (e.g., friction users take for granted, overcomplicated workflows, or opportunities to invert standard patterns).
+2. The "What If?" Innovation Proposals (1–3 concrete ideas) — For each proposal:
+   - **Concept & Non-Obvious Insight:** What is the innovative capability or delightful interaction?
+   - **User & Persona Impact:** How does this dramatically improve the lives of scholars, seminary search committees, or theological administrators?
+   - **Data & Architecture Feasibility:** How does this hook into existing tables, Next.js routes, or Supabase RLS without architectural bloat?
+   - **Proposed ADR / Specification:** Recommended architectural decision or feature factory story.
+3. Rapid Prototyping Path — How can the software factory build and verify the highest-value proposal in a single focused cycle?
+
+Return concise structured markdown, 500–700 words. Be bold, innovative, and technically grounded.
+```
+
 ---
 
 ## 3. Phase 2: Synthesis & Change Management
@@ -199,7 +224,7 @@ Runs once Phase 3 is clean and before a PR opens.
 
 Commit, every Council round:
 - `docs/reviews/YYYY-MM-DD-council-review-[N]-synthesis.md`
-- `docs/reviews/YYYY-MM-DD-council-review-[N]-agent-[1-4]-*.md`
+- `docs/reviews/YYYY-MM-DD-council-review-[N]-agent-[1-5]-*.md`
 - `docs/adr/XXXX-*.md` for any new ADRs
 - Documenter's updates to planning docs, `CHANGELOG.md`, `README.md`, `docs/`, and memory
 
