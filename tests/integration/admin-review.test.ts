@@ -61,7 +61,7 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
         id, account_id, slug, full_name, title, current_institution, profile_status, verification_status
       ) VALUES (
         $1, $2, 'admin-review-test-scholar', 'Dr. Review Test Scholar',
-        'Associate Professor', 'Puritan Seminary', 'approved', 'verified'
+        'Associate Professor', 'Puritan Seminary', 'draft', 'verified'
       )
       ON CONFLICT (id) DO NOTHING
     `, [testScholarId, testAccountId]);
