@@ -419,5 +419,34 @@
     "loading": "Cargando...",
     "all": "Todos",
     "learn_more": "Más Información"
+  },
+  "confessional_lens": {
+    "matrix_full_alignment": "Suscripción Confesional Plena",
+    "matrix_substantial_alignment": "Alineación Confesional Sustancial",
+    "matrix_ecumenical_alignment": "Compatibilidad Ortodoxa Ecuménica",
+    "matrix_distinctive_alignment": "Confesión Distintiva / Independiente",
+    "confessional_lens_title": "Lente Confesional • Matriz de Ajuste Doctrinal",
+    "confessional_lens_subtitle": "Alineación teológica institucional y mapeo de confesiones históricas",
+    "theological_compatibility_index": "Índice de Compatibilidad Teológica",
+    "verified_confessional_standards": "Estándares Verificados",
+    "no_explicit_confessions": "Declaración doctrinal evangélica / independiente registrada",
+    "committee_theological_notes": "Notas de Ajuste del Comité",
+    "ai_verified": "Verificado por IA"
+  },
+  "board_docket": {
+    "board_executive_docket_title": "Expediente del Consejo Directivo • Matriz de Calificación",
+    "board_docket_subtitle": "Matriz de votación ejecutiva y registro confidencial de deliberación del comité",
+    "confidential_board_record": "Registro Privilegiado del Comité de Búsqueda",
+    "candidate": "Candidato",
+    "terminal_credentials": "Grado Terminal / Inst.",
+    "primary_discipline": "Disciplina y Tradición",
+    "confessional_stance": "Confesión Principal",
+    "verified_pubs": "Pubs / Sílabos",
+    "committee_tier": "Nivel de Clasificación del Comité",
+    "highly_recommended": "Altamente Recomendado (Nivel 1)",
+    "recommended": "Finalista Recomendado",
+    "alternative": "Grupo Alternativo",
+    "search_committee_eval": "Evaluación del Comité",
+    "enter_board_deliberation_notes": "Ingrese hallazgos confidenciales del comité, notas de alineación teológica y comentarios de entrevistas..."
   }
 }

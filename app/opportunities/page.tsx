@@ -34,6 +34,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     { value: 'modular_intensive', label: 'Modular Intensives' },
     { value: 'full_time_tenure_track', label: 'Full-Time / Tenure Track' },
     { value: 'sabbatical_cover', label: 'Sabbatical Cover' },
+    { value: 'sabbatical_exchange', label: 'SabbaticalSwap (Exchanges)' },
   ];
 
   return (

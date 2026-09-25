@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Download, Printer, ExternalLink, GraduationCap, ScrollText, BookOpen } from 'lucide-react';
 import { ShortlistDossier } from '@/lib/inquiries/export-dossier';
+import { BoardDocketSummary } from '@/components/institution/board-docket-summary';
 
 export default function SearchCommitteeDossierPage() {
   const [dossier, setDossier] = useState<ShortlistDossier | null>(null);
@@ -104,51 +105,8 @@ export default function SearchCommitteeDossierPage() {
         </div>
       </div>
 
-      {/* Candidate Summary Table */}
-      <div className="space-y-3">
-        <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-slate-500">
-          Candidate Roster Summary ({candidates.length})
-        </h2>
-
-        <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
-              <tr>
-                <th className="py-2.5 px-3">Candidate</th>
-                <th className="py-2.5 px-3">Institution</th>
-                <th className="py-2.5 px-3">Terminal Degree</th>
-                <th className="py-2.5 px-3">Discipline</th>
-                <th className="py-2.5 px-3">Tradition</th>
-                <th className="py-2.5 px-3">Confessions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {candidates.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                  <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-white">
-                    {c.full_name}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400">
-                    {c.current_institution || 'Independent'}
-                  </td>
-                  <td className="py-2.5 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                    {c.terminal_degree ? `${c.terminal_degree} (${c.terminal_degree_institution || 'Univ.'})` : '—'}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                    {c.primary_discipline || 'Theology'}
-                  </td>
-                  <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
-                    {c.primary_tradition || 'Ecumenical'}
-                  </td>
-                  <td className="py-2.5 px-3 text-[11px] text-slate-500">
-                    {c.confessions.length > 0 ? c.confessions[0] : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Board Executive Docket & Candidate Decision Matrix */}
+      <BoardDocketSummary candidates={candidates} institutionName={dossier?.institution_name} />
 
       {/* Detailed Candidate Dossier Cards */}
       <div className="space-y-6">

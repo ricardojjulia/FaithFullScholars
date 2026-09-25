@@ -7,8 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Integration Test Concurrency & ADR 0005 Test Fixture Isolation**:
+### Added
+- **Wildcard Innovation Trio — Council Review #7 Deliverables**:
+  - **Board of Trustees Executive Search Committee Docket Generator (ADR 0015)**:
+    - Implemented `<BoardDocketSummary />` on `/institution/saved/dossier` providing search committee chairs with candidate ranking tiers (*Highly Recommended*, *Recommended*, *Alternative Pool*), confidential deliberation notes, and print-ready board decision matrices.
+  - **Confessional Lens Doctrinal Alignment Matrix (ADR 0016)**:
+    - Implemented `lib/search/confessional-matcher.ts` evaluating theological compatibility against historic confessional standards (Westminster, 1689 London Baptist, 39 Articles, Heidelberg, Chicago Inerrancy).
+    - Created `<ConfessionalAlignmentMatrix />` displaying compatibility radar index, verified standards badges, and committee fit notes on scholar profiles.
+  - **SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017)**:
+    - Added `sabbatical_exchange` opportunity type to `lib/postings/postings-service.ts` for reciprocal semester faculty swaps.
+    - Integrated SabbaticalSwap filter tabs into `/opportunities` and a dedicated Visiting Exchange Hub into `/institution/consortium`.
   - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
     - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
     - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
