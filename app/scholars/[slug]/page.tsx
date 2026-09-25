@@ -14,6 +14,7 @@ import { ScholarMediaShowcase } from '@/components/scholars/scholar-media-showca
 import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
 import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
 import { getSpeakerTopicsByScholarId } from '@/lib/speakers/speaker-service';
+import { ConfessionalAlignmentMatrix } from '@/components/scholars/confessional-alignment-matrix';
 
 interface ScholarProfilePageProps {
   params: Promise<{
@@ -82,6 +83,13 @@ export default async function ScholarProfilePage({
 
         {/* 1. LinkedIn-Style Anchor Hero Card (Cover Banner + Avatar + Headline + Action Toolbar) */}
         <ScholarProfileHero scholar={scholar} />
+
+        {/* 1.5 Confessional Lens • Doctrinal Fit Matrix */}
+        <ConfessionalAlignmentMatrix
+          scholarName={scholar.full_name}
+          scholarConfessions={scholar.confessions.map(c => ({ id: c.confessional_standard.id, name: c.confessional_standard.name, slug: c.confessional_standard.slug }))}
+          scholarDoctrinalStatement={scholar.doctrinal_statement_text || undefined}
+        />
 
         {/* 2. Balanced Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

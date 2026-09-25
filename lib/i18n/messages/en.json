@@ -419,5 +419,34 @@
     "loading": "Loading...",
     "all": "All",
     "learn_more": "Learn More"
+  },
+  "confessional_lens": {
+    "matrix_full_alignment": "Full Confessional Subscription",
+    "matrix_substantial_alignment": "Substantial Confessional Alignment",
+    "matrix_ecumenical_alignment": "Ecumenical Orthodox Compatibility",
+    "matrix_distinctive_alignment": "Distinctive / Independent Confession",
+    "confessional_lens_title": "Confessional Lens • Doctrinal Fit Matrix",
+    "confessional_lens_subtitle": "Institutional theological alignment & historic confession mapping",
+    "theological_compatibility_index": "Theological Compatibility Index",
+    "verified_confessional_standards": "Verified Standards",
+    "no_explicit_confessions": "Independent / evangelical doctrinal statement on record",
+    "committee_theological_notes": "Committee Fit Notes",
+    "ai_verified": "AI-Verified"
+  },
+  "board_docket": {
+    "board_executive_docket_title": "Board of Trustees Search Docket • Candidate Scoring Matrix",
+    "board_docket_subtitle": "Executive voting matrix & confidential search committee deliberation record",
+    "confidential_board_record": "Privileged Search Committee Record",
+    "candidate": "Candidate",
+    "terminal_credentials": "Terminal Degree / Inst.",
+    "primary_discipline": "Discipline & Tradition",
+    "confessional_stance": "Primary Confession",
+    "verified_pubs": "Pubs / Syllabi",
+    "committee_tier": "Committee Ranking Tier",
+    "highly_recommended": "Highly Recommended (Tier 1)",
+    "recommended": "Recommended Finalist",
+    "alternative": "Alternative Pool",
+    "search_committee_eval": "Committee Evaluation",
+    "enter_board_deliberation_notes": "Enter confidential search committee findings, theological alignment notes, and campus interview remarks..."
   }
 }

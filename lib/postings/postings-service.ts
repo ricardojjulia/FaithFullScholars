@@ -6,6 +6,7 @@ export type OpportunityType =
   | 'full_time_tenure_track'
   | 'visiting_fellow'
   | 'sabbatical_cover'
+  | 'sabbatical_exchange'
   | 'guest_lecturer'
   | 'doctoral_supervision';
 
@@ -15,6 +16,7 @@ export const OPPORTUNITY_TYPES: OpportunityType[] = [
   'full_time_tenure_track',
   'visiting_fellow',
   'sabbatical_cover',
+  'sabbatical_exchange',
   'guest_lecturer',
   'doctoral_supervision',
 ];
@@ -104,6 +106,8 @@ export function formatOpportunityType(type: OpportunityType): string {
       return 'Visiting Fellow';
     case 'sabbatical_cover':
       return 'Sabbatical Replacement';
+    case 'sabbatical_exchange':
+      return 'Sabbatical Exchange (SabbaticalSwap)';
     case 'guest_lecturer':
       return 'Guest Lecturer';
     case 'doctoral_supervision':
