@@ -10,6 +10,7 @@ import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { ScholarEndorsementsCard } from '@/components/scholars/scholar-endorsements-card';
 import { ScholarSpeakerTopicsCard } from '@/components/scholars/scholar-speaker-topics-card';
+import { ScholarDoctoralSupervisionCard } from '@/components/scholars/scholar-doctoral-supervision-card';
 import { ScholarMediaShowcase } from '@/components/scholars/scholar-media-showcase';
 import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service';
 import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
@@ -298,6 +299,20 @@ export default async function ScholarProfilePage({
               topics={speakerTopics}
               initialOpenModal={action === 'invite_speaker'}
             />
+
+            {/* Doctoral Supervision & External Committee Reader Exchange (ADR 0018) */}
+            {(scholar.availability?.opportunity_types?.includes('doctoral_supervision') ||
+              action === 'request_reader') && (
+              <ScholarDoctoralSupervisionCard
+                scholarId={scholar.id}
+                scholarName={scholar.full_name}
+                primaryInstitution={scholar.current_institution}
+                avatarUrl={scholar.profile_photo_path}
+                terminalDegrees={scholar.credentials?.filter((c) => c.is_terminal)}
+                disciplines={scholar.disciplines?.map((d) => d.discipline.name)}
+                initialOpenModal={action === 'request_reader'}
+              />
+            )}
 
             {/* Peer Endorsements & Faculty Commendations Card (§21) */}
             <ScholarEndorsementsCard

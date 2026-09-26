@@ -874,6 +874,25 @@ Acceptance:
 8. [x] Extend test suite with unit tests (`tests/unit/media-showcase.test.ts`, `tests/unit/dossier-service.test.ts`), RLS/trigger integration tests (`tests/integration/scholar-media.test.ts`), and Playwright E2E test (`tests/e2e/distinguished-dossier.spec.ts`).
 9. [x] Update pilot fixtures and verification diagnostics (14/14 checks PASS in `scripts/verify-pilot-readiness.ts`).
 
+### Phase 14: Wildcard Innovation Trio — Board Executive Dockets, Confessional Lens Matrix & SabbaticalSwap Network (Completed)
+
+> **Status:** Completed (ADR 0015, ADR 0016, ADR 0017: 1-click Board of Trustees Search Committee Docket Generator at `/institution/saved/dossier` with candidate tiering and confidential deliberation notes; Confessional Lens Doctrinal Alignment Matrix comparing candidate confessions against institutional standards at `lib/search/confessional-matcher.ts` and `<ConfessionalAlignmentMatrix />`; SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network under `/opportunities` and `/institution/consortium`; 228 passing unit/integration tests across 45 suites, 38 Playwright E2E tests, 100% RLS across 35 tables, 21 deployment pre-flight checks, and 14/14 pilot readiness checks).
+
+1. [x] Implement Board of Trustees Executive Search Committee Docket Generator (ADR 0015) in `components/institution/board-docket-summary.tsx` and `app/(institution)/institution/saved/dossier/page.tsx`.
+2. [x] Implement Confessional Lens Doctrinal Alignment Matrix (ADR 0016) in `lib/search/confessional-matcher.ts`, `components/scholars/confessional-alignment-matrix.tsx`, and scholar profile route.
+3. [x] Implement SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017) in `lib/postings/postings-service.ts`, `app/opportunities/page.tsx`, and `app/(institution)/institution/consortium/page.tsx`.
+4. [x] Add unit tests for theological confessional matching (`tests/unit/confessional-matcher.test.ts`).
+5. [x] Maintain 100% symmetric i18n support across English and Spanish in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json`.
+
+### Phase 15: Doctoral Dissertation Supervision & External Committee Reader Exchange (Completed)
+
+> **Status:** Completed (ADR 0018: Structured discovery, credential verification, and 1-click inquiry dispatch for external Th.M., Ph.D., and D.Min. dissertation defense committees compliant with ATS Standards 4 & 5; `<ScholarDoctoralSupervisionCard />` mounted on `/scholars/[slug]`; full English & Spanish localization in `lib/i18n/messages/`; 232 passing unit/integration tests across 46 suites, 38 Playwright E2E tests, 100% RLS across 35 tables, 21 deployment pre-flight checks, and 14/14 pilot readiness checks).
+
+1. [x] Implement `<ScholarDoctoralSupervisionCard />` in `components/scholars/scholar-doctoral-supervision-card.tsx` with ATS Standard 4/5 accreditation badge, verified terminal doctorate credentials, supervisory research fields, defense formats, and 1-click modal trigger.
+2. [x] Mount card in `app/scholars/[slug]/page.tsx` for scholars with active `doctoral_supervision` availability.
+3. [x] Add bilingual i18n support in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under `doctoral` namespace.
+4. [x] Author comprehensive unit test suite in `tests/unit/doctoral-supervision.test.ts`.
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -947,6 +966,10 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Course licensing and syllabus distribution agreements (ADR 0013)** (`course_licensing_agreements`, `/institution/licensing`, `/dashboard/licensing`, `lib/licensing/`, `app/api/institution/licensing/`, `app/api/dashboard/licensing/`).
 - [x] **ATS/ABHE/TRACS/HLC Accreditation status & verified institutional badges (ADR 0013)** (`accreditation_body`, `accreditation_status`, `<AccreditationBadge />`, `/admin/institutions`, `lib/licensing/`).
 - [x] **Premium scholar profiles & distinguished faculty dossiers (ADR 0014)** (`profile_tier`, `public.scholars.orcid_id`, `google_scholar_url`, `media_links`, `/scholars/[slug]/dossier`, `/dashboard/media`, `lib/profiles/dossier-service.ts`, `lib/media/showcase-service.ts`).
+- [x] **Board of Trustees Search Committee Executive Docket Generator (ADR 0015)** (`<BoardDocketSummary />`, `/institution/saved/dossier`, candidate tiering and confidential deliberation notes).
+- [x] **Confessional Lens Doctrinal Alignment Matrix (ADR 0016)** (`lib/search/confessional-matcher.ts`, `<ConfessionalAlignmentMatrix />`, `/scholars/[slug]`).
+- [x] **SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017)** (`sabbatical_exchange`, `/opportunities`, `/institution/consortium`).
+- [x] **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018)** (`<ScholarDoctoralSupervisionCard />`, `/scholars/[slug]`, ATS Standard 4/5 doctoral committee reader dispatch).
 
 ## 22. Governing Decisions
 
