@@ -448,5 +448,20 @@
     "alternative": "Alternative Pool",
     "search_committee_eval": "Committee Evaluation",
     "enter_board_deliberation_notes": "Enter confidential search committee findings, theological alignment notes, and campus interview remarks..."
+  },
+  "doctoral": {
+    "title": "Doctoral Supervision & External Committee Reader",
+    "subtitle": "Available as external dissertation reader, thesis examiner, or doctoral committee member (Ph.D. / Th.M. / D.Min.)",
+    "ats_badge": "ATS Standard 4/5 Eligible",
+    "request_reader": "Request External Reader",
+    "supervisory_fields": "Supervisory Research Fields",
+    "terminal_qualification": "Terminal Qualification Verified",
+    "defense_formats": "Defense & Examination Formats",
+    "virtual_defense": "Virtual Defense (Zoom / Teams)",
+    "hybrid_defense": "Hybrid Examination",
+    "on_campus_defense": "On-Campus Defense",
+    "annual_capacity": "Committee Capacity",
+    "annual_capacity_desc": "Accepting 1–2 dissertation external reader appointments per academic year",
+    "honorarium_guidance": "Standard academic dissertation examination honorarium applies"
   }
 }

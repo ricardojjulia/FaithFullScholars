@@ -448,5 +448,20 @@
     "alternative": "Grupo Alternativo",
     "search_committee_eval": "Evaluación del Comité",
     "enter_board_deliberation_notes": "Ingrese hallazgos confidenciales del comité, notas de alineación teológica y comentarios de entrevistas..."
+  },
+  "doctoral": {
+    "title": "Supervisión Doctoral y Lector Externo de Comité",
+    "subtitle": "Disponible como lector externo de tesis, examinador doctoral o miembro de comité (Ph.D. / Th.M. / D.Min.)",
+    "ats_badge": "Elegible según Normas ATS 4/5",
+    "request_reader": "Solicitar Lector Externo",
+    "supervisory_fields": "Campos de Investigación y Supervisión",
+    "terminal_qualification": "Grado Terminal Verificado",
+    "defense_formats": "Formatos de Defensa y Examen",
+    "virtual_defense": "Defensa Virtual (Zoom / Teams)",
+    "hybrid_defense": "Examen Híbrido",
+    "on_campus_defense": "Defensa Presencial en Campus",
+    "annual_capacity": "Capacidad de Comité",
+    "annual_capacity_desc": "Aceptando 1–2 nombramientos de lector externo de tesis por año académico",
+    "honorarium_guidance": "Aplica estipendio estándar de examen doctoral académico"
   }
 }

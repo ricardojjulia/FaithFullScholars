@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018 / Phase 15)**:
+  - Implemented `<ScholarDoctoralSupervisionCard />` in `components/scholars/scholar-doctoral-supervision-card.tsx` rendering verified terminal doctorate credentials, supervisory research fields, annual committee capacity (1–2 dissertations / academic year), examination defense formats (Virtual Defense Zoom/Teams, Hybrid, On-Campus), and direct "Request External Reader" dispatch button.
+  - Mounted `<ScholarDoctoralSupervisionCard />` on `/scholars/[slug]` when `doctoral_supervision` is in the scholar's active availability profile.
+  - Added full bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under the `doctoral` namespace with 100% key parity.
+  - Authored comprehensive test suite `tests/unit/doctoral-supervision.test.ts` verifying ATS accreditation terminal degree filtering, opportunity type compatibility, availability detection, and symmetric translation keys (4/4 tests passing).
 - **Wildcard Innovation Trio — Council Review #7 Deliverables**:
   - **Board of Trustees Executive Search Committee Docket Generator (ADR 0015)**:
     - Implemented `<BoardDocketSummary />` on `/institution/saved/dossier` providing search committee chairs with candidate ranking tiers (*Highly Recommended*, *Recommended*, *Alternative Pool*), confidential deliberation notes, and print-ready board decision matrices.
@@ -17,12 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017)**:
     - Added `sabbatical_exchange` opportunity type to `lib/postings/postings-service.ts` for reciprocal semester faculty swaps.
     - Integrated SabbaticalSwap filter tabs into `/opportunities` and a dedicated Visiting Exchange Hub into `/institution/consortium`.
-  - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
-    - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
-    - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
-    - Staged scholar initial state as `draft` in `tests/integration/security-guardrails-and-rls.test.ts` and `tests/integration/admin-review.test.ts` before atomic elevation to `approved` alongside `published_revision_id`, eliminating transient zero-revision windows during test setup.
-
-### Added
 - **Premium Scholar Profiles, Distinguished Faculty Dossiers & Media Showcase (ADR 0014 / Phase 13)**:
   - Created migration `supabase/migrations/20260924140000_distinguished_scholar_dossiers.sql`:
     - Added `profile_tier` (`standard`, `distinguished_fellow`), `orcid_id`, and `google_scholar_url` with strict regex check constraints to `public.scholars`.
@@ -98,6 +97,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Mounted `<PublicNav />` across all application workspace layouts (`/dashboard/*`, `/institution/*`, `/admin/*`) with stacked two-tier header hierarchy (`h-16 top-0` universal bar above `h-12 top-16` workspace sub-nav).
   - Consolidated `/institution/contracts` and `/institution/subscription` into `app/(institution)/institution/` so all institutional views inherit the unified portal shell.
   - Expanded `UserMenu` and `PublicFooter` with direct navigation matrices across Faculty Directory, Courses, Speaking Bureau, Opportunities, Contracts Inbox, Institutional Portals, and System Diagnostics.
+
+### Fixed
+- **Integration Test Concurrency & ADR 0005 Revision Invariant Enforcement**:
+  - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
+    - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
+    - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
+    - Staged scholar initial state as `draft` in `tests/integration/security-guardrails-and-rls.test.ts` and `tests/integration/admin-review.test.ts` before atomic elevation to `approved` alongside `published_revision_id`, eliminating transient zero-revision windows during test setup.
 
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
