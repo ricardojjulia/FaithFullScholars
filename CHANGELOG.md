@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **E2E Playwright Hydration Race Condition & WebServer Diagnostics Route Access**:
+  - Hardened `<LanguageSwitcher />` interaction in `tests/e2e/translation-and-locale.spec.ts` using Playwright's `expect.toPass()` polling retry pattern to eliminate click-dropping race conditions during client-side Next.js App Router hydration.
+  - Enhanced Course Catalog and Speaking Bureau test to explicitly verify bidirectional language transitions (`en` → `es` → `en`).
+  - Added `ENABLE_DEV_ROUTES: 'true'` to `playwright.config.ts` `webServer.env` allowing unauthenticated E2E browser tests to verify `/dev/status` system diagnostics in production webServer mode.
+
 ### Added
 - **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018 / Phase 15)**:
   - Implemented `<ScholarDoctoralSupervisionCard />` in `components/scholars/scholar-doctoral-supervision-card.tsx` rendering verified terminal doctorate credentials, supervisory research fields, annual committee capacity (1–2 dissertations / academic year), examination defense formats (Virtual Defense Zoom/Teams, Hybrid, On-Campus), and direct "Request External Reader" dispatch button.

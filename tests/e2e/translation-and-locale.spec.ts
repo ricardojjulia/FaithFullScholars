@@ -25,7 +25,13 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
 
     // Open language switcher dropdown and pick Español
     const langBtn = page.getByRole('button', { name: /Select Language/i });
-    await langBtn.click();
+    await expect(async () => {
+      const isExpanded = (await langBtn.getAttribute('aria-expanded')) === 'true';
+      if (!isExpanded) {
+        await langBtn.click();
+      }
+      await expect(page.getByRole('button', { name: /Español/i })).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
     const esOption = page.getByRole('button', { name: /Español/i });
     await esOption.click();
 
@@ -43,9 +49,28 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
     await page.goto('/courses');
     await page.waitForLoadState('domcontentloaded');
 
-    // Switch back to English
+    // Switch to Spanish first
     const langBtn = page.getByRole('button', { name: /Select Language/i });
-    await langBtn.click();
+    await expect(async () => {
+      const isExpanded = (await langBtn.getAttribute('aria-expanded')) === 'true';
+      if (!isExpanded) {
+        await langBtn.click();
+      }
+      await expect(page.getByRole('button', { name: /Español/i })).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
+    const esOption = page.getByRole('button', { name: /Español/i });
+    await esOption.click();
+
+    await expect(page.locator('header')).toContainText(/Cursos/i);
+
+    // Switch back to English
+    await expect(async () => {
+      const isExpanded = (await langBtn.getAttribute('aria-expanded')) === 'true';
+      if (!isExpanded) {
+        await langBtn.click();
+      }
+      await expect(page.getByRole('button', { name: /English/i })).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 10000 });
     const enOption = page.getByRole('button', { name: /English/i });
     await enOption.click();
 

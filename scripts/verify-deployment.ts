@@ -69,6 +69,14 @@ async function verifyDeployment() {
     record('Environment', 'SUPABASE_SERVICE_ROLE_KEY', 'WARN', 'Optional for read-only preview; required for admin sync');
   }
 
+  // Security guardrail: ENABLE_DEV_ROUTES must never be active in true production environments
+  const isProductionDeploy = process.env.VERCEL_ENV === 'production' || (process.env.NODE_ENV === 'production' && !process.env.CI);
+  if (isProductionDeploy && process.env.ENABLE_DEV_ROUTES === 'true') {
+    record('Environment', 'ENABLE_DEV_ROUTES Guard', 'FAIL', 'ENABLE_DEV_ROUTES is enabled in production! Admin auth would be bypassed.');
+  } else {
+    record('Environment', 'ENABLE_DEV_ROUTES Guard', 'PASS', isProductionDeploy ? 'Disabled for production deployment' : 'Safe for local/test execution');
+  }
+
   // --------------------------------------------------------------------------
   // 2. Database Connectivity, RLS Coverage & Security Policies
   // --------------------------------------------------------------------------
