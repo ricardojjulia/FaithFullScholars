@@ -302,7 +302,29 @@
     "accredited": "Miembro Acreditado",
     "candidate": "Estatus de Candidato",
     "applicant": "Solicitante",
-    "unaccredited": "Estatus Institucional"
+    "unaccredited": "Estatus Institucional",
+    "matrix_title": "Matriz de Credenciales Docentes ATS y ABHE",
+    "matrix_subtitle": "Nómina de cumplimiento de autoestudio institucional para Estándar 3 y Estándar 11",
+    "accreditation_badge": "Listo para Auditoría ATS / ABHE",
+    "total_faculty": "Total de Profesores Evaluados",
+    "terminal_degree_ratio": "Proporción de Doctorados Terminales",
+    "terminal_standard_note": "El Estándar 3 de ATS requiere ≥50% de doctorados terminales",
+    "standard_met": "Cumple con el Estándar 3 de ATS",
+    "standard_deficit": "Déficit de Cumplimiento (<50%)",
+    "scholarly_works": "Publicaciones Académicas",
+    "confessional_ratio": "Afirmación Confesional",
+    "faculty_member": "Miembro Docente",
+    "credentials": "Grado Más Alto e Institución",
+    "discipline": "Disciplina de Enseñanza",
+    "publications": "Publicaciones",
+    "confessional_affirmation": "Afirmación Confesional",
+    "compliance_status": "Estatus Estándar 3",
+    "download_csv": "Descargar CSV de ATS",
+    "print_dossier": "Imprimir Informe de Autoestudio",
+    "back_to_shortlist": "Volver a la Selección",
+    "empty_title": "Sin Profesores en la Nómina",
+    "empty_desc": "Guarde académicos en su lista institucional para generar su matriz de cumplimiento de acreditación ATS/ABHE.",
+    "discover_scholars": "Explorar Profesores"
   },
   "forms": {
     "full_name": "Nombre Completo",
@@ -465,3 +487,5 @@
     "honorarium_guidance": "Aplica estipendio estándar de examen doctoral académico"
   }
 }
+
+
