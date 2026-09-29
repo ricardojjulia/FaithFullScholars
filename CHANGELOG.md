@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019 / Phase 16)**:
+  - Authored Architectural Decision Record `docs/adr/0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md`.
+  - Implemented core calculation and export engine in `lib/accreditation/ats-matrix-generator.ts`:
+    - `isTerminalDoctorate(degree)`: Verifies research and ministerial doctorates (Ph.D., Th.D., D.Phil., D.Min., S.T.D., Ed.D., D.Miss., etc.) per ATS Standard 3 and ABHE Standard 11.
+    - `generateAccreditationMatrix(candidates)`: Aggregates institutional rosters, calculates terminal doctorate ratios, confessional affirmation ratios, publication totals, and evaluates ATS Standard 3 compliance (≥50% terminal doctorates).
+    - `exportAccreditationCsv(report)`: RFC-4180 compliant CSV generator with leading UTF-8 BOM (`\uFEFF`) ensuring native Microsoft Excel opening without encoding corruption.
+  - Implemented server-side loader in `lib/accreditation/ats-matrix-service.ts` connecting institutional shortlist candidates directly to the matrix engine under RLS isolation.
+  - Created `<ATSComplianceMatrixTable />` in `components/institution/ats-compliance-matrix-table.tsx` with executive academic styling, summary KPI cards (Total Faculty, Terminal Ratio with compliance badge, Scholarly Works, Confessional Ratio), credentials matrix table, CSV download, and print-optimized layout (`@media print`).
+  - Mounted dedicated institutional route at `app/(institution)/institution/saved/accreditation/page.tsx`.
+  - Added "Accreditation Matrix" action button on `/institution/saved` alongside the Committee Dossier button.
+  - Added `aria-current="page"` accessibility attribute to active navigation links in `components/institution/institution-nav.tsx`.
+  - Created branded root error handling boundaries:
+    - `app/not-found.tsx`: Dignified 404 page with navigation links to Faculty Directory, Course Catalog, and Home.
+    - `app/error.tsx`: Root client-side error boundary with incident diagnostic logging, "Try Again" retry action, and Home navigation.
+  - Added full bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under the `accreditation` namespace with 100% key parity.
+  - Authored comprehensive test suites:
+    - Unit tests: `tests/unit/ats-matrix-generator.test.ts` (6 passing tests).
+    - Playwright E2E browser tests: `tests/e2e/accreditation-matrix.spec.ts` (2 passing tests).
+  - All verification gates passed: 47 test files (238 vitest tests), 40 Playwright E2E browser tests, 35/35 RLS tables, 0 Splinter issues, and 59 Next.js App Router routes compiled cleanly.
+
 ### Verified
 - **Full System Health & Pilot Readiness Verification (September 28, 2026)**:
   - Verified 100% test pass rate across 46 Vitest suites (232 tests) and 38 Playwright E2E browser tests (13 test files across all personas).

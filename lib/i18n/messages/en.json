@@ -302,7 +302,29 @@
     "accredited": "Accredited Member",
     "candidate": "Candidate Status",
     "applicant": "Applicant",
-    "unaccredited": "Institutional Status"
+    "unaccredited": "Institutional Status",
+    "matrix_title": "ATS & ABHE Faculty Credentials Matrix",
+    "matrix_subtitle": "Standard 3 & Standard 11 institutional self-study compliance roster",
+    "accreditation_badge": "ATS / ABHE Audit Ready",
+    "total_faculty": "Total Faculty Evaluated",
+    "terminal_degree_ratio": "Terminal Doctorate Ratio",
+    "terminal_standard_note": "ATS Standard 3 requires ≥50% terminal doctorates",
+    "standard_met": "Meets ATS Standard 3",
+    "standard_deficit": "Compliance Deficit (<50%)",
+    "scholarly_works": "Scholarly Publications",
+    "confessional_ratio": "Confessional Affirmation",
+    "faculty_member": "Faculty Member",
+    "credentials": "Highest Earned Degree & Institution",
+    "discipline": "Primary Teaching Field",
+    "publications": "Publications",
+    "confessional_affirmation": "Confessional Affirmation",
+    "compliance_status": "Std 3 Status",
+    "download_csv": "Download ATS CSV",
+    "print_dossier": "Print Self-Study Report",
+    "back_to_shortlist": "Back to Shortlist",
+    "empty_title": "No Faculty on Roster",
+    "empty_desc": "Save scholars to your institutional shortlist to compile your ATS/ABHE faculty credentials compliance matrix.",
+    "discover_scholars": "Discover Faculty"
   },
   "forms": {
     "full_name": "Full Name",
@@ -465,3 +487,5 @@
     "honorarium_guidance": "Standard academic dissertation examination honorarium applies"
   }
 }
+
+

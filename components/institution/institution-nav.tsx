@@ -82,6 +82,7 @@ export function InstitutionNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-current={isActive ? 'page' : undefined}
                 className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition ${
                   isActive
                     ? 'bg-indigo-900 text-white shadow-xs'

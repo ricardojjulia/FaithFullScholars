@@ -970,6 +970,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Confessional Lens Doctrinal Alignment Matrix (ADR 0016)** (`lib/search/confessional-matcher.ts`, `<ConfessionalAlignmentMatrix />`, `/scholars/[slug]`).
 - [x] **SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017)** (`sabbatical_exchange`, `/opportunities`, `/institution/consortium`).
 - [x] **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018)** (`<ScholarDoctoralSupervisionCard />`, `/scholars/[slug]`, ATS Standard 4/5 doctoral committee reader dispatch).
+- [x] **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019)** (`lib/accreditation/ats-matrix-generator.ts`, `<ATSComplianceMatrixTable />`, `/institution/saved/accreditation`, RFC-4180 UTF-8 BOM CSV export, root error boundaries `app/not-found.tsx` and `app/error.tsx`).
 
 ## 22. Governing Decisions
 
