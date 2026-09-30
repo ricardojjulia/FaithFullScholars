@@ -174,7 +174,8 @@ export async function updateContractStatus(
     .eq('id', contractId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Error updating contract status:', error);
+    return { success: false, error: 'Failed to update contract status.' };
   }
 
   return { success: true };
@@ -200,7 +201,8 @@ export async function updateMilestoneStatus(
     .eq('id', milestoneId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Error updating milestone status:', error);
+    return { success: false, error: 'Failed to update milestone status.' };
   }
 
   return { success: true };

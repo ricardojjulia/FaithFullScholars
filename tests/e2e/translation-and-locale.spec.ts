@@ -10,13 +10,13 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
     await expect(langBtn).toBeVisible();
 
     // Verify English navigation items
-    await expect(page.locator('header')).toContainText(/Directory/i);
-    await expect(page.locator('header')).toContainText(/Courses/i);
-    await expect(page.locator('header')).toContainText(/Speakers/i);
+    await expect(page.locator('header').first()).toContainText(/Directory/i);
+    await expect(page.locator('header').first()).toContainText(/Courses/i);
+    await expect(page.locator('header').first()).toContainText(/Speakers/i);
 
     // Verify English footer items
-    await expect(page.locator('footer')).toContainText(/Faculty Directory/i);
-    await expect(page.locator('footer')).toContainText(/Academic Postings Marketplace|Postings/i);
+    await expect(page.locator('footer').first()).toContainText(/Faculty Directory/i);
+    await expect(page.locator('footer').first()).toContainText(/Academic Postings Marketplace|Postings/i);
   });
 
   test('switches seamlessly to Spanish and updates Navigation, Directory, and Footer without language mixing', async ({ page }) => {
@@ -36,13 +36,13 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
     await esOption.click();
 
     // Verify header navigation labels in Spanish
-    await expect(page.locator('header')).toContainText(/Directorio/i);
-    await expect(page.locator('header')).toContainText(/Cursos/i);
-    await expect(page.locator('header')).toContainText(/Conferencistas/i);
-    await expect(page.locator('header')).toContainText(/Oportunidades/i);
+    await expect(page.locator('header').first()).toContainText(/Directorio/i);
+    await expect(page.locator('header').first()).toContainText(/Cursos/i);
+    await expect(page.locator('header').first()).toContainText(/Conferencistas/i);
+    await expect(page.locator('header').first()).toContainText(/Oportunidades/i);
 
     // Verify footer in Spanish
-    await expect(page.locator('footer')).toContainText(/Directorio/i);
+    await expect(page.locator('footer').first()).toContainText(/Directorio/i);
   });
 
   test('switches language on Course Catalog and Theological Speaking Bureau', async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
     const esOption = page.getByRole('button', { name: /Español/i });
     await esOption.click();
 
-    await expect(page.locator('header')).toContainText(/Cursos/i);
+    await expect(page.locator('header').first()).toContainText(/Cursos/i);
 
     // Switch back to English
     await expect(async () => {
@@ -74,11 +74,11 @@ test.describe('Internationalization (i18n) & Language Parity E2E Journey', () =>
     const enOption = page.getByRole('button', { name: /English/i });
     await enOption.click();
 
-    await expect(page.locator('header')).toContainText(/Courses/i);
+    await expect(page.locator('header').first()).toContainText(/Courses/i);
 
     // Go to speakers
     await page.goto('/speakers');
     await page.waitForLoadState('domcontentloaded');
-    await expect(page.locator('header')).toContainText(/Speakers/i);
+    await expect(page.locator('header').first()).toContainText(/Speakers/i);
   });
 });

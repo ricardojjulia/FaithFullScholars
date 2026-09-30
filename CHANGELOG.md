@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020 / Phase 17)**:
+  - Authored Architectural Decision Record `docs/adr/0020-confessional-common-application-and-applicant-matrix.md`.
+  - Implemented candidate aggregation and evaluation engine in `lib/postings/applicant-service.ts`:
+    - Compiles verified scholar profile snapshots, terminal doctorate verification per ATS Standard 3, confessional fit scores, and applicant status.
+    - Generates RFC-4180 compliant CSV export with leading UTF-8 BOM (`\uFEFF`) for Microsoft Excel and committee triage.
+  - Built interactive search committee triage interface `<PostingApplicantMatrix />` in `components/institution/posting-applicant-matrix.tsx`:
+    - Summary KPI cards (Total Applicants, Terminal Doctorate Ratio with ATS badge, Avg Confessional Fit, Shortlisted/Interviewing count).
+    - Status filtering (All, Under Review, Shortlisted, Interviewing, Offer Extended, Archived) and status badge updates.
+    - Full candidate dossier inspection modal rendering doctoral degrees, affirmed confessions, and personal statements.
+    - Print-optimized CSS (`@media print`) and 1-click CSV candidate roster export.
+  - Mounted dedicated search committee view at `app/(institution)/institution/postings/[id]/applicants/page.tsx`.
+  - Added "Applicant Matrix" navigation button on `/institution/postings` opportunities list.
+  - Enhanced `app/api/postings/[id]/express-interest/route.ts` with structured Common Application metadata formatting.
+  - Added full bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under the `applicant_matrix` namespace with 100% key parity.
+  - Authored comprehensive test suites:
+    - Unit tests: `tests/unit/posting-applicants.test.ts` (8 passing tests).
+    - Playwright E2E browser tests: `tests/e2e/applicant-matrix.spec.ts` (1 passing test).
+
+### Security & Shell Hardening
+- **API Authorization & Tenant Boundary Enforcement**:
+  - Hardened `app/api/institution/saved-scholars/route.ts`: added authenticated user session verification and institutional tenancy checks.
+  - Hardened `app/api/institution/saved-courses/route.ts`: added authenticated user session verification and institutional tenancy checks.
+  - Hardened `app/api/inquiries/[id]/route.ts`: added session verification and ownership validation (scholar recipient or institution sender).
+  - Sanitized database error messages across `lib/inquiries/actions.ts`, `lib/admin/actions.ts`, `lib/contracts/contract-service.ts`, and `lib/licensing/licensing-service.ts` to prevent internal schema and stack trace leakage.
+- **Shell & Navigation Quality**:
+  - Created dynamic scholar dashboard navigation `<ScholarDashboardNav />` (`components/scholar/scholar-dashboard-nav.tsx`) with active pathname indicators, `aria-current="page"` attributes, and direct links to Media Showcase (`/dashboard/media`) and Course Licensing (`/dashboard/licensing`).
+  - Added "Course Licensing" navigation item to `components/institution/institution-nav.tsx`.
+  - Added `@media print` isolation (`print:hidden`) to navigation bars in `app/(institution)/institution/layout.tsx` and `app/dashboard/layout.tsx`.
+  - Created root layout error boundary `app/global-error.tsx`.
+  - Improved ARIA accessibility for `components/shell/universal-search-bar.tsx`.
+
+### Fixed
+- **E2E Playwright Selector Resilience**:
+  - Updated `tests/e2e/translation-and-locale.spec.ts` to use `page.locator('header').first()` and `page.locator('footer').first()`, preventing strict mode locator resolution ambiguity.
+
 - **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019 / Phase 16)**:
   - Authored Architectural Decision Record `docs/adr/0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md`.
   - Implemented core calculation and export engine in `lib/accreditation/ats-matrix-generator.ts`:

@@ -42,6 +42,11 @@ export function InstitutionNav() {
       exact: false,
     },
     {
+      href: '/institution/licensing',
+      label: 'Course Licensing',
+      exact: false,
+    },
+    {
       href: '/institution/subscription',
       label: t('institution.nav_subscription') || 'Subscription',
       exact: false,

@@ -90,6 +90,7 @@ function UniversalSearchBarContent() {
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+        aria-label={scope === 'courses' ? 'Search syllabi and courses' : 'Search scholars, fields, and confessions'}
         placeholder={scope === 'courses' ? 'Search syllabi & courses...' : 'Search scholars, fields, confessions...'}
         className="w-full bg-transparent py-1.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
       />
@@ -98,6 +99,7 @@ function UniversalSearchBarContent() {
         <button
           type="button"
           onClick={handleClear}
+          aria-label="Clear search query"
           className="pr-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs flex items-center justify-center"
           title="Clear search"
         >

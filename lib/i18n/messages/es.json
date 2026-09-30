@@ -485,6 +485,23 @@
     "annual_capacity": "Capacidad de Comité",
     "annual_capacity_desc": "Aceptando 1–2 nombramientos de lector externo de tesis por año académico",
     "honorarium_guidance": "Aplica estipendio estándar de examen doctoral académico"
+  },
+  "applicant_matrix": {
+    "title": "Matriz de Candidatos del Comité de Búsqueda",
+    "subtitle": "Triaje comparativo de expedientes de candidatos y matriz de credenciales de la Norma 3 de ATS",
+    "total_applicants": "Total de Candidatos",
+    "terminal_doctorates": "Doctorados Terminales",
+    "confessional_alignment": "Alineación Confesional",
+    "export_csv": "Exportar CSV",
+    "print_dossier": "Imprimir Expediente",
+    "filter_placeholder": "Filtrar candidatos por nombre, institución o título...",
+    "ats_qualified": "Calificado por ATS",
+    "view_dossier": "Ver Expediente",
+    "candidate_dossier": "Expediente de Candidato Common App",
+    "highest_degree": "Grado Académico Más Alto",
+    "affirmed_standards": "Estándares Confesionales Afirmados",
+    "cover_note": "Nota de Presentación del Candidato",
+    "inspect_profile": "Inspeccionar Perfil Completo del Académico y Sílabos"
   }
 }
 

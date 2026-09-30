@@ -823,6 +823,41 @@ export async function seedPilotCohort() {
         description = EXCLUDED.description,
         is_featured = EXCLUDED.is_featured,
         duration_seconds = EXCLUDED.duration_seconds;
+
+      -- 14. Seed Reference Inquiries and Common App Applications (ADR 0020)
+      INSERT INTO public.inquiries (
+        id, institution_id, scholar_id, sender_account_id, opportunity_type,
+        proposed_term, delivery_mode, message, contact_email, status, created_at
+      ) VALUES
+        (
+          '11000000-0000-0000-0000-000000000001',
+          'e1000000-0000-0000-0000-000000000001',
+          'f1000000-0000-0000-0000-000000000003',
+          'a1000000-0000-0000-0000-000000000005',
+          'adjunct',
+          'Spring 2027',
+          'online_synchronous',
+          '[Common App for Posting: Adjunct Professor in Historical Theology (Reformation Era) (f1000000-0000-0000-0000-000000000001)]\n\nI am pleased to submit my Common Application for the Adjunct Professor in Historical Theology position. My doctoral research and 15 years of postgraduate teaching in post-Reformation scholasticism align closely with the curriculum needs of Westminster Theological Seminary. I subscribe ex animo to the Westminster Standards.',
+          'dr.thomas.cranmer@faithfullscholars.org',
+          'pending',
+          now() - interval '2 days'
+        ),
+        (
+          '11000000-0000-0000-0000-000000000002',
+          'e1000000-0000-0000-0000-000000000001',
+          'f1000000-0000-0000-0000-000000000004',
+          'a1000000-0000-0000-0000-000000000006',
+          'adjunct',
+          'Spring 2027',
+          'online_synchronous',
+          '[Common App for Posting: Adjunct Professor in Historical Theology (Reformation Era) (f1000000-0000-0000-0000-000000000001)]\n\nEnclosing my candidate dossier for consideration in the Spring 2027 modular intensive. I hold a Ph.D. in Systematic Theology and have taught historical dogmatics and covenant theology for over a decade.',
+          'dr.marcus.vance@faithfullscholars.org',
+          'accepted',
+          now() - interval '4 days'
+        )
+      ON CONFLICT (id) DO UPDATE SET
+        message = EXCLUDED.message,
+        status = EXCLUDED.status;
     `);
 
     await client.query('COMMIT;');

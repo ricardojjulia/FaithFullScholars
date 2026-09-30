@@ -197,7 +197,8 @@ export async function respondToInquiry(
     .eq('id', inquiryId);
 
   if (updateError) {
-    return { success: false, error: updateError.message };
+    console.error('Error updating inquiry status:', updateError);
+    return { success: false, error: 'Failed to update inquiry status.' };
   }
 
   // 3. Dispatch notification if responded (accepted / declined)
@@ -243,7 +244,8 @@ export async function toggleSaveScholar(
       .eq('id', existing.id);
 
     if (deleteError) {
-      return { success: false, error: deleteError.message };
+      console.error('Error removing scholar from shortlist:', deleteError);
+      return { success: false, error: 'Failed to remove scholar from shortlist.' };
     }
     return { success: true, data: { saved: false } };
   }
@@ -258,7 +260,8 @@ export async function toggleSaveScholar(
     });
 
   if (insertError) {
-    return { success: false, error: insertError.message };
+    console.error('Error adding scholar to shortlist:', insertError);
+    return { success: false, error: 'Failed to add scholar to shortlist.' };
   }
 
   return { success: true, data: { saved: true } };
@@ -288,7 +291,8 @@ export async function toggleSaveCourse(
       .eq('id', existing.id);
 
     if (deleteError) {
-      return { success: false, error: deleteError.message };
+      console.error('Error removing course from saved list:', deleteError);
+      return { success: false, error: 'Failed to remove course from saved list.' };
     }
     return { success: true, data: { saved: false } };
   }
@@ -302,7 +306,8 @@ export async function toggleSaveCourse(
     });
 
   if (insertError) {
-    return { success: false, error: insertError.message };
+    console.error('Error saving course:', insertError);
+    return { success: false, error: 'Failed to save course.' };
   }
 
   return { success: true, data: { saved: true } };
@@ -332,7 +337,8 @@ export async function updateInstitutionProfile(
     .eq('id', institutionId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Error updating institution profile:', error);
+    return { success: false, error: 'Failed to update institutional profile.' };
   }
 
   return { success: true };
