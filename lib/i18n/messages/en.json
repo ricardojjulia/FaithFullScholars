@@ -485,6 +485,23 @@
     "annual_capacity": "Committee Capacity",
     "annual_capacity_desc": "Accepting 1–2 dissertation external reader appointments per academic year",
     "honorarium_guidance": "Standard academic dissertation examination honorarium applies"
+  },
+  "applicant_matrix": {
+    "title": "Search Committee Applicant Matrix",
+    "subtitle": "Comparative candidate application dossier triage and ATS Standard 3 credentials matrix",
+    "total_applicants": "Total Applicants",
+    "terminal_doctorates": "Terminal Doctorates",
+    "confessional_alignment": "Confessional Alignment",
+    "export_csv": "Export CSV",
+    "print_dossier": "Print Dossier",
+    "filter_placeholder": "Filter candidates by name, institution, or degree...",
+    "ats_qualified": "ATS Qualified",
+    "view_dossier": "View Dossier",
+    "candidate_dossier": "Common App Candidate Dossier",
+    "highest_degree": "Highest Earned Degree",
+    "affirmed_standards": "Affirmed Confessional Standards",
+    "cover_note": "Candidate Cover Note",
+    "inspect_profile": "Inspect Full Scholar Profile & Syllabi"
   }
 }
 

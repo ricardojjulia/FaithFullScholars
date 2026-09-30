@@ -197,7 +197,8 @@ export async function processInstitutionVerification(
     .eq('id', institutionId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Error verifying institution:', error);
+    return { success: false, error: 'Failed to process institution verification.' };
   }
 
   return { success: true };
@@ -223,7 +224,8 @@ export async function processContentReport(
     .eq('id', reportId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Error processing content report:', error);
+    return { success: false, error: 'Failed to process content report.' };
   }
 
   return { success: true };

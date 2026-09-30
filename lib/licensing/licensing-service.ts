@@ -159,7 +159,7 @@ export async function requestCourseLicense(
 
   if (error) {
     console.error('Error creating course licensing request:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Failed to create course licensing request.' };
   }
 
   return { success: true, agreement: data as CourseLicensingAgreement };
@@ -191,7 +191,7 @@ export async function updateLicensingAgreement(
 
   if (error) {
     console.error('Error updating licensing agreement:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Failed to update licensing agreement.' };
   }
 
   return { success: true, agreement: data as CourseLicensingAgreement };
@@ -235,7 +235,7 @@ export async function signLicensingAgreement(
 
   if (error) {
     console.error('Error signing licensing agreement:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: 'Failed to sign licensing agreement.' };
   }
 
   return { success: true, agreement: data as CourseLicensingAgreement };

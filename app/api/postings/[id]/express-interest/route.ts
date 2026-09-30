@@ -74,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         opportunity_type: posting.opportunity_type || 'adjunct',
         proposed_term: posting.term || null,
         delivery_mode: posting.delivery_mode || null,
-        message: coverNote.trim(),
+        message: `[Common App for Posting: ${posting.title} (${posting.id})]\n\n${coverNote.trim()}`,
         contact_email: user.email || 'candidate@faithfullscholars.org',
         status: 'pending',
       })

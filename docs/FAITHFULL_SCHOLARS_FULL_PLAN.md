@@ -893,6 +893,31 @@ Acceptance:
 3. [x] Add bilingual i18n support in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under `doctoral` namespace.
 4. [x] Author comprehensive unit test suite in `tests/unit/doctoral-supervision.test.ts`.
 
+### Phase 16: ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix (Completed)
+
+> **Status:** Completed (ADR 0019: Automated ATS Standard 3 / ABHE Standard 9 faculty credential self-study matrix generator, compliance KPI scoring, UTF-8 BOM CSV export for accreditation evaluators at `/institution/saved/accreditation`, print CSS self-study report styling, root branded 404 and global error boundaries; 243 unit tests across 48 suites, 39 Playwright E2E tests, 100% RLS across 35 tables, 22 deployment pre-flight checks).
+
+1. [x] Implement `lib/accreditation/ats-matrix-generator.ts` with terminal degree heuristics, confessional standard checks, and RFC-4180 CSV compilation.
+2. [x] Build candidate credentials self-study matrix UI (`components/institution/ats-compliance-matrix-table.tsx`).
+3. [x] Mount accreditation view at `/institution/saved/accreditation` with `@media print` support and CSV download.
+4. [x] Create error boundaries (`app/not-found.tsx` and `app/error.tsx`).
+5. [x] Add unit tests in `tests/unit/ats-matrix-generator.test.ts` and E2E test in `tests/e2e/accreditation-matrix.spec.ts`.
+
+### Phase 17: Confessional Common Application & Search Committee Applicant Matrix (Completed)
+
+> **Status:** Completed (ADR 0020: 1-click Common Application interest expression linking verified scholar dossiers to faculty search opportunities, search committee candidate matrix at `/institution/postings/[id]/applicants`, candidate triage status workflow, ATS Standard 3 terminal doctorate and confessional fit scoring, RFC-4180 CSV export, candidate dossier modal, shell/API security hardening, bilingual i18n parity; 251 unit/integration tests across 49 suites, 41 Playwright E2E tests, 35/35 tables RLS enforced, 6/6 Splinter checks passing, 22 deployment pre-flight checks).
+
+1. [x] Implement `lib/postings/applicant-service.ts` compiling applicant reports, ATS Standard 3 doctorates, confessional fit, and CSV export.
+2. [x] Build search committee candidate matrix UI (`components/institution/posting-applicant-matrix.tsx`) with status filtering, CSV export, and print styles.
+3. [x] Mount applicant matrix page at `/institution/postings/[id]/applicants`.
+4. [x] Add "Applicant Matrix" navigation link from institutional postings list (`app/(institution)/institution/postings/page.tsx`).
+5. [x] Format applicant submission metadata in `app/api/postings/[id]/express-interest/route.ts`.
+6. [x] Harden API routes (`/api/institution/saved-scholars`, `/api/institution/saved-courses`, `/api/inquiries/[id]`) with user authentication, institutional tenancy, and sanitized error responses.
+7. [x] Implement dynamic scholar dashboard navigation (`components/scholar/scholar-dashboard-nav.tsx`), add print-hiding on institution layout, and improve universal search bar ARIA labeling.
+8. [x] Add unit tests (`tests/unit/posting-applicants.test.ts`) and Playwright E2E test (`tests/e2e/applicant-matrix.spec.ts`).
+9. [x] Seed candidate reference data in `scripts/seed-pilot-cohort.ts`.
+10. [x] Maintain 100% key parity in `lib/i18n/messages/en.json` and `es.json` under `applicant_matrix`.
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -971,6 +996,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **SabbaticalSwap Visiting Scholar & Sabbatical Exchange Network (ADR 0017)** (`sabbatical_exchange`, `/opportunities`, `/institution/consortium`).
 - [x] **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018)** (`<ScholarDoctoralSupervisionCard />`, `/scholars/[slug]`, ATS Standard 4/5 doctoral committee reader dispatch).
 - [x] **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019)** (`lib/accreditation/ats-matrix-generator.ts`, `<ATSComplianceMatrixTable />`, `/institution/saved/accreditation`, RFC-4180 UTF-8 BOM CSV export, root error boundaries `app/not-found.tsx` and `app/error.tsx`).
+- [x] **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020)** (`lib/postings/applicant-service.ts`, `<PostingApplicantMatrix />`, `/institution/postings/[id]/applicants`, candidate triage workflow, ATS Standard 3 doctoral scoring, RFC-4180 candidate CSV export).
 
 ## 22. Governing Decisions
 
