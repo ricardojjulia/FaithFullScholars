@@ -295,15 +295,15 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
           </div>
         ) : (
           <div className="overflow-x-auto print:overflow-visible">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs" aria-label="Applicant Matrix">
               <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 font-semibold">
                 <tr>
-                  <th className="py-3.5 px-4">Candidate</th>
-                  <th className="py-3.5 px-4">Terminal Degree (ATS Standard 3)</th>
-                  <th className="py-3.5 px-4">Confessional Fit</th>
-                  <th className="py-3.5 px-4">Applied</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right print:hidden">Actions</th>
+                  <th scope="col" className="py-3.5 px-4">Candidate</th>
+                  <th scope="col" className="py-3.5 px-4">Terminal Degree (ATS Standard 3)</th>
+                  <th scope="col" className="py-3.5 px-4">Confessional Fit</th>
+                  <th scope="col" className="py-3.5 px-4">Applied</th>
+                  <th scope="col" className="py-3.5 px-4">Status</th>
+                  <th scope="col" className="py-3.5 px-4 text-right print:hidden">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -414,7 +414,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
       {selectedApplicant && (
         <div
           role="dialog"
-          aria-modal="true"
+          aria-modal={true}
           aria-labelledby="dossier-modal-title"
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
         >

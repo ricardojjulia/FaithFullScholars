@@ -6,6 +6,7 @@ import { getPublicCourseBySlug } from '@/lib/domain/queries';
 import { formatDeliveryMode } from '@/lib/domain/taxonomies';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
+import { CourseLicensingButton } from '@/components/licensing/course-licensing-button';
 
 interface CourseDetailPageProps {
   params: Promise<{
@@ -142,7 +143,7 @@ export default async function CourseDetailPage({
               This course is ready for modular intensive delivery (1–2 weeks), synchronous online semester instruction, or asynchronous video module integration.
             </p>
 
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/60 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <div className="text-xs font-semibold text-slate-900 dark:text-white">
                   Full Course Syllabus & Weekly Schedule
@@ -152,12 +153,20 @@ export default async function CourseDetailPage({
                 </div>
               </div>
 
-              <Link
-                href={`/scholars/${course.scholar.slug}`}
-                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
-              >
-                Inquire With Scholar
-              </Link>
+              <div className="flex items-center gap-2">
+                <CourseLicensingButton
+                  courseId={course.id}
+                  courseTitle={course.title}
+                  scholarId={course.scholar.id}
+                  scholarName={course.scholar.full_name}
+                />
+                <Link
+                  href={`/scholars/${course.scholar.slug}`}
+                  className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+                >
+                  Inquire With Scholar
+                </Link>
+              </div>
             </div>
           </section>
         </div>

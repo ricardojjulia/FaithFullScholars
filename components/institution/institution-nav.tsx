@@ -47,6 +47,11 @@ export function InstitutionNav() {
       exact: false,
     },
     {
+      href: '/institution/conferences',
+      label: t('institution.nav_conferences') || 'Conferences',
+      exact: false,
+    },
+    {
       href: '/institution/subscription',
       label: t('institution.nav_subscription') || 'Subscription',
       exact: false,
@@ -64,7 +69,7 @@ export function InstitutionNav() {
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-30 shadow-2xs">
+    <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-30 shadow-2xs print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between gap-4">
         <div className="flex items-center space-x-2">
           <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400 stroke-[1.75]" />

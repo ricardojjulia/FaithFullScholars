@@ -232,6 +232,7 @@
     "nav_contracts": "Contratos",
     "nav_subscription": "Suscripción",
     "nav_consortium": "Consorcio",
+    "nav_conferences": "Conferencias",
     "nav_profile": "Perfil Institucional",
     "shortlist": "Preseleccionar",
     "shortlisted": "Preseleccionado"
@@ -502,6 +503,24 @@
     "affirmed_standards": "Estándares Confesionales Afirmados",
     "cover_note": "Nota de Presentación del Candidato",
     "inspect_profile": "Inspeccionar Perfil Completo del Académico y Sílabos"
+  },
+  "conferences": {
+    "title": "Suite de Conferencias del Comité de Búsqueda",
+    "subtitle": "Expediente móvil para entrevistas en el piso de la convención y puntuación deliberativa confidencial del comité en suites de hotel.",
+    "badge": "Convenciones Anuales de Sociedades Teológicas · Noviembre 2026",
+    "presenter_badge": "Ponente en Convención Teológica",
+    "schedule_interview": "Programar Entrevista en la Convención",
+    "book_slot": "Reservar Horario de Entrevista",
+    "floor_docket": "Expediente de Entrevistas del Comité en el Piso",
+    "floor_docket_desc": "Entrevistas preliminares de 30 minutos programadas y rúbricas confidenciales de evaluación del comité.",
+    "presenting_faculty": "Profesores Ponentes y Sesiones de Monografías",
+    "presenting_faculty_desc": "Académicos que presentan ponencias disponibles para entrevistas presenciales en la convención.",
+    "rubric_title": "Rúbrica Confidencial de Deliberación del Comité",
+    "scholarship_score": "Rigor Académico e Investigación (1–5)",
+    "pedagogy_score": "Entrega Pedagógica y Docencia (1–5)",
+    "confessional_score": "Alineación Confesional (1–5)",
+    "deliberation_notes": "Notas de Deliberación y Recomendación",
+    "save_notes": "Guardar Notas de Deliberación"
   }
 }
 
