@@ -31,7 +31,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900">
+    <header className="border-b border-slate-200 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900 print:hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-6">
@@ -49,7 +49,7 @@ export function AdminNav() {
               </div>
             </div>
 
-            <nav className="hidden md:flex items-center gap-1">
+            <nav className="hidden md:flex items-center gap-1" aria-label="Admin Navigation">
               {ADMIN_TABS.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = pathname.startsWith(tab.href);
@@ -57,6 +57,7 @@ export function AdminNav() {
                   <Link
                     key={tab.href}
                     href={tab.href}
+                    aria-current={isActive ? 'page' : undefined}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
                       isActive
                         ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300'

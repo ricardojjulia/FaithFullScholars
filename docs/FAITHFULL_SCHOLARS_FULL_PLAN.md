@@ -918,6 +918,24 @@ Acceptance:
 9. [x] Seed candidate reference data in `scripts/seed-pilot-cohort.ts`.
 10. [x] Maintain 100% key parity in `lib/i18n/messages/en.json` and `es.json` under `applicant_matrix`.
 
+### Phase 18: Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (Completed)
+
+> **Status:** Completed (ADR 0021: Search committee mobile convention suite at `/institution/conferences` for the November ETS/SBL/EPS annual meetings, candidate floor docket with 30-min interview booking, confidential committee deliberation rubrics scoring scholarship, pedagogy, and confessional alignment, scholar profile presentation badge `<ConferencePresentationBadge />` on `/scholars/[slug]`, accessible interview booking modal `<ConferenceInterviewModal />`, shell print-hiding, PublicNav active link detection, error sanitization, bilingual i18n parity, and comprehensive verification: 261 passing unit/integration tests across 50 suites, 43 Playwright E2E browser tests across 16 spec files, 35/35 tables RLS enforced, 6/6 Splinter security checks).
+
+1. [x] Model annual meetings (ETS 2026, SBL/AAR 2026, EPS 2026), paper presentations, session rooms, and interview appointments in `lib/conferences/conference-types.ts`.
+2. [x] Implement `lib/conferences/conference-service.ts` for conference attendees queries, convention interview booking, slot collision defense, and confidential committee deliberation scoring.
+3. [x] Build search committee convention suite page (`app/(institution)/institution/conferences/page.tsx`) with conference switcher, candidate briefing, deliberation scoring, and print-optimized docket.
+4. [x] Add "Conferences" navigation link to institutional navigation (`components/institution/institution-nav.tsx`).
+5. [x] Build `<ConferencePresentationBadge />` and `<ConferenceInterviewModal />` with accessible ARIA semantics (`role="dialog"`, `aria-modal={true}`).
+6. [x] Mount presentation badges on scholar profile dossier (`app/scholars/[slug]/page.tsx`).
+7. [x] Harden shell components with `print:hidden` (`PublicNav`, `PublicFooter`, `InstitutionNav`, `AdminNav`) to prevent navigation chrome from contaminating printed dossiers and ATS reports.
+8. [x] Add dynamic active route indication and `aria-current="page"` to `components/shell/public-nav.tsx`.
+9. [x] Sanitize database error messages in `lib/inquiries/actions.ts` and `lib/admin/actions.ts`.
+10. [x] Secure `GET/PATCH /api/institution/contracts/[id]` with authenticated session verification.
+11. [x] Mount `CourseLicensingButton` on `/courses/[slug]` linking `CourseLicensingModal`.
+12. [x] Add 100% key parity in `lib/i18n/messages/en.json` and `es.json` under `conferences` namespace.
+13. [x] Author comprehensive unit tests (`tests/unit/conference-service.test.ts`) and Playwright E2E test (`tests/e2e/conference-suite.spec.ts`).
+
 Pilot:
 
 - 20 to 40 scholars.
@@ -997,6 +1015,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018)** (`<ScholarDoctoralSupervisionCard />`, `/scholars/[slug]`, ATS Standard 4/5 doctoral committee reader dispatch).
 - [x] **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019)** (`lib/accreditation/ats-matrix-generator.ts`, `<ATSComplianceMatrixTable />`, `/institution/saved/accreditation`, RFC-4180 UTF-8 BOM CSV export, root error boundaries `app/not-found.tsx` and `app/error.tsx`).
 - [x] **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020)** (`lib/postings/applicant-service.ts`, `<PostingApplicantMatrix />`, `/institution/postings/[id]/applicants`, candidate triage workflow, ATS Standard 3 doctoral scoring, RFC-4180 candidate CSV export).
+- [x] **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021)** (`lib/conferences/`, `/institution/conferences`, `<ConferencePresentationBadge />`, `<ConferenceInterviewModal />`, convention floor docket with confidential committee deliberation rubrics).
 
 ## 22. Governing Decisions
 

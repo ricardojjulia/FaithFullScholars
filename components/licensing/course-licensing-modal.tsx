@@ -77,13 +77,18 @@ export function CourseLicensingModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+      <div
+        role="dialog"
+        aria-modal={true}
+        aria-labelledby="licensing-modal-title"
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200"
+      >
         <div className="bg-gradient-to-r from-emerald-800 to-emerald-950 px-6 py-5 text-white flex justify-between items-center">
           <div>
             <span className="text-xs uppercase tracking-wider text-emerald-300 font-semibold">
               {t('licensing.modal_badge') || 'Curricular Licensing & Distribution'}
             </span>
-            <h3 className="text-lg font-bold mt-0.5">{t('licensing.modal_title') || 'Request Course License'}</h3>
+            <h3 id="licensing-modal-title" className="text-lg font-bold mt-0.5">{t('licensing.modal_title') || 'Request Course License'}</h3>
           </div>
           <button
             onClick={onClose}

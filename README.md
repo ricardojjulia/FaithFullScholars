@@ -40,10 +40,16 @@ Initial ADRs:
 - [ADR 0018: Doctoral Dissertation Supervision & External Reader Exchange](docs/adr/0018-doctoral-dissertation-supervision-and-external-reader-exchange.md)
 - [ADR 0019: ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix](docs/adr/0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md)
 - [ADR 0020: Confessional Common Application & Search Committee Applicant Matrix](docs/adr/0020-confessional-common-application-and-applicant-matrix.md)
+- [ADR 0021: Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub](docs/adr/0021-theological-guild-annual-conference-interview-hub.md)
 
 ## Current Status & Verification
 
-- **Current Position:** Phase 0 through Phase 17, the Platform Translation Pipeline (Spanish `es`), the **Board of Trustees Search Docket (ADR 0015)**, **Confessional Lens Matrix (ADR 0016)**, **SabbaticalSwap Exchange (ADR 0017)**, **Doctoral Supervision Exchange (ADR 0018)**, **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix (ADR 0019)**, **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020)**, branded root error boundaries (`app/not-found.tsx`, `app/error.tsx`), and the full testing suite are verified across all quality gates (251 vitest tests across 49 suites, 41 Playwright E2E browser tests across 15 spec files, 35/35 tables RLS enforced with 123 policies, 0 Splinter security findings, 60 Next.js App Router routes compiled, 14/14 pilot readiness checks, 22/22 deployment pre-flight checks).
+- **Current Position:** Phase 0 through Phase 18, the Platform Translation Pipeline (Spanish `es`), the **Board of Trustees Search Docket (ADR 0015)**, **Confessional Lens Matrix (ADR 0016)**, **SabbaticalSwap Exchange (ADR 0017)**, **Doctoral Supervision Exchange (ADR 0018)**, **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix (ADR 0019)**, **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020)**, **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021)**, branded root error boundaries (`app/not-found.tsx`, `app/error.tsx`), and the full testing suite are verified across all quality gates (261 vitest tests across 50 suites, 43 Playwright E2E browser tests across 16 spec files, 35/35 tables RLS enforced with 123 policies, 0 Splinter security findings, 60 Next.js App Router routes compiled, 14/14 pilot readiness checks, 22/22 deployment pre-flight checks).
+- **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021 / Phase 18):**
+  - **Convention Suite Workflow:** Search committees and deans coordinate on-site 30-minute interview booking, candidate presentation schedules, and confidential search committee rubrics at ETS, SBL/AAR, and EPS annual meetings (`/institution/conferences`).
+  - **Conference Presentation Badges:** Badges on verified scholar dossiers displaying upcoming paper titles, conference tracks, session locations, and presentation dates (`components/conferences/conference-presentation-badge.tsx`).
+  - **Confidential Deliberation Rubric:** 4-dimension evaluation rubric (Academic Rigor, Confessional Articulation, Pedagogical Warmth, Institutional Alignment) with score tracking and private notes.
+  - **Shell & Print Hardening:** Added `print:hidden` across all navigation shells (`PublicNav`, `PublicFooter`, `InstitutionNav`, `AdminNav`) to guarantee clean physical dossiers; active link indicators on `PublicNav`; modal dialog accessibility (`role="dialog"`, `aria-modal={true}`, `aria-labelledby`).
 - **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020 / Phase 17):**
   - **1-Click Common Application Interest Expression:** Scholars apply to theological faculty opportunities directly using their verified profile dossier, eliminating redundant CV and doctrinal statement re-submission.
   - **Search Committee Candidate Matrix:** Comprehensive triage table (`/institution/postings/[id]/applicants`) providing search committees with candidate KPI cards (Total Applicants, Terminal Doctorate Ratio per ATS Standard 3, Avg Confessional Fit), candidate status workflows (Under Review, Shortlisted, Interviewing, Offer Extended, Archived), candidate dossier modal, print-optimized formatting, and RFC-4180 CSV export.
@@ -116,7 +122,7 @@ Initial ADRs:
   npm run verify:deploy
   npm run test:e2e
   ```
-  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (41 suites, 194 tests), `audit:rls` (35/35 tables), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (21 checks), and Playwright E2E browser tests (36 tests).
+  Runs all quality gates: `version:check`, `lint` (0 errors), `typecheck` (0 errors), `test` (50 suites, 261 tests), `audit:rls` (35/35 tables, 123 active policies), `audit:security` (Splinter security advisor), Next.js Turbopack `build`, `verify:deploy` (22 checks), and Playwright E2E browser tests (43 tests across 16 spec files).
 
 ## Product Shape
 

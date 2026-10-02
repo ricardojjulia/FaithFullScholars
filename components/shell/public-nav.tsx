@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Home, Users, BookOpen, Briefcase, GraduationCap, Mic } from 'lucide-react';
 import { UniversalSearchBar } from './universal-search-bar';
 import { UserMenu } from './user-menu';
@@ -9,9 +10,16 @@ import { useTranslation } from '@/lib/i18n/i18n-context';
 
 export function PublicNav() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+
+  const isHomeActive = pathname === '/';
+  const isScholarsActive = pathname === '/scholars' || (pathname.startsWith('/scholars/') && !pathname.includes('dossier'));
+  const isCoursesActive = pathname.startsWith('/courses');
+  const isOpportunitiesActive = pathname.startsWith('/opportunities');
+  const isSpeakersActive = pathname.startsWith('/speakers');
 
   return (
-    <header className="border-b border-slate-200/90 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sticky top-0 z-40 shadow-xs">
+    <header className="border-b border-slate-200/90 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sticky top-0 z-40 shadow-xs print:hidden">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Brand & Universal Search */}
         <div className="flex items-center gap-3 sm:gap-5 flex-1 max-w-xl">
@@ -36,10 +44,15 @@ export function PublicNav() {
         </div>
 
         {/* Center / Right: Primary Navigation Icons (LinkedIn-style) */}
-        <nav className="flex items-center gap-1 sm:gap-4 shrink-0">
+        <nav className="flex items-center gap-1 sm:gap-4 shrink-0" aria-label="Main Navigation">
           <Link
             href="/"
-            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            aria-current={isHomeActive ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center px-2 py-1 transition-colors rounded-lg group ${
+              isHomeActive
+                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+            }`}
             title={t('nav.home') || 'Home Feed'}
           >
             <Home className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
@@ -48,7 +61,12 @@ export function PublicNav() {
 
           <Link
             href="/scholars"
-            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            aria-current={isScholarsActive ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center px-2 py-1 transition-colors rounded-lg group ${
+              isScholarsActive
+                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+            }`}
             title={t('nav.directory') || 'Faculty Network Directory'}
           >
             <Users className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
@@ -57,7 +75,12 @@ export function PublicNav() {
 
           <Link
             href="/courses"
-            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            aria-current={isCoursesActive ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center px-2 py-1 transition-colors rounded-lg group ${
+              isCoursesActive
+                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+            }`}
             title={t('nav.courses') || 'Course Syllabi & Lecture Showcase'}
           >
             <BookOpen className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
@@ -66,7 +89,12 @@ export function PublicNav() {
 
           <Link
             href="/opportunities"
-            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            aria-current={isOpportunitiesActive ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center px-2 py-1 transition-colors rounded-lg group ${
+              isOpportunitiesActive
+                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+            }`}
             title={t('nav.opportunities') || 'Academic Opportunities & Teaching Calls'}
           >
             <Briefcase className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />
@@ -75,7 +103,12 @@ export function PublicNav() {
 
           <Link
             href="/speakers"
-            className="flex flex-col items-center justify-center px-2 py-1 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors rounded-lg group"
+            aria-current={isSpeakersActive ? 'page' : undefined}
+            className={`flex flex-col items-center justify-center px-2 py-1 transition-colors rounded-lg group ${
+              isSpeakersActive
+                ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+            }`}
             title={t('nav.speakers') || 'Theological Conference Speaker Bureau & Keynotes'}
           >
             <Mic className="w-4 h-4 mb-0.5 group-hover:scale-110 transition-transform stroke-[1.75]" />

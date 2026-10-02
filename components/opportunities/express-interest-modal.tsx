@@ -62,7 +62,12 @@ export function ExpressInterestModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+      <div
+        role="dialog"
+        aria-modal={true}
+        aria-labelledby="express-interest-title"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150"
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -76,7 +81,7 @@ export function ExpressInterestModal({
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-display font-bold text-slate-900 dark:text-white">
+            <h3 id="express-interest-title" className="text-base font-display font-bold text-slate-900 dark:text-white">
               Express Interest in Position
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">

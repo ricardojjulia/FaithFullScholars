@@ -85,7 +85,8 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
       <div
         className="bg-white dark:bg-slate-900 w-full max-w-4xl max-h-[90vh] rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
-        aria-modal="true"
+        aria-modal={true}
+        aria-labelledby="ai-matcher-title"
       >
         {/* Modal Header */}
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-start justify-between gap-4 bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 text-white">
@@ -94,7 +95,7 @@ export function AiFacultyMatcherModal({ isOpen, onClose }: AiFacultyMatcherModal
               <Sparkles className="w-3.5 h-3.5 text-amber-300 stroke-[2]" />
               <span>{t('ai_matcher.modal_badge')}</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-display font-bold tracking-tight text-white">
+            <h2 id="ai-matcher-title" className="text-xl sm:text-2xl font-display font-bold tracking-tight text-white">
               {t('ai_matcher.modal_title')}
             </h2>
             <p className="text-xs text-indigo-200 max-w-xl leading-relaxed">

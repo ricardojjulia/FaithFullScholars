@@ -8,12 +8,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Verified
-- **Full System Health & Operational Audit Baseline (October 1, 2026)**:
-  - Verified 100% test pass rate across 49 Vitest suites (251 tests) and 41 Playwright E2E browser tests (15 test files across all 8 personas).
+- **Full System Health & Operational Audit Baseline (October 2, 2026)**:
+  - Verified 100% test pass rate across 50 Vitest suites (261 tests) and 43 Playwright E2E browser tests (16 test files across all personas).
   - Confirmed 100% PostgreSQL Row Level Security enforcement across all 35 public tables (123 active security policies).
   - Verified 0 Splinter security advisor issues, 14/14 pilot readiness checks, and 22/22 deployment pre-flight checks.
-  - Turbopack compilation verified across all 60 static and dynamic Next.js App Router routes (59 static prerendered, 1 dynamic).
-  - Evaluated randomized operational decision (`0.5588` -> `CLOSE`), concluding daily factory cycle with complete system verification and documentation close-out.
+  - Turbopack compilation verified across all 60 static and dynamic Next.js App Router routes (60 static prerendered, 1 dynamic).
+  - Evaluated randomized operational decision (`0.3786` -> `COUNCIL`), executed Council Review #11, implemented Phase 18 (ADR 0021), and completed full quality gate verification.
+
+### Added
+- **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021 / Phase 18)**:
+  - Authored Architectural Decision Record `docs/adr/0021-theological-guild-annual-conference-interview-hub.md`.
+  - Implemented conference schedule domain models and service layer in `lib/conferences/conference-types.ts` and `lib/conferences/conference-service.ts`:
+    - Modeled upcoming November 2026 guild meetings (ETS 2026, SBL/AAR 2026, EPS 2026 in San Antonio, TX).
+    - Query presenting faculty, session rooms, paper titles, and 30-minute interview availability slots.
+    - Automated interview slot scheduling with double-booking collision prevention scoped by institution.
+    - Scored search committee deliberation rubrics (1–5 on scholarship, pedagogical delivery, and confessional alignment) with private evaluator notes.
+  - Built interactive search committee convention suite at `app/(institution)/institution/conferences/page.tsx`:
+    - Conference switcher tabs, live committee floor docket, candidate paper abstracts, and deliberation scoring forms.
+    - Mobile-optimized layout with print stylesheet support (`@media print`) for offline convention floor briefing.
+  - Added "Conferences" tab to `components/institution/institution-nav.tsx`.
+  - Built UI badge `<ConferencePresentationBadge />` (`components/conferences/conference-presentation-badge.tsx`) and booking modal `<ConferenceInterviewModal />` (`components/conferences/conference-interview-modal.tsx`).
+  - Mounted Guild Conference Presentations card on scholar profile dossier at `app/scholars/[slug]/page.tsx`.
+  - Mounted `<CourseLicensingButton />` directly on course details (`app/courses/[slug]/page.tsx`) triggering `CourseLicensingModal`.
+  - Added symmetric bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under `conferences` namespace with 100% key parity.
+  - Authored comprehensive test suites:
+    - Unit tests: `tests/unit/conference-service.test.ts` (10 passing tests).
+    - Playwright E2E browser tests: `tests/e2e/conference-suite.spec.ts` (2 passing tests).
+
+### Security & Accessibility Hardening
+- **Shell Print Hardening & Active Route Indication**:
+  - Added `print:hidden` to `PublicNav`, `PublicFooter`, `InstitutionNav`, and `AdminNav` preventing navigation chrome from contaminating printed dossiers and board accreditation reports.
+  - Added dynamic `usePathname()` active route highlight and `aria-current="page"` to `PublicNav` (`components/shell/public-nav.tsx`).
+  - Added `aria-current="page"` to `AdminNav` (`components/admin/admin-nav.tsx`).
+- **Modal Dialog & Table ARIA Accessibility**:
+  - Added `role="dialog"`, boolean `aria-modal={true}`, and `aria-labelledby` across `ExpressInterestModal`, `IssueEndorsementModal`, `CourseLicensingModal`, `StructuredInquiryModal`, `AIFacultyMatcherModal`, and `PostingApplicantMatrix`.
+  - Added `scope="col"` on header cells and `aria-label="Applicant Matrix"` on `PostingApplicantMatrix` table.
+- **Route Authorization & Error Sanitization**:
+  - Hardened `app/api/institution/contracts/[id]/route.ts`: added authenticated user session checks for both `GET` and `PATCH`.
+  - Sanitized database error messages in `lib/inquiries/actions.ts` and `lib/admin/actions.ts` to prevent internal schema and Postgres error leakage.
 
 ### Added
 - **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020 / Phase 17)**:

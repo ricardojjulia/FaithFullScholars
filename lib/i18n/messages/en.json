@@ -502,6 +502,24 @@
     "affirmed_standards": "Affirmed Confessional Standards",
     "cover_note": "Candidate Cover Note",
     "inspect_profile": "Inspect Full Scholar Profile & Syllabi"
+  },
+  "conferences": {
+    "title": "Search Committee Conference Suite",
+    "subtitle": "Mobile interview floor docket, presenting candidate briefing, and confidential committee deliberation scoring for convention hotel suites.",
+    "badge": "Annual Guild Conventions · November 2026",
+    "presenter_badge": "Guild Conference Presenter",
+    "schedule_interview": "Schedule Convention Interview",
+    "book_slot": "Book Interview Slot",
+    "floor_docket": "Committee Interview Floor Docket",
+    "floor_docket_desc": "Scheduled 30-minute screening interviews and confidential committee scoring rubrics.",
+    "presenting_faculty": "Presenting Faculty & Monograph Sessions",
+    "presenting_faculty_desc": "Scholars presenting academic papers available for on-site convention interviews.",
+    "rubric_title": "Confidential Committee Deliberation Rubric",
+    "scholarship_score": "Scholarship & Rigor (1–5)",
+    "pedagogy_score": "Pedagogical Delivery (1–5)",
+    "confessional_score": "Confessional Alignment (1–5)",
+    "deliberation_notes": "Deliberation Notes & Recommendation",
+    "save_notes": "Save Deliberation Notes"
   }
 }
 

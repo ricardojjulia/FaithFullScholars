@@ -109,12 +109,13 @@ export async function processRevisionReview(
       .eq('id', input.revisionId);
 
     if (reqErr) {
+      console.error('Admin request changes error:', reqErr);
       return {
         success: false,
         action: input.action,
         revisionId: input.revisionId,
         scholarId,
-        error: reqErr.message,
+        error: 'Unable to record feedback request. Please try again.',
       };
     }
   } else if (input.action === 'reject') {
@@ -129,12 +130,13 @@ export async function processRevisionReview(
       .eq('id', input.revisionId);
 
     if (rejErr) {
+      console.error('Admin rejection error:', rejErr);
       return {
         success: false,
         action: input.action,
         revisionId: input.revisionId,
         scholarId,
-        error: rejErr.message,
+        error: 'Unable to reject revision. Please try again.',
       };
     }
   } else if (input.action === 'hide') {
@@ -148,12 +150,13 @@ export async function processRevisionReview(
       .eq('id', scholarId);
 
     if (hideErr) {
+      console.error('Admin hide scholar error:', hideErr);
       return {
         success: false,
         action: input.action,
         revisionId: input.revisionId,
         scholarId,
-        error: hideErr.message,
+        error: 'Unable to update scholar profile status. Please try again.',
       };
     }
   }

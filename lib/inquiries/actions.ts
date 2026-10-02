@@ -135,7 +135,7 @@ export async function sendInquiry(
 
   if (insertError || !newInquiry) {
     console.error('Error inserting inquiry:', insertError);
-    return { success: false, error: insertError?.message || 'Failed to dispatch inquiry.' };
+    return { success: false, error: 'Unable to dispatch inquiry at this time. Please try again later.' };
   }
 
   // Record rate limit consumption
