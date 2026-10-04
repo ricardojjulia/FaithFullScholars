@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { Plus, Briefcase, Calendar, Eye, Clock, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { getPostingsByInstitution, formatOpportunityType } from '@/lib/postings/postings-service';
 
 export const metadata: Metadata = {
@@ -10,23 +11,8 @@ export const metadata: Metadata = {
 
 export default async function InstitutionPostingsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster partner workspace
-
-  if (user) {
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('institution_id')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    if (instUser) {
-      institutionId = instUser.institution_id;
-    }
-  }
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  const { institutionId } = await requireInstitutionMember(supabase);
 
   const postings = await getPostingsByInstitution(institutionId);
 

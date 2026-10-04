@@ -10,11 +10,8 @@ export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const isDev = process.env.NODE_ENV === 'development';
-  const enableDevRoutes = process.env.ENABLE_DEV_ROUTES === 'true';
-
   const auth = await verifyStaffUser();
-  if (!auth.authorized && !isDev && !enableDevRoutes) {
+  if (!auth.authorized) {
     return NextResponse.json({ error: auth.error || 'Admin authorization required' }, { status: auth.status });
   }
 
@@ -37,11 +34,8 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const isDev = process.env.NODE_ENV === 'development';
-  const enableDevRoutes = process.env.ENABLE_DEV_ROUTES === 'true';
-
   const auth = await verifyStaffUser();
-  if (!auth.authorized && !isDev && !enableDevRoutes) {
+  if (!auth.authorized) {
     return NextResponse.json({ error: auth.error || 'Admin authorization required' }, { status: auth.status });
   }
 
@@ -56,7 +50,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid review action' }, { status: 400 });
     }
 
-    const reviewerAccountId = auth.user?.id || 'a1000000-0000-0000-0000-000000000001';
+    const reviewerAccountId = auth.user!.id;
 
     const result = await processRevisionReview({
       revisionId: id,

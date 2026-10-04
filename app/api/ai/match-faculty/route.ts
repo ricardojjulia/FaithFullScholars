@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { getInstitutionSubscription } from '@/lib/subscriptions/subscription-service';
 import {
   matchFacultyWithGemini,
@@ -262,7 +262,8 @@ export async function POST(req: NextRequest) {
     const candidates: CandidateForMatching[] = [...SEED_CANDIDATES];
 
     try {
-      const supabase = createAdminClient();
+      // Caller's RLS-scoped client: only rows the caller may see feed the matcher.
+      const supabase = authClient;
       const { data: dbScholars } = await supabase
         .from('scholars')
         .select(`

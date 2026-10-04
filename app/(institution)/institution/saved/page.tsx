@@ -81,7 +81,6 @@ export default function InstitutionSavedPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          institutionId: 'f2000000-0000-0000-0000-000000000001',
           scholarId,
         }),
       });
@@ -97,7 +96,6 @@ export default function InstitutionSavedPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          institutionId: 'f2000000-0000-0000-0000-000000000001',
           courseId,
         }),
       });

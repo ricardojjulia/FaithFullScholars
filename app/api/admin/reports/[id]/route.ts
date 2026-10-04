@@ -8,11 +8,8 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const isDev = process.env.NODE_ENV === 'development';
-  const enableDevRoutes = process.env.ENABLE_DEV_ROUTES === 'true';
-
   const auth = await verifyStaffUser();
-  if (!auth.authorized && !isDev && !enableDevRoutes) {
+  if (!auth.authorized) {
     return NextResponse.json({ error: auth.error || 'Admin authorization required' }, { status: auth.status });
   }
 

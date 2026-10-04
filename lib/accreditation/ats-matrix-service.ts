@@ -7,6 +7,7 @@
  * ==============================================================================
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchShortlistDossier, ShortlistDossierCandidate } from '@/lib/inquiries/export-dossier';
 import {
   generateAccreditationMatrix,
@@ -14,9 +15,11 @@ import {
 } from './ats-matrix-generator';
 
 export async function fetchATSAccreditationReport(
+  supabase: SupabaseClient,
   institutionId: string
 ): Promise<ATSComplianceReport> {
-  const dossier = await fetchShortlistDossier(institutionId);
+  // `supabase` is the caller's RLS-scoped client: only that institution's members can read its shortlist.
+  const dossier = await fetchShortlistDossier(supabase, institutionId);
 
   // If live database returned saved candidates, generate matrix from live data
   if (dossier.candidates.length > 0) {

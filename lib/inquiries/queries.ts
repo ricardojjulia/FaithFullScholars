@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   InstitutionInquiry,
   InquiryStatus,
@@ -125,10 +125,10 @@ interface SavedCourseRow {
  * Fetches all incoming inquiries for a scholar.
  */
 export async function fetchScholarInquiries(
+  supabase: SupabaseClient,
   scholarId: string,
   statusFilter?: InquiryStatus | 'all'
 ): Promise<DetailedScholarInquiry[]> {
-  const supabase = createAdminClient();
 
   let query = supabase
     .from('inquiries')
@@ -206,10 +206,10 @@ export async function fetchScholarInquiries(
  * Fetches all inquiries sent by an institution.
  */
 export async function fetchInstitutionInquiries(
+  supabase: SupabaseClient,
   institutionId: string,
   statusFilter?: InquiryStatus | 'all'
 ): Promise<DetailedInstitutionInquiry[]> {
-  const supabase = createAdminClient();
 
   let query = supabase
     .from('inquiries')
@@ -291,9 +291,10 @@ export async function fetchInstitutionInquiries(
 /**
  * Fetches shortlisted scholars for an institution.
  */
-export async function fetchSavedScholars(institutionId: string): Promise<SavedScholar[]> {
-  const supabase = createAdminClient();
-
+export async function fetchSavedScholars(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<SavedScholar[]> {
   const { data, error } = await supabase
     .from('saved_scholars')
     .select(`
@@ -340,9 +341,10 @@ export async function fetchSavedScholars(institutionId: string): Promise<SavedSc
 /**
  * Fetches bookmarked courses for an institution.
  */
-export async function fetchSavedCourses(institutionId: string): Promise<SavedCourse[]> {
-  const supabase = createAdminClient();
-
+export async function fetchSavedCourses(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<SavedCourse[]> {
   const { data, error } = await supabase
     .from('saved_courses')
     .select(`
@@ -389,10 +391,10 @@ export async function fetchSavedCourses(institutionId: string): Promise<SavedCou
  * Checks if a scholar is shortlisted by an institution.
  */
 export async function checkIsScholarSaved(
+  supabase: SupabaseClient,
   institutionId: string,
   scholarId: string
 ): Promise<boolean> {
-  const supabase = createAdminClient();
   const { data, error } = await supabase
     .from('saved_scholars')
     .select('id')
@@ -409,8 +411,10 @@ export async function checkIsScholarSaved(
 /**
  * Fetches institutional profile data.
  */
-export async function fetchInstitutionProfile(institutionId: string): Promise<Institution | null> {
-  const supabase = createAdminClient();
+export async function fetchInstitutionProfile(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<Institution | null> {
   const { data, error } = await supabase
     .from('institutions')
     .select('*')
@@ -426,9 +430,10 @@ export async function fetchInstitutionProfile(institutionId: string): Promise<In
 /**
  * Fetches aggregate metrics for an institution dashboard.
  */
-export async function fetchInstitutionStats(institutionId: string) {
-  const supabase = createAdminClient();
-
+export async function fetchInstitutionStats(
+  supabase: SupabaseClient,
+  institutionId: string
+) {
   const [inquiriesRes, savedScholarsRes, savedCoursesRes] = await Promise.all([
     supabase
       .from('inquiries')

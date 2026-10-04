@@ -2,24 +2,15 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { verifyStaffUser } from "@/lib/feedback/auth";
 
 export default async function DevStatusPage() {
   const isDev = process.env.NODE_ENV === "development";
-  const enableDevRoutes = process.env.ENABLE_DEV_ROUTES === "true";
 
-  // In production, gate behind admin auth or explicit env toggle
-  if (!isDev && !enableDevRoutes) {
-    try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      const role = user?.app_metadata?.role || user?.user_metadata?.role;
-      if (role !== "admin") {
-        notFound();
-      }
-    } catch {
+  // Outside local `next dev`, only platform admins (role from public.accounts) may view
+  if (!isDev) {
+    const auth = await verifyStaffUser();
+    if (!auth.authorized) {
       notFound();
     }
   }
@@ -36,11 +27,11 @@ export default async function DevStatusPage() {
       supabaseConnected = true;
       connectionMessage = "Connected successfully to local Supabase stack.";
     } else {
-      connectionMessage = `Auth response: ${error.message}`;
+      connectionMessage = "Auth endpoint responded with an error.";
     }
   } catch (err: unknown) {
-    connectionMessage =
-      err instanceof Error ? err.message : "Failed to connect to Supabase";
+    console.error("Dev status connectivity check failed:", err);
+    connectionMessage = "Failed to connect to Supabase";
   }
 
   const ports = [
@@ -277,9 +268,9 @@ export default async function DevStatusPage() {
             </h3>
             <p className="text-slate-400 leading-relaxed">
               This page is automatically protected in production builds. Only
-              authenticated administrators or environments with{" "}
-              <code className="text-indigo-300">ENABLE_DEV_ROUTES=true</code>{" "}
-              can view these diagnostics.
+              platform administrators (or local{" "}
+              <code className="text-indigo-300">next dev</code>) can view these
+              diagnostics.
             </p>
           </div>
         </div>

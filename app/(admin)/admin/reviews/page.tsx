@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireStaffPage } from '@/lib/auth/guards';
 import Link from 'next/link';
 import { fetchPendingRevisions } from '@/lib/admin/queries';
 import { RevisionStatus } from '@/lib/domain/types';
@@ -9,6 +10,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminReviewsPage(props: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireStaffPage();
+
   const searchParams = await props.searchParams;
   const currentFilter = (searchParams.status as RevisionStatus | 'all') || 'all';
 

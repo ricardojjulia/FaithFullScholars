@@ -703,6 +703,8 @@ Acceptance:
 
 ### Phase 2: Authentication and Roles
 
+> **Status:** Largely implemented, with security corrections (2026-10-04, ADR 0022). Signup, login, logout, and recovery exist (`app/(auth)`, `app/auth`, `lib/auth/auth-actions.ts`). Roles are read from `public.accounts` only. Protected pages guard themselves (`lib/auth/guards.ts`) rather than relying on layouts. Institution self-signup creates only new pending institutions. **Still open:** inviting members to an existing institution, a database-level guard on inquiry accept/decline, and role-boundary tests through the real login flow (Playwright).
+
 1. Implement signup, login, logout, and account recovery.
 2. Implement scholar, institution-user, and admin roles.
 3. Implement protected routes.

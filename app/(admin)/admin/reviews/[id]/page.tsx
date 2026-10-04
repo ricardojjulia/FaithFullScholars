@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireStaffPage } from '@/lib/auth/guards';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { fetchRevisionWithBaseline, fetchReviewAuditHistory } from '@/lib/admin/queries';
@@ -11,6 +12,9 @@ export const dynamic = 'force-dynamic';
 export default async function AdminReviewDetailPage(props: {
   params: Promise<{ id: string }>;
 }) {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireStaffPage();
+
   const params = await props.params;
   const detail = await fetchRevisionWithBaseline(params.id);
 

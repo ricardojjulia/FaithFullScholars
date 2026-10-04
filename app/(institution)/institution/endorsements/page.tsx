@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { ShieldCheck, UserCheck, ExternalLink, Calendar, Award } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { getEndorsementsByInstitution } from '@/lib/endorsements/institutional-endorsement-service';
 import { IssueEndorsementButton } from '@/components/institution/issue-endorsement-button';
 
@@ -12,23 +13,8 @@ export const metadata: Metadata = {
 
 export default async function InstitutionEndorsementsPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster Theological Seminary
-
-  if (user) {
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('institution_id')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    if (instUser) {
-      institutionId = instUser.institution_id;
-    }
-  }
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  const { institutionId } = await requireInstitutionMember(supabase);
 
   const endorsements = await getEndorsementsByInstitution(institutionId);
 
