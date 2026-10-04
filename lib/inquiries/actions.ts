@@ -1,3 +1,4 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/server';
 import { CreateInquiryInput, InquiryStatus, Institution } from '@/lib/domain/types';
 import { checkInquiryRateLimit, recordInquirySent } from '@/lib/inquiries/rate-limiter';
@@ -19,15 +20,20 @@ function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+const INQUIRY_STATUSES: readonly InquiryStatus[] = ['pending', 'read', 'accepted', 'declined', 'archived'];
+
 /**
  * Submits a new structured institutional inquiry.
+ *
+ * `supabase` must be the caller's user-scoped client so RLS enforces that the
+ * sender belongs to `input.institution_id`; `senderAccountId` must come from the
+ * verified session, never from the request body.
  */
 export async function sendInquiry(
+  supabase: SupabaseClient,
   input: CreateInquiryInput,
-  senderAccountId?: string
+  senderAccountId: string
 ): Promise<ActionResult<{ inquiryId: string }>> {
-  const supabase = createAdminClient();
-
   // 1. Validate fields
   if (!input.institution_id || !input.scholar_id) {
     return { success: false, error: 'Institution ID and Scholar ID are required.' };
@@ -72,10 +78,10 @@ export async function sendInquiry(
     };
   }
 
-  // 4. Verify Scholar Profile
+  // 4. Verify Scholar Profile (public fields only; RLS hides unapproved profiles)
   const { data: scholar, error: scholarError } = await supabase
     .from('scholars')
-    .select('id, full_name, profile_status, account_id, accounts(email)')
+    .select('id, full_name, profile_status, account_id')
     .eq('id', input.scholar_id)
     .single();
 
@@ -87,32 +93,8 @@ export async function sendInquiry(
     return { success: false, error: 'Scholars in draft or review cannot receive public inquiries.' };
   }
 
-  // 5. Determine Sender Account ID
-  let resolvedSenderAccountId = senderAccountId;
-  if (!resolvedSenderAccountId) {
-    // Lookup the institution's primary contact account
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('account_id')
-      .eq('institution_id', input.institution_id)
-      .limit(1)
-      .maybeSingle();
-
-    resolvedSenderAccountId = instUser?.account_id;
-  }
-
-  if (!resolvedSenderAccountId) {
-    // Fallback: look for scholar account or first account
-    const { data: firstAccount } = await supabase
-      .from('accounts')
-      .select('id')
-      .limit(1)
-      .single();
-    resolvedSenderAccountId = firstAccount?.id;
-  }
-
-  if (!resolvedSenderAccountId) {
-    return { success: false, error: 'Could not resolve sender account.' };
+  if (!senderAccountId) {
+    return { success: false, error: 'Authentication required.' };
   }
 
   // 6. Insert Inquiry
@@ -122,7 +104,7 @@ export async function sendInquiry(
       institution_id: input.institution_id,
       scholar_id: input.scholar_id,
       course_id: input.course_id || null,
-      sender_account_id: resolvedSenderAccountId,
+      sender_account_id: senderAccountId,
       opportunity_type: input.opportunity_type,
       proposed_term: input.proposed_term || null,
       delivery_mode: input.delivery_mode || null,
@@ -135,16 +117,27 @@ export async function sendInquiry(
 
   if (insertError || !newInquiry) {
     console.error('Error inserting inquiry:', insertError);
-    return { success: false, error: insertError?.message || 'Failed to dispatch inquiry.' };
+    return { success: false, error: 'Failed to dispatch inquiry.' };
   }
 
   // Record rate limit consumption
   recordInquirySent(input.institution_id);
 
-  // 7. Dispatch Notification
-  const scholarEmail = (scholar.accounts as { email?: string } | null)?.email || 'scholar@faithfullscholars.org';
+  // 7. Dispatch Notification. The scholar's private email is read server-side with
+  // the service role (RLS correctly hides it from institutions) and never returned.
+  const { data: scholarAccount } = await createAdminClient()
+    .from('accounts')
+    .select('email')
+    .eq('id', scholar.account_id)
+    .maybeSingle();
+
+  if (!scholarAccount?.email) {
+    console.error('Inquiry stored but scholar email is missing; notification skipped:', newInquiry.id);
+    return { success: true, data: { inquiryId: newInquiry.id } };
+  }
+
   await notifyScholarOfNewInquiry({
-    scholarEmail,
+    scholarEmail: scholarAccount.email,
     scholarName: scholar.full_name,
     institutionName: institution.name,
     opportunityType: input.opportunity_type,
@@ -160,13 +153,21 @@ export async function sendInquiry(
 
 /**
  * Updates an inquiry's status (Accept, Decline, Read, Archive).
+ *
+ * RLS limits visibility/updates to the inquiry's participants. Accepting or
+ * declining is additionally reserved to the recipient scholar
+ * (`actingScholarId`, resolved from the verified session).
  */
 export async function respondToInquiry(
+  supabase: SupabaseClient,
   inquiryId: string,
   status: InquiryStatus,
-  responseNotes?: string | null
+  responseNotes: string | null | undefined,
+  actingScholarId: string | null
 ): Promise<ActionResult> {
-  const supabase = createAdminClient();
+  if (!INQUIRY_STATUSES.includes(status)) {
+    return { success: false, error: 'Invalid inquiry status.' };
+  }
 
   // 1. Fetch inquiry with scholar and institution data
   const { data: inquiry, error: fetchError } = await supabase
@@ -187,6 +188,10 @@ export async function respondToInquiry(
     return { success: false, error: 'Inquiry not found.' };
   }
 
+  if ((status === 'accepted' || status === 'declined') && inquiry.scholar_id !== actingScholarId) {
+    return { success: false, error: 'Only the recipient scholar can accept or decline an inquiry.' };
+  }
+
   // 2. Update status
   const { error: updateError } = await supabase
     .from('inquiries')
@@ -197,7 +202,8 @@ export async function respondToInquiry(
     .eq('id', inquiryId);
 
   if (updateError) {
-    return { success: false, error: updateError.message };
+    console.error('Error updating inquiry status:', updateError);
+    return { success: false, error: 'Failed to update inquiry.' };
   }
 
   // 3. Dispatch notification if responded (accepted / declined)
@@ -222,12 +228,11 @@ export async function respondToInquiry(
  * Toggles a scholar on an institution's shortlist.
  */
 export async function toggleSaveScholar(
+  supabase: SupabaseClient,
   institutionId: string,
   scholarId: string,
   notes?: string | null
 ): Promise<ActionResult<{ saved: boolean }>> {
-  const supabase = createAdminClient();
-
   // Check if exists
   const { data: existing } = await supabase
     .from('saved_scholars')
@@ -243,7 +248,8 @@ export async function toggleSaveScholar(
       .eq('id', existing.id);
 
     if (deleteError) {
-      return { success: false, error: deleteError.message };
+      console.error('Shortlist/profile write failed:', deleteError);
+      return { success: false, error: 'Request could not be completed.' };
     }
     return { success: true, data: { saved: false } };
   }
@@ -258,7 +264,8 @@ export async function toggleSaveScholar(
     });
 
   if (insertError) {
-    return { success: false, error: insertError.message };
+    console.error('Shortlist/profile write failed:', insertError);
+    return { success: false, error: 'Request could not be completed.' };
   }
 
   return { success: true, data: { saved: true } };
@@ -268,12 +275,11 @@ export async function toggleSaveScholar(
  * Toggles a course bookmark for an institution.
  */
 export async function toggleSaveCourse(
+  supabase: SupabaseClient,
   institutionId: string,
   courseId: string,
   notes?: string | null
 ): Promise<ActionResult<{ saved: boolean }>> {
-  const supabase = createAdminClient();
-
   const { data: existing } = await supabase
     .from('saved_courses')
     .select('id')
@@ -288,7 +294,8 @@ export async function toggleSaveCourse(
       .eq('id', existing.id);
 
     if (deleteError) {
-      return { success: false, error: deleteError.message };
+      console.error('Shortlist/profile write failed:', deleteError);
+      return { success: false, error: 'Request could not be completed.' };
     }
     return { success: true, data: { saved: false } };
   }
@@ -302,7 +309,8 @@ export async function toggleSaveCourse(
     });
 
   if (insertError) {
-    return { success: false, error: insertError.message };
+    console.error('Shortlist/profile write failed:', insertError);
+    return { success: false, error: 'Request could not be completed.' };
   }
 
   return { success: true, data: { saved: true } };
@@ -312,11 +320,10 @@ export async function toggleSaveCourse(
  * Updates institutional profile settings.
  */
 export async function updateInstitutionProfile(
+  supabase: SupabaseClient,
   institutionId: string,
   updates: Partial<Institution>
 ): Promise<ActionResult> {
-  const supabase = createAdminClient();
-
   const allowedUpdates: Record<string, unknown> = {};
   if (updates.name !== undefined) allowedUpdates.name = updates.name.trim();
   if (updates.website !== undefined) allowedUpdates.website = updates.website?.trim() || null;
@@ -332,7 +339,8 @@ export async function updateInstitutionProfile(
     .eq('id', institutionId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Shortlist/profile write failed:', error);
+    return { success: false, error: 'Request could not be completed.' };
   }
 
   return { success: true };

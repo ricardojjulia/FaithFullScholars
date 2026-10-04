@@ -703,6 +703,8 @@ Acceptance:
 
 ### Phase 2: Authentication and Roles
 
+> **Status:** Not started — signup, login, logout, and recovery do not exist yet. Partial groundwork as of 2026-10-04 (ADR 0009): server-side session context (`lib/auth/session.ts`), roles read from `public.accounts` only, guarded dashboard / institution / admin layouts, and RLS helpers that work for real callers. Until this phase ships, the dashboard, institution portal, and admin console are unreachable for everyone.
+
 1. Implement signup, login, logout, and account recovery.
 2. Implement scholar, institution-user, and admin roles.
 3. Implement protected routes.

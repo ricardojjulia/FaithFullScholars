@@ -43,7 +43,7 @@ export function StructuredInquiryModal({
   scholar,
   courseId,
   courseTitle,
-  institutionId = 'f2000000-0000-0000-0000-000000000001', // Seed WTS institution as default
+  institutionId, // omitted → server uses the caller's own institution membership
   defaultInstitutionEmail = 'academic.dean@wts.edu',
 }: StructuredInquiryModalProps) {
   const { t } = useTranslation();

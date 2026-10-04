@@ -1,7 +1,22 @@
 import Link from 'next/link';
 import { Inbox, BarChart3, Eye } from 'lucide-react';
+import { AccessRestricted } from '@/components/shell/access-restricted';
+import { getSessionContext } from '@/lib/auth/session';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSessionContext();
+
+  if (!session) {
+    return (
+      <AccessRestricted
+        title="Scholar Workspace"
+        message="Please sign in to manage your scholar profile."
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       {/* Dashboard Sub-Header */}

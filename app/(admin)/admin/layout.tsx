@@ -11,13 +11,9 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const isDev = process.env.NODE_ENV === 'development';
-  const enableDevRoutes = process.env.ENABLE_DEV_ROUTES === 'true';
-
   const auth = await verifyStaffUser();
 
-  // In production (or non-dev without override), strictly enforce admin auth
-  if (!auth.authorized && !isDev && !enableDevRoutes) {
+  if (!auth.authorized) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
         <div className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-lg dark:border-rose-900/50 dark:bg-slate-900">

@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getSessionContext } from '@/lib/auth/session';
 
 export interface StaffAuthResult {
   authorized: boolean;
@@ -14,16 +14,15 @@ export interface StaffAuthResult {
 /**
  * Validates that the current request has an authenticated session
  * and holds the platform staff ('admin') role.
+ *
+ * The role is read from public.accounts (the same source RLS uses via
+ * is_admin()), never from auth user_metadata, which the user can edit.
  */
 export async function verifyStaffUser(): Promise<StaffAuthResult> {
   try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+    const session = await getSessionContext();
 
-    if (error || !user) {
+    if (!session) {
       return {
         authorized: false,
         status: 401,
@@ -31,8 +30,7 @@ export async function verifyStaffUser(): Promise<StaffAuthResult> {
       };
     }
 
-    const role = user.app_metadata?.role || user.user_metadata?.role;
-    if (role !== 'admin') {
+    if (session.role !== 'admin') {
       return {
         authorized: false,
         status: 403,
@@ -44,8 +42,8 @@ export async function verifyStaffUser(): Promise<StaffAuthResult> {
       authorized: true,
       status: 200,
       user: {
-        id: user.id,
-        email: user.email,
+        id: session.userId,
+        email: session.email,
         role: 'admin',
       },
     };

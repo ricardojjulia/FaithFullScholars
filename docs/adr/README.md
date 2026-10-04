@@ -21,6 +21,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0006-pilot-feedback-error-triage.md`: Distributed telemetry, rate limiting, and staff error-triage workspace.
 - `0007-linkedin-ux-and-academic-network-design-system.md`: Modern LinkedIn UI/UX paradigm, universal app bar, 3-column layout, and canonical profile card hierarchy.
 - `0008-search-abuse-gating-anti-scraping-and-pii-protection.md`: Token-bucket search rate limiting, 3-page anonymous discovery cap, input sanitization, and PII segregation.
+- `0009-session-derived-identity-and-rls-helper-isolation.md`: Caller identity and tenancy from the verified session only; RLS helpers run as owner from a non-exposed `private` schema.
 
 Each ADR must define:
 - **Status:** Proposed / Accepted / Superseded

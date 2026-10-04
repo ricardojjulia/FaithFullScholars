@@ -195,7 +195,8 @@ export async function processInstitutionVerification(
     .eq('id', institutionId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Admin moderation update failed:', error);
+    return { success: false, error: 'Moderation update failed.' };
   }
 
   return { success: true };
@@ -221,7 +222,8 @@ export async function processContentReport(
     .eq('id', reportId);
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('Admin moderation update failed:', error);
+    return { success: false, error: 'Moderation update failed.' };
   }
 
   return { success: true };

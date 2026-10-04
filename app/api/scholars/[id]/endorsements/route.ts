@@ -15,8 +15,8 @@ export async function GET(
     const endorsements = await getApprovedEndorsements(id);
     return NextResponse.json({ endorsements });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Scholar endorsements route failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
@@ -28,12 +28,12 @@ export async function POST(
     const { id: recipientScholarId } = await params;
     const supabase = await createClient();
 
-    // Verify session
+    // Verify the session with the auth server (getSession() trusts the cookie unverified)
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session) {
+    if (!user) {
       return NextResponse.json({ error: 'Authentication required to endorse colleagues.' }, { status: 401 });
     }
 
@@ -41,7 +41,7 @@ export async function POST(
     const { data: endorserScholar } = await supabase
       .from('scholars')
       .select('id, profile_status')
-      .eq('account_id', session.user.id)
+      .eq('account_id', user.id)
       .single();
 
     if (!endorserScholar) {
@@ -73,7 +73,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, endorsement: result.endorsement }, { status: 201 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('Scholar endorsements route failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Authorization lockdown (ADR 0009)** — closes cross-account data exposure found in the 2026-10-04 code review:
+  - `GET /api/inquiries` no longer returns any scholar's inbox or any institution's outbox for a client-supplied id. Callers see only their own inbox, or the outbox of an institution they belong to.
+  - Shortlist routes (`/api/institution/saved-scholars`, `/saved-courses`) and the CSV/JSON export now require a signed-in member of the institution. The hardcoded fallback institution id is removed.
+  - `POST /api/inquiries` takes the sender from the session and requires membership of the sending institution. The "first account in the database" sender fallback is removed.
+  - `PATCH /api/inquiries/[id]` requires a participant (enforced by RLS). Only the recipient scholar may accept or decline.
+  - Postings and institutional endorsements no longer default to a hardcoded seminary for anonymous callers. Endorsements are marked credential-verified only when the issuing institution is admin-approved.
+  - `verifyStaffUser` reads the role from `public.accounts`; self-editable `user_metadata.role` no longer grants admin.
+  - Removed the `NODE_ENV=development` / `ENABLE_DEV_ROUTES=true` authorization bypass from all admin routes and pages. `/dev/status` is admin-only outside local `next dev`.
+  - The scholar dashboard and institution portal layouts now require a session (and institution membership for the portal).
+  - Request paths use the caller's RLS-scoped Supabase client instead of the service role. That includes inquiries, shortlists, export, and the AI faculty matcher.
+  - API routes no longer return raw database or exception messages. Details are logged server-side.
+- **Corrective migration `20261004120000_fix_rls_helper_recursion.sql`** — RLS helper functions recursed through the policies of the tables they read, and the `institution_users` policy referenced its own table. Owner-privileged helpers now live in a non-exposed `private` schema behind unchanged `public` wrappers. No table, column, or row changes.
+
+### Fixed
+- `POST /api/postings/[id]/express-interest` wrote non-existent columns and still reported success with a `simulated-transmission` id. It now requires a signed-in scholar and returns `501` until a scholar→posting application model exists.
+- `/institution/endorsements` queried non-existent `scholars` columns (`approval_status`, `title_or_position`), so its scholar picker was always empty.
+- Peer endorsements verify the session with `auth.getUser()` instead of trusting the unverified `getSession()` cookie.
+
+### Added
+- `lib/auth/session.ts` — `getSessionContext()` and `resolveInstitutionAccess()`.
+- `tests/unit/authorization-lockdown.test.ts` — 21 route- and helper-level authorization tests. Confirmed to fail against the previous code.
+- `tests/integration/rls-authenticated.test.ts` — first suite that evaluates RLS as real `anon` / `authenticated` callers (all previous integration suites bypassed RLS).
+
 ### Changed
 - **Modern Edge Vector Iconography Overhaul (`lucide-react`)**:
   - Completely purged dated 1980s unicode emojis (`📥`, `👁️`, `✍️`, `📖`, `💼`, `🎓`, `🏛️`, `📍`, `📜`, `✉️`, `🔗`, `📈`, `🛡️`, `🔍`, `📅`, `📄`, `📚`, `✨`, `⚡`, `🖨️`, `▶`, `🔒`, `✓`, `★`, `☆`, `🎉`, `👤`, `🎯`, `📤`, `🇺🇸`, `🇪🇸`) and raw unicode glyphs across all 43+ user interface files.

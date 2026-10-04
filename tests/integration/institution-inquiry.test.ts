@@ -21,6 +21,11 @@ import {
   clearDispatchedNotifications,
 } from '@/lib/notifications/email-service';
 import { resetInquiryRateLimits } from '@/lib/inquiries/rate-limiter';
+import { createAdminClient } from '@/lib/supabase/server';
+
+// These tests exercise business rules with the service role; RLS/tenant
+// isolation is covered as real users in tests/integration/rls-authenticated.test.ts.
+const admin = () => createAdminClient();
 
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
@@ -145,7 +150,7 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
   });
 
   it('1. dispatches structured inquiry when initiated by an approved institution', async () => {
-    const result = await sendInquiry({
+    const result = await sendInquiry(admin(), {
       institution_id: testApprovedInstId,
       scholar_id: testScholarId,
       course_id: testCourseId,
@@ -170,44 +175,44 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
   });
 
   it('2. blocks unapproved institutions from dispatching inquiries', async () => {
-    const result = await sendInquiry({
+    const result = await sendInquiry(admin(), {
       institution_id: testPendingInstId,
       scholar_id: testScholarId,
       opportunity_type: 'guest_lecturing',
       message: 'Can you speak at our unaccredited conference next month?',
       contact_email: 'dean@pending.edu',
-    });
+    }, testInstAccountId);
 
     expect(result.success).toBe(false);
     expect(result.error).toContain('Only verified and approved institutions');
   });
 
   it('3. rejects inquiry messages that are too short or lack valid email', async () => {
-    const shortMsgResult = await sendInquiry({
+    const shortMsgResult = await sendInquiry(admin(), {
       institution_id: testApprovedInstId,
       scholar_id: testScholarId,
       opportunity_type: 'adjunct_teaching',
       message: 'Teach for us?',
       contact_email: 'dean@approved.edu',
-    });
+    }, testInstAccountId);
 
     expect(shortMsgResult.success).toBe(false);
     expect(shortMsgResult.error).toContain('at least 20 characters');
 
-    const badEmailResult = await sendInquiry({
+    const badEmailResult = await sendInquiry(admin(), {
       institution_id: testApprovedInstId,
       scholar_id: testScholarId,
       opportunity_type: 'adjunct_teaching',
       message: 'This is a sufficiently long message exceeding twenty characters in length.',
       contact_email: 'not-an-email',
-    });
+    }, testInstAccountId);
 
     expect(badEmailResult.success).toBe(false);
     expect(badEmailResult.error).toContain('valid institutional contact email');
   });
 
   it('4. retrieves incoming inquiries for the scholar inbox', async () => {
-    const inquiries = await fetchScholarInquiries(testScholarId);
+    const inquiries = await fetchScholarInquiries(admin(), testScholarId);
     expect(inquiries.length).toBeGreaterThanOrEqual(1);
 
     const match = inquiries.find((i) => i.id === createdInquiryId);
@@ -218,7 +223,7 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
   });
 
   it('5. retrieves outgoing inquiries for the institution outbox', async () => {
-    const inquiries = await fetchInstitutionInquiries(testApprovedInstId);
+    const inquiries = await fetchInstitutionInquiries(admin(), testApprovedInstId);
     expect(inquiries.length).toBeGreaterThanOrEqual(1);
 
     const match = inquiries.find((i) => i.id === createdInquiryId);
@@ -231,15 +236,17 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
     clearDispatchedNotifications();
 
     const response = await respondToInquiry(
+      admin(),
       createdInquiryId,
       'accepted',
-      'I am delighted to accept this teaching engagement for Fall 2027.'
+      'I am delighted to accept this teaching engagement for Fall 2027.',
+      testScholarId
     );
 
     expect(response.success).toBe(true);
 
     // Verify in database
-    const inquiries = await fetchScholarInquiries(testScholarId);
+    const inquiries = await fetchScholarInquiries(admin(), testScholarId);
     const updated = inquiries.find((i) => i.id === createdInquiryId);
     expect(updated?.status).toBe('accepted');
 
@@ -253,11 +260,12 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
 
   it('7. bookmarks and removes scholar on institution shortlist', async () => {
     // 1. Initial state: not saved
-    const isInitiallySaved = await checkIsScholarSaved(testApprovedInstId, testScholarId);
+    const isInitiallySaved = await checkIsScholarSaved(admin(), testApprovedInstId, testScholarId);
     expect(isInitiallySaved).toBe(false);
 
     // 2. Save scholar
     const saveRes = await toggleSaveScholar(
+      admin(),
       testApprovedInstId,
       testScholarId,
       'Top candidate for Dogmatics chair.'
@@ -265,26 +273,27 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
     expect(saveRes.success).toBe(true);
     expect(saveRes.data?.saved).toBe(true);
 
-    const isSaved = await checkIsScholarSaved(testApprovedInstId, testScholarId);
+    const isSaved = await checkIsScholarSaved(admin(), testApprovedInstId, testScholarId);
     expect(isSaved).toBe(true);
 
-    const savedList = await fetchSavedScholars(testApprovedInstId);
+    const savedList = await fetchSavedScholars(admin(), testApprovedInstId);
     expect(savedList.length).toBe(1);
     expect(savedList[0].scholar_id).toBe(testScholarId);
     expect(savedList[0].notes).toBe('Top candidate for Dogmatics chair.');
 
     // 3. Remove scholar (toggle again)
-    const removeRes = await toggleSaveScholar(testApprovedInstId, testScholarId);
+    const removeRes = await toggleSaveScholar(admin(), testApprovedInstId, testScholarId);
     expect(removeRes.success).toBe(true);
     expect(removeRes.data?.saved).toBe(false);
 
-    const isStillSaved = await checkIsScholarSaved(testApprovedInstId, testScholarId);
+    const isStillSaved = await checkIsScholarSaved(admin(), testApprovedInstId, testScholarId);
     expect(isStillSaved).toBe(false);
   });
 
   it('8. bookmarks and removes course on institution saved courses', async () => {
     // 1. Save course
     const saveRes = await toggleSaveCourse(
+      admin(),
       testApprovedInstId,
       testCourseId,
       'Excellent bibliography for Romans exegesis.'
@@ -292,22 +301,22 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
     expect(saveRes.success).toBe(true);
     expect(saveRes.data?.saved).toBe(true);
 
-    const savedCourses = await fetchSavedCourses(testApprovedInstId);
+    const savedCourses = await fetchSavedCourses(admin(), testApprovedInstId);
     expect(savedCourses.length).toBe(1);
     expect(savedCourses[0].course_id).toBe(testCourseId);
     expect(savedCourses[0].notes).toBe('Excellent bibliography for Romans exegesis.');
 
     // 2. Remove course
-    const removeRes = await toggleSaveCourse(testApprovedInstId, testCourseId);
+    const removeRes = await toggleSaveCourse(admin(), testApprovedInstId, testCourseId);
     expect(removeRes.success).toBe(true);
     expect(removeRes.data?.saved).toBe(false);
 
-    const remainingCourses = await fetchSavedCourses(testApprovedInstId);
+    const remainingCourses = await fetchSavedCourses(admin(), testApprovedInstId);
     expect(remainingCourses.length).toBe(0);
   });
 
   it('9. computes accurate dashboard statistics for the institution', async () => {
-    const stats = await fetchInstitutionStats(testApprovedInstId);
+    const stats = await fetchInstitutionStats(admin(), testApprovedInstId);
     expect(stats.totalInquiries).toBeGreaterThanOrEqual(1);
     expect(stats.acceptedInquiries).toBeGreaterThanOrEqual(1);
   });

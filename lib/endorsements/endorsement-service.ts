@@ -149,7 +149,8 @@ export async function submitPeerEndorsement(
     .single();
 
   if (error) {
-    return { error: error.message };
+    console.error('Failed to submit peer endorsement:', error);
+    return { error: 'Could not submit endorsement.' };
   }
 
   return {

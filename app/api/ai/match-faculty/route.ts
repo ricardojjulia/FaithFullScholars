@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import {
   matchFacultyWithGemini,
   CandidateForMatching,
@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
     const candidates: CandidateForMatching[] = [...SEED_CANDIDATES];
 
     try {
-      const supabase = createAdminClient();
+      const supabase = await createClient();
       const { data: dbScholars } = await supabase
         .from('scholars')
         .select(`

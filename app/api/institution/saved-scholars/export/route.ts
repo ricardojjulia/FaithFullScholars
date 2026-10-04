@@ -1,13 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
 import { fetchShortlistDossier, generateShortlistCsv } from '@/lib/inquiries/export-dossier';
 
 export async function GET(req: NextRequest) {
   try {
+    const supabase = await createClient();
     const { searchParams } = new URL(req.url);
-    const institutionId = searchParams.get('institutionId') || 'f2000000-0000-0000-0000-000000000001';
-    const format = searchParams.get('format') || 'csv';
 
-    const dossier = await fetchShortlistDossier(institutionId);
+    const access = resolveInstitutionAccess(
+      await getSessionContext(supabase),
+      searchParams.get('institutionId')
+    );
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const format = searchParams.get('format') || 'csv';
+    const dossier = await fetchShortlistDossier(supabase, access.institutionId);
 
     if (format === 'json') {
       return NextResponse.json({ dossier });
@@ -30,7 +40,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('GET /api/institution/saved-scholars/export failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

@@ -7,7 +7,7 @@
  * ==============================================================================
  */
 
-import { createAdminClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface ShortlistDossierCandidate {
   id: string;
@@ -101,9 +101,9 @@ export function generateShortlistCsv(
  * Fetches enriched candidates for an institution's shortlist dossier.
  */
 export async function fetchShortlistDossier(
+  supabase: SupabaseClient,
   institutionId: string
 ): Promise<ShortlistDossier> {
-  const supabase = createAdminClient();
 
   // 1. Fetch institution details
   const { data: instData } = await supabase

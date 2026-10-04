@@ -28,8 +28,11 @@ Initial ADRs:
 - [ADR 0006: Pilot Feedback & Automatic Error Triage System](docs/adr/0006-pilot-feedback-error-triage.md)
 - [ADR 0007: LinkedIn-Grade UI/UX and Academic Network Design System](docs/adr/0007-linkedin-ux-and-academic-network-design-system.md)
 - [ADR 0008: Search Abuse Gating, Anti-Scraping Defenses & PII Protection](docs/adr/0008-search-abuse-gating-anti-scraping-and-pii-protection.md)
+- [ADR 0009: Session-Derived Identity and RLS Helper Isolation](docs/adr/0009-session-derived-identity-and-rls-helper-isolation.md)
 
 ## Current Status & Verification
+
+> **Reality check (2026-10-04, ADR 0009):** Authentication (Phase 2) has not been built — there is no signup or login yet, so the scholar dashboard, institution portal, and admin console are intentionally locked for everyone. Most dashboard and portal screens still render built-in sample data rather than live records. Before 2026-10-04, several API routes exposed other accounts' inquiries and shortlists and admin checks could be bypassed; that lockdown is described in the CHANGELOG. Earlier "28/28 tables RLS enforced" results verified that policies *exist*; `tests/integration/rls-authenticated.test.ts` is the first suite that verifies they *work* for real signed-in callers. Treat the feature list below as implemented UI and data model, not as a production-ready, authenticated application.
 
 - **Current Position:** Phase 0 through Phase 6, Steps 1–3, the Platform Translation Pipeline (Spanish `es`), the **Strategic Backlog Platform Capabilities (§21: Shortlist Export, Scholar Analytics, Citation-Grounded AI Faculty Matcher, and Peer Endorsements)**, the **Institutional Accounts Dual-Purpose Expansion (Academic Postings Marketplace & Authoritative Institutional Endorsements)**, the **UI & Typography Revamp (Aptos / Clean Modern Sans & Crisp Card Elevation)**, the **Modern Edge Vector Iconography Overhaul (`lucide-react`)**, the **SEO Topic Hubs & Schema.org JSON-LD Structured Metadata Engine**, the **Playwright Browser E2E Automation Suite**, and the **Pre-Flight Deployment Verification Tooling** are fully implemented, audited, and verified across all quality gates (130 vitest tests across 24 suites, 9 Playwright E2E tests, 28/28 tables RLS enforced, 0 Splinter security findings).
 - **Institutional Accounts Dual-Purpose Expansion:**

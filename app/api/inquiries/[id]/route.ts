@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { getSessionContext } from '@/lib/auth/session';
 import { respondToInquiry } from '@/lib/inquiries/actions';
 
 export async function PATCH(
@@ -6,6 +8,12 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const supabase = await createClient();
+    const session = await getSessionContext(supabase);
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
+    }
+
     const { id } = await params;
     const body = await req.json();
 
@@ -13,15 +21,23 @@ export async function PATCH(
       return NextResponse.json({ error: 'Status is required.' }, { status: 400 });
     }
 
-    const result = await respondToInquiry(id, body.status, body.response_notes);
+    // RLS only exposes inquiries the caller participates in.
+    const result = await respondToInquiry(
+      supabase,
+      id,
+      body.status,
+      body.response_notes,
+      session.scholarId
+    );
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
+      const status = result.error === 'Inquiry not found.' ? 404 : 400;
+      return NextResponse.json({ error: result.error }, { status });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('PATCH /api/inquiries/[id] failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

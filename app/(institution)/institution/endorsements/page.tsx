@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Metadata } from 'next';
 import { ShieldCheck, UserCheck, ExternalLink, Calendar, Award } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionContext } from '@/lib/auth/session';
 import { getEndorsementsByInstitution } from '@/lib/endorsements/institutional-endorsement-service';
 import { IssueEndorsementButton } from '@/components/institution/issue-endorsement-button';
 
@@ -11,20 +12,22 @@ export const metadata: Metadata = {
 };
 
 export default async function InstitutionEndorsementsPage() {
-  const institutionId = 'e1000000-0000-0000-0000-000000000001'; // Westminster Theological Seminary
+  const supabase = await createClient();
+  // The institution layout guarantees a signed-in institution member.
+  const session = await getSessionContext(supabase);
+  const institutionId = session!.institutionIds[0];
   const endorsements = await getEndorsementsByInstitution(institutionId);
 
-  const supabase = await createClient();
   const { data: scholarsData } = await supabase
     .from('scholars')
-    .select('id, full_name, title_or_position')
-    .eq('approval_status', 'approved')
+    .select('id, full_name, title')
+    .eq('profile_status', 'approved')
     .order('full_name');
 
   const scholars = (scholarsData || []).map((s) => ({
     id: s.id,
     full_name: s.full_name,
-    title_or_position: s.title_or_position,
+    title_or_position: s.title,
   }));
 
   return (

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
 import { getAllPublishedPostings } from '@/lib/postings/postings-service';
 
 export async function GET(request: NextRequest) {
@@ -17,8 +18,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ postings });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('posting route failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
@@ -48,24 +49,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient();
 
-    // Look up institution for user or fallback to pilot seminary
-    let institutionId = 'e1000000-0000-0000-0000-000000000001';
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const { data: instUser } = await supabase
-        .from('institution_users')
-        .select('institution_id')
-        .eq('account_id', user.id)
-        .maybeSingle();
-
-      if (instUser) {
-        institutionId = instUser.institution_id;
-      }
+    // Act only for an institution the signed-in caller belongs to (RLS re-checks on insert).
+    const access = resolveInstitutionAccess(await getSessionContext(supabase), body.institutionId);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
+    const institutionId = access.institutionId;
 
     // Generate slug
     const baseSlug = title
@@ -96,12 +85,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Failed to create posting:', error);
+      return NextResponse.json({ error: 'Could not create posting.' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true, posting }, { status: 201 });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('posting route failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

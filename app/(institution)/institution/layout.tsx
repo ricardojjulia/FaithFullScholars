@@ -1,7 +1,26 @@
 import React from 'react';
 import { InstitutionNav } from '@/components/institution/institution-nav';
+import { AccessRestricted } from '@/components/shell/access-restricted';
+import { getSessionContext } from '@/lib/auth/session';
 
-export default function InstitutionLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function InstitutionLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSessionContext();
+
+  if (!session || session.institutionIds.length === 0) {
+    return (
+      <AccessRestricted
+        title="Institution Portal"
+        message={
+          session
+            ? 'Your account is not linked to an institution.'
+            : 'Please sign in with an institution account to use the portal.'
+        }
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <InstitutionNav />
