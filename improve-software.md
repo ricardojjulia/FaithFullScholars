@@ -1,6 +1,6 @@
 # IMPROVE-SOFTWARE — Council Review & Software Factory Protocol
 
-This protocol defines the repeatable cycle of auditing code (the 4-agent audit Council), planning changes (ADRs and change management), executing features/fixes (the software factory), reviewing before merge (`pr-review`), and closing the loop (the Documenter).
+This protocol defines the repeatable cycle of auditing code (the read-only audit Council: Agents 1–5 and 7), planning changes (ADRs and change management), executing features/fixes (the software factory), reviewing before merge (`pr-review`), and closing the loop (the Documenter).
 
 ## 0. Mandate
 
@@ -8,8 +8,9 @@ This protocol defines the repeatable cycle of auditing code (the 4-agent audit C
 
 **The `pr-review` gate applies to every PR regardless of size** — it is separate from, and does not replace, the Council mandate above.
 
-The Council is six agents:
+The Council is seven agents:
 - **Agents 1–4:** read-only baseline audit — data/API, routes/pages, UX/shell, feature/competitive.
+- **Agent 7 — Stakeholder & Trust Lens:** read-only. Reviews the change through the six domain lenses in [`docs/factory/review-personas.md`](docs/factory/review-personas.md): scholar advocate, search committee, trust and moderation, theological integrity, privacy and data protection, and adversary. Numbered 7 so historic seat numbers (Agent 5 Wildcard, Agent 6 Documenter) stay stable in past review records. Runs in parallel with Agents 1–5.
 - **Agent 5 — The Wildcard (Innovation & Improvement Catalyst):** read-only lateral thinker. Operates either as a random callout to think outside the box and challenge orthodoxies, or via direct invitation to propose high-impact software improvements that get fed into the Council synthesis for consideration and approval.
 - **Agent 6 — Documenter:** write role. Runs after synthesis and after factory execution verifies cleanly. Updates the planning doc, `CHANGELOG.md`, README/docs, finalizes ADRs, commits the Council's own output, and writes memory/handoff notes.
 
@@ -23,8 +24,10 @@ Do not let audits run and stop at "findings noted" with no Documenter step — t
 graph TD
     A[Trigger council review] --> B[Run Agents 1-4 Baseline Audits]
     A --> W[Spawn Agent 5 Wildcard: Innovation & Lateral Thinking]
+    A --> T[Run Agent 7 Stakeholder & Trust Lens]
     B --> C[Synthesize Consensus, Findings & Wildcard Proposals]
     W --> C
+    T --> C
     C --> D[Generate ADRs and Change Management Plan]
     D --> E[Create prompts for the Software Factory]
     E --> F[Execute via feature-factory / build-with-tests]
@@ -34,8 +37,8 @@ graph TD
     I --> J[Open PR referencing Council + Documenter sign-off]
 ```
 
-1. **Audit (Council):** spawn read-only agents in parallel with the prompts below (Agents 1–4 baseline audits plus Agent 5 Wildcard), using `/Users/rjulia/programs/FaithFullScholars` as the repo root and FaithFull Scholars specifics (scholars, institutions, admins, courses, availability, confessional standards, and inquiry workflows).
-2. **Synthesize:** group findings into cross-agent consensus, evaluate Wildcard innovation proposals, list architectural decisions, outline sequence of work.
+1. **Audit (Council):** spawn read-only agents in parallel with the prompts below (Agents 1–4 baseline audits, Agent 5 Wildcard, and Agent 7 Stakeholder & Trust Lens), using `/Users/rjulia/programs/FaithFullScholars` as the repo root and FaithFull Scholars specifics (scholars, institutions, admins, courses, availability, confessional standards, and inquiry workflows).
+2. **Synthesize:** group findings into cross-agent consensus, carry Agent 7's stakeholder-lens findings through with their severity (a Critical lens finding blocks like any other Critical), evaluate Wildcard innovation proposals, list architectural decisions, outline sequence of work.
 3. **ADRs:** draft an ADR under `docs/adr/` for any new boundary, role-access pattern, integration contract, or data-exposure rule the Council identifies.
 4. **Change Management:** turn agreed findings and approved Wildcard ideas into concrete, sequenced implementation prompts.
 5. **Software Factory Execution:** hand prompts to `feature-factory` / `build-with-tests`.
@@ -63,8 +66,11 @@ Produce a structured report covering:
 4. App Pages/Views — list every page/route under `app/`. Flag any that are redirect-only or empty stubs.
 5. Seed/fixture data — check `supabase/seed.sql`. Are theological disciplines, traditions, confessional standards, sample scholars, courses, and inquiries realistic? What's missing (edge cases, pending revisions, exception notes)?
 6. Top 5 critical gaps for data/API security and completeness — specifically verify RLS policies, multi-tenant isolation, and draft vs. published profile separation (ADR 0005).
+7. RLS as real callers — "RLS enabled + policy exists" is not evidence that a policy works. For every new or changed policy, cite the test that exercises it as a real `anon` / `authenticated` role (pattern: `tests/integration/rls-authenticated.test.ts`), including rows where the policy's `OR` does not short-circuit. Flag `SECURITY INVOKER` helpers that read RLS-protected tables whose policies call them back (recursion), and `SECURITY DEFINER` functions in API-exposed schemas.
+8. Identity & privilege paths — flag any service-role (`createAdminClient`) use on a request path, any client-supplied tenant/scholar id used for authorization, any `user_metadata` role check, any environment-variable auth bypass, and any page that loads protected data relying only on its layout for authorization (Next.js layouts do not stop pages rendering — ADR 0022).
+9. Migrations — for each new migration: backward compatible with the running app? Rollback path stated? Idempotent where re-run is possible?
 
-Return concise structured markdown, 500–700 words. Name every gap specifically.
+Every finding cites file:line or command output; "no gap" must state what was checked. Return concise structured markdown, 600–800 words. Name every gap specifically.
 ```
 
 ### Agent 2 — Route & Page Audit
@@ -145,6 +151,26 @@ Provide a structured innovation brief covering:
 3. Rapid Prototyping Path — How can the software factory build and verify the highest-value proposal in a single focused cycle?
 
 Return concise structured markdown, 500–700 words. Be bold, innovative, and technically grounded.
+```
+
+### Agent 7 — Stakeholder & Trust Lens
+
+```
+You are Council Agent 7 (Stakeholder & Trust Lens) for FaithFull Scholars. READ-ONLY — do not edit any files.
+
+Read first: `docs/factory/review-personas.md` (the six lenses and evidence rules), `docs/FAITHFULL_SCHOLARS_FULL_PLAN.md` §4–§7 and §15, and the ADRs touched by the change under review.
+
+Scope: the diff or branch under review (state which). For EACH of the six lenses — Scholar advocate, Search committee, Trust & moderation, Theological integrity, Privacy & data protection, Adversary — report:
+- Findings: severity (Critical / Important / Minor), one-sentence claim, evidence (file:line, command output, or reproducible request), and the concrete harm to that stakeholder.
+- Or "No findings" with what you checked, or "Not applicable" with one line why.
+
+Always check, regardless of diff size:
+1. Can any trust signal (verified badge, endorsement, approval, accreditation, membership role) be self-granted, or set from client input?
+2. Is any user told something succeeded when it did not?
+3. Does anything infer, score, or rank a person's beliefs beyond what they declared and opted into?
+4. Does any special-category data (religious affiliation, doctrinal statements) or private contact data reach a new surface, processor, log, or anonymous caller?
+
+Do not cast votes or "approve". Return concise structured markdown, 500–700 words.
 ```
 
 ---

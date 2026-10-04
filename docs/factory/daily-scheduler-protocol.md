@@ -191,6 +191,6 @@ Run the FaithFull Scholars daily 1:00 PM development cycle per docs/factory/dail
 3. ROADMAP TRAVERSAL: Read docs/FAITHFULL_SCHOLARS_FULL_PLAN.md §18 and docs/product/roadmap.md. Identify the next uncompleted phase or slice.
 4. EXECUTION: Create a new feature branch (git checkout -b feat/...). Implement the scoped slice following Next.js App Router rules, Supabase multi-tenant isolation, and RLS policies. Draft an ADR under docs/adr/ if new boundaries or schema patterns are added.
 5. TESTING: Write comprehensive unit, integration, and RLS test suites. Ensure npm run test, npm run lint, npm run audit:rls, and npm run build all pass green.
-6. GOVERNANCE: Execute the Council review (4-agent audit + synthesis) and Documenter closeout (update FAITHFULL_SCHOLARS_FULL_PLAN.md, CHANGELOG.md, README.md). Run the mandatory pr-review gate and resolve all Critical/Important findings.
+6. GOVERNANCE: Execute the Council review (read-only audit agents 1–5 and 7 + synthesis) and Documenter closeout (update FAITHFULL_SCHOLARS_FULL_PLAN.md, CHANGELOG.md, README.md). Run the mandatory pr-review gate and resolve all Critical/Important findings.
 7. CLOSEOUT & REPORT: Open/merge the PR into main, sync main, and write a full run report at docs/reviews/run-reports/YYYY-MM-DD-daily-run.md detailing leftovers triaged, phase delivered, test results, and next recommended slice.
 ```

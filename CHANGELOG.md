@@ -72,6 +72,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/unit/auth-callback-redirect.test.ts` (9).
 - `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`. It also attempts each self-grant escalation (admin role, scholar approval, institution approval and accreditation, inquiry accept and rewrite, pending-institution insert) and confirms the legitimate edits still succeed. Council Review 12 added: admin positive paths, a service-role bypass check, fail-closed without claims, `accounts` insert with role `admin`, inquiry to an unapproved scholar, and reopening a declined inquiry.
 
+### Changed
+- **Domain review personas (process).** Added `docs/factory/review-personas.md`, six stakeholder lenses for FaithFull Scholars: scholar advocate, search committee, trust and moderation, theological integrity, privacy and data protection, and adversary. They come with evidence rules: no votes, findings cite file:line or command output.
+  - New read-only Council seat **Agent 7 — Stakeholder & Trust Lens** in `improve-software.md`. It is numbered 7 so the historic Agent 5 (Wildcard) and Agent 6 (Documenter) seat numbers stay stable.
+  - Council Agent 1 now requires RLS evidence as real `anon`/`authenticated` roles, and checks for recursive helpers, service-role use on request paths, client-supplied identity, `user_metadata` roles, env-var bypasses, layout-only page guards, and migration rollback and compatibility.
+  - `story-writer` adds a **Persona impact** section. The `pr-reviewer` checklist gains identity/privilege, trust-signal, and real-role RLS checks.
+  - Synced the stale `.claude/skills/council/SKILL.md` (it still described a 4-agent Council) with `.agents/skills/council/SKILL.md`.
+
 ### Verified
 - **Full System Health & Operational Audit Baseline (October 2, 2026)**:
   - Verified 100% test pass rate across 50 Vitest suites (261 tests) and 43 Playwright E2E browser tests (16 test files across all personas).
