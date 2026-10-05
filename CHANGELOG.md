@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- **Trust guards phase 2 (ADR 0023, migration `20261005150000_trust_guards_phase2.sql`).** Closes Council Review 12 finding C-1 using the ADR 0022 trigger pattern, which is fail-closed and `SECURITY INVOKER`.
+  - Subscriptions: members can no longer set their own tier or limits; usage can only increase by one. The upgrade route now says plan changes go through the team, and its broken form is replaced.
+  - Contracts: only the scholar accepts or declines, and terms lock after the scholar responds.
+  - Milestones: the scholar submits; the institution verifies and pays.
+  - Licensing: each side signs only for itself, and a license is active only with both signatures. New terms void the other side's signature, and a course can only be licensed from the scholar who offers it.
+  - Endorsements: only approved institutions can issue them, and "verified" requires the institution's owner or admin.
+  - Consortiums: only approved institutions can found one, and invitations start as `pending`.
+- **Policy-matrix gate.** `tests/integration/policy-matrix.{json,test.ts}` declares which columns each persona may write on 10 trust-bearing tables. CI fails on any undeclared column, and on any real-role write whose outcome differs from the declaration.
 - **Authorization lockdown (ADR 0022)**:
   - **Institution signup takeover closed.** `signupInstitution` matched institutions by name with the service role and linked the new account using the free-text "role title" as its membership role. Anyone could register as `owner` of an existing approved institution. Self-signup now only creates a new *pending* institution owned by the registrant, and refuses an existing institution name before creating a login. New-institution signup also no longer fails on non-existent columns (`type` → `institution_type`; adds required `contact_email`).
   - **Page-level guards.** `/admin/reviews`, `/admin/reviews/[id]`, `/admin/reports`, and `/admin/institutions` loaded service-role data relying only on the admin layout. Per the Next.js docs, a layout does not stop a page from rendering or reaching the RSC payload. These pages, plus the institution postings, applicants, endorsements, and accreditation pages, now call guards from `lib/auth/guards.ts` before fetching.

@@ -245,7 +245,9 @@ export async function addConsortiumMember(
         consortium_id: input.consortiumId,
         institution_id: input.institutionId,
         role,
-        status: 'active',
+        // Another institution must accept the invitation itself (ADR 0023); the
+        // database refuses to list it as active on the lead's say-so.
+        status: 'pending',
         joined_at: new Date().toISOString(),
       },
       { onConflict: 'consortium_id,institution_id' }

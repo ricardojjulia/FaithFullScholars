@@ -1,0 +1,218 @@
+{
+  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A.",
+  "scenarios": [
+    {
+      "table": "accounts",
+      "persona": "scholar",
+      "fixture": "none",
+      "row": { "column": "id", "value": "$SCHOLAR_A_ACCOUNT" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "email": { "writable": false, "value": "'changed@example.org'" },
+        "role": { "writable": false, "value": "'admin'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "scholars",
+      "persona": "scholar",
+      "fixture": "none",
+      "row": { "column": "id", "value": "$SCHOLAR_A" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "account_id": { "writable": false, "value": "'$ADMIN_ACCOUNT'" },
+        "slug": { "writable": true, "value": "'probe-matrix-slug'" },
+        "full_name": { "writable": true, "value": "'Probe Name'" },
+        "title": { "writable": true, "value": "'Probe Title'" },
+        "profile_photo_path": { "writable": true, "value": "'probe/photo.png'" },
+        "current_institution": { "writable": true, "value": "'Probe Institution'" },
+        "institutional_role": { "writable": true, "value": "'Probe Role'" },
+        "biography": { "writable": true, "value": "'Probe biography'" },
+        "location": { "writable": true, "value": "'Probe City'" },
+        "timezone": { "writable": true, "value": "'Europe/London'" },
+        "contact_preference": { "writable": true, "value": "'probe'" },
+        "doctrinal_statement_text": { "writable": true, "value": "'Probe statement'" },
+        "doctrinal_statement_path": { "writable": true, "value": "'probe/statement.pdf'" },
+        "orcid_id": { "writable": true, "value": "'0000-0002-1825-0097'" },
+        "google_scholar_url": { "writable": true, "value": "'https://scholar.google.com/citations?user=probe'" },
+        "draft_revision_id": { "writable": true, "value": "NULL" },
+        "profile_status": { "writable": false, "value": "'hidden'" },
+        "verification_status": { "writable": false, "value": "'flagged'" },
+        "published_revision_id": { "writable": false, "value": "NULL" },
+        "profile_tier": { "writable": false, "value": "'distinguished_fellow'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "institutions",
+      "persona": "institution_owner",
+      "fixture": "member_of_a",
+      "row": { "column": "id", "value": "$INST_A" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "name": { "writable": true, "value": "'Probe Seminary'" },
+        "slug": { "writable": false, "value": "'probe-seminary-slug'" },
+        "website": { "writable": true, "value": "'https://probe.example.edu'" },
+        "institution_type": { "writable": true, "value": "'bible_college'" },
+        "status": { "writable": false, "value": "'suspended'" },
+        "contact_email": { "writable": true, "value": "'probe@example.edu'" },
+        "location": { "writable": true, "value": "'Probe Town'" },
+        "accreditation_body": { "writable": false, "value": "'TRACS'" },
+        "accreditation_status": { "writable": false, "value": "'associate'" },
+        "accreditation_verified_at": { "writable": false, "value": "'2001-01-01'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "inquiries",
+      "persona": "institution_owner",
+      "fixture": "inquiry",
+      "row": { "column": "id", "value": "$INQUIRY" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "scholar_id": { "writable": false, "value": "'$OTHER_SCHOLAR'" },
+        "course_id": { "writable": false, "value": "'$COURSE_A'" },
+        "sender_account_id": { "writable": false, "value": "'$ADMIN_ACCOUNT'" },
+        "opportunity_type": { "writable": false, "value": "'guest_lecturing'" },
+        "proposed_term": { "writable": true, "value": "'Spring 2030'" },
+        "delivery_mode": { "writable": true, "value": "'online'" },
+        "message": { "writable": false, "value": "'Rewritten after sending.'" },
+        "contact_email": { "writable": false, "value": "'spoof@example.org'" },
+        "status": { "writable": true, "value": "'archived'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "institution_subscriptions",
+      "persona": "institution_owner",
+      "fixture": "subscription",
+      "row": { "column": "institution_id", "value": "$INST_A" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "tier": { "writable": false, "value": "'premier_partner'" },
+        "billing_cycle": { "writable": false, "value": "'annual'" },
+        "status": { "writable": false, "value": "'trialing'" },
+        "seats_limit": { "writable": false, "value": "50" },
+        "monthly_inquiry_limit": { "writable": false, "value": "999" },
+        "inquiries_used_current_month": { "writable": true, "value": "inquiries_used_current_month + 1" },
+        "current_period_start": { "writable": false, "value": "'2001-01-01'" },
+        "current_period_end": { "writable": false, "value": "'2099-01-01'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "institution_contracts",
+      "persona": "institution_owner",
+      "fixture": "contract_offered",
+      "row": { "column": "id", "value": "$CONTRACT" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "scholar_id": { "writable": false, "value": "'$OTHER_SCHOLAR'" },
+        "inquiry_id": { "skip": "nullable FK with no inquiry fixture; party immutability covered by trust-guards-phase2" },
+        "created_by": { "writable": false, "value": "'$ADMIN_ACCOUNT'" },
+        "opportunity_type": { "writable": true, "value": "'guest_lecture'" },
+        "title": { "writable": true, "value": "'Revised offer'" },
+        "scope_of_work": { "writable": true, "value": "'Revised scope'" },
+        "start_date": { "writable": true, "value": "'2031-01-01'" },
+        "end_date": { "writable": true, "value": "'2031-06-01'" },
+        "total_compensation_amount": { "writable": true, "value": "4500" },
+        "currency": { "writable": true, "value": "'EUR'" },
+        "payment_terms": { "writable": true, "value": "'Net 30'" },
+        "status": { "writable": false, "value": "'accepted'" },
+        "institution_notes": { "writable": true, "value": "'Institution note'" },
+        "scholar_notes": { "writable": false, "value": "'Forged scholar note'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "institution_contracts",
+      "persona": "scholar",
+      "fixture": "contract_offered",
+      "row": { "column": "id", "value": "$CONTRACT" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "scholar_id": { "writable": false, "value": "'$OTHER_SCHOLAR'" },
+        "inquiry_id": { "skip": "nullable FK with no inquiry fixture; party immutability covered by trust-guards-phase2" },
+        "created_by": { "writable": false, "value": "'$ADMIN_ACCOUNT'" },
+        "opportunity_type": { "writable": false, "value": "'guest_lecture'" },
+        "title": { "writable": false, "value": "'Revised offer'" },
+        "scope_of_work": { "writable": false, "value": "'Revised scope'" },
+        "start_date": { "writable": false, "value": "'2031-01-01'" },
+        "end_date": { "writable": false, "value": "'2031-06-01'" },
+        "total_compensation_amount": { "writable": false, "value": "999999" },
+        "currency": { "writable": false, "value": "'EUR'" },
+        "payment_terms": { "writable": false, "value": "'Net 0'" },
+        "status": { "writable": true, "value": "'accepted'" },
+        "institution_notes": { "writable": false, "value": "'Forged institution note'" },
+        "scholar_notes": { "writable": true, "value": "'Scholar note'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "course_licensing_agreements",
+      "persona": "institution_owner",
+      "fixture": "license_requested",
+      "row": { "column": "id", "value": "$LICENSE" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "course_id": { "writable": false, "value": "gen_random_uuid()" },
+        "scholar_id": { "writable": false, "value": "'$OTHER_SCHOLAR'" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "consortium_id": { "skip": "nullable FK with no consortium fixture; party immutability enforced by guard" },
+        "license_type": { "writable": true, "value": "'full_course_curriculum'" },
+        "term_duration": { "writable": true, "value": "'1_academic_year'" },
+        "royalty_amount": { "writable": true, "value": "750" },
+        "permitted_students_count": { "writable": true, "value": "40" },
+        "custom_terms": { "writable": true, "value": "'Probe terms'" },
+        "status": { "writable": false, "value": "'active'" },
+        "signed_by_scholar_at": { "writable": false, "value": "now()" },
+        "signed_by_institution_at": { "writable": true, "value": "now()" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "institution_endorsements",
+      "persona": "institution_recruiter",
+      "fixture": "endorsement",
+      "row": { "column": "id", "value": "$ENDORSEMENT" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "institution_id": { "writable": false, "value": "'$INST_B'" },
+        "scholar_id": { "writable": false, "value": "'$OTHER_SCHOLAR'" },
+        "relationship_type": { "writable": true, "value": "'Visiting Scholar'" },
+        "department_or_field": { "writable": true, "value": "'Old Testament'" },
+        "endorsement_text": { "writable": true, "value": "'Revised endorsement'" },
+        "is_credential_verified": { "writable": false, "value": "true" },
+        "status": { "writable": true, "value": "'revoked'" },
+        "created_at": { "skip": "audit timestamp" },
+        "updated_at": { "writable": true, "value": "now()" }
+      }
+    },
+    {
+      "table": "consortium_members",
+      "persona": "institution_owner",
+      "fixture": "consortium_invite",
+      "row": { "column": "id", "value": "$CONSORTIUM_MEMBER" },
+      "columns": {
+        "id": { "skip": "primary key" },
+        "consortium_id": { "writable": false, "value": "gen_random_uuid()" },
+        "institution_id": { "writable": false, "value": "'$OTHER_INST'" },
+        "role": { "writable": false, "value": "'lead'" },
+        "status": { "writable": false, "value": "'active'" },
+        "joined_at": { "writable": true, "value": "now()" }
+      }
+    }
+  ]
+}
