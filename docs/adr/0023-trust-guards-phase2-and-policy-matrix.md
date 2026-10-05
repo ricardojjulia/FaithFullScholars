@@ -31,9 +31,11 @@ Separately, `audit:rls` and `audit:security` **passed on a database with these h
      - **Milestones:** the scholar submits; the institution verifies and pays. Amounts lock after acceptance.
      - **Licensing:** each side signs only for itself. Status is `active` only with both signatures. New terms void the counterparty's signature. Active terms are frozen. A course can only be licensed from the scholar who offers it.
      - **Endorsements:** only approved institutions may issue them. "Credential verified" requires the institution's owner or admin.
-     - **Consortiums:** only approved institutions may found one. Other institutions join as `pending` and must accept themselves.
+     - **Consortiums:** only approved institutions may found one. Other institutions join as `pending`. No self-service acceptance flow exists yet, so platform staff confirm memberships.
+     - **Deletes and walk-backs:** milestones cannot be deleted after the scholar responds, and an active license can only move to `terminated`.
 2. **Policy matrix.** `tests/integration/policy-matrix.json` is the declared write contract per table and persona:
-   - Every column must be declared writable or not, with a probe value, or skipped with a reason.
+   - Every column must be declared writable or not, with a probe value, or skipped with a reason. The runner fails if a probe doesn't change the value: Postgres `now()` is constant within a transaction, so a no-op write would otherwise pass vacuously.
+   - It covers 14 scenarios over 11 tables. Columns maintained by triggers (`updated_at`) are skipped.
    - `tests/integration/policy-matrix.test.ts` fails CI on undeclared or stale columns, and on any probe whose real-role outcome differs from the declaration.
    - New columns on covered tables are therefore *decided*, not silently writable.
 3. **Product consequences, made explicit rather than faked:**
@@ -51,4 +53,5 @@ Separately, `audit:rls` and `audit:security` **passed on a database with these h
   - Extend the matrix to every table with an UPDATE policy.
   - Consider default-deny column grants (Council Wildcard proposal 2) once the matrix guards regressions.
   - Add a member-side "accept consortium invitation" flow.
+  - `institution_subscriptions` has no member INSERT policy, so the guard's INSERT branch is defense in depth. `incrementInquiryUsage`'s fallback upsert for a missing subscription row fails silently. Provision subscription rows server-side.
   - Add billing.

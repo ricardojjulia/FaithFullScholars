@@ -37,6 +37,7 @@ const IDS = {
   $ENDORSEMENT: 'c0000000-0000-0000-0000-0000000001e1',
   $CONSORTIUM: 'c0000000-0000-0000-0000-0000000001d1',
   $CONSORTIUM_MEMBER: 'c0000000-0000-0000-0000-0000000001d2',
+  $MILESTONE: 'c0000000-0000-0000-0000-0000000001a2',
 } as const;
 
 type ColumnDecl = { skip: string } | { writable: boolean; value: string };
@@ -117,6 +118,14 @@ describe('Policy matrix — declared column-write contract', () => {
         [IDS.$CONTRACT, IDS.$INST_A, dynamicIds.$SCHOLAR_A]
       );
     },
+    contract_with_milestone: async () => {
+      await fixtures.contract_offered();
+      await client.query(
+        `INSERT INTO public.contract_milestones (id, contract_id, title, compensation_amount, status)
+         VALUES ($1, $2, 'Matrix milestone', 1000, 'pending')`,
+        [IDS.$MILESTONE, IDS.$CONTRACT]
+      );
+    },
     license_requested: async () => {
       await client.query(
         `INSERT INTO public.course_licensing_agreements
@@ -173,6 +182,7 @@ describe('Policy matrix — declared column-write contract', () => {
     it(`${scenario.table} as ${scenario.persona}: column writes match the declaration`, async () => {
       const persona = personas[scenario.persona];
       const mismatches: string[] = [];
+      let allowedCount = 0;
 
       for (const [column, decl] of Object.entries(scenario.columns)) {
         if ('skip' in decl) continue;
@@ -186,22 +196,31 @@ describe('Policy matrix — declared column-write contract', () => {
             JSON.stringify({ role: 'authenticated', sub: persona.sub }),
           ]);
 
-          const sql = fill(
-            `UPDATE public.${scenario.table} SET ${column} = ${decl.value} WHERE ${scenario.row.column} = '${scenario.row.value}'`
-          );
+          const where = fill(`WHERE ${scenario.row.column} = '${scenario.row.value}'`);
+          const read = async () =>
+            (await client.query(`SELECT ${column}::text AS v FROM public.${scenario.table} ${where}`)).rows[0]?.v ?? null;
+          const before = await read();
+          const sql = fill(`UPDATE public.${scenario.table} SET ${column} = ${decl.value} ${where}`);
           let outcome: 'allowed' | 'denied';
           try {
             const res = await client.query(sql);
             outcome = res.rowCount && res.rowCount > 0 ? 'allowed' : 'denied';
+            if (outcome === 'allowed' && (await read()) === before) {
+              mismatches.push(`${column}: probe did not change the value (no-op write) — use a value that differs from the fixture`);
+              continue;
+            }
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            if (/Unauthorized|row-level security|permission denied/.test(message)) {
+            // Only the guards' explicit refusals and RLS WITH CHECK count as denials;
+            // e.g. "permission denied for function" (a broken grant) must not pass as one.
+            if (/^Unauthorized:|new row violates row-level security/.test(message)) {
               outcome = 'denied';
             } else {
               mismatches.push(`${column}: probe value is invalid (${message}) — fix the declaration`);
               continue;
             }
           }
+          if (outcome === 'allowed') allowedCount += 1;
           const expected = decl.writable ? 'allowed' : 'denied';
           if (outcome !== expected) mismatches.push(`${column}: expected ${expected}, got ${outcome}`);
         } finally {
@@ -210,6 +229,12 @@ describe('Policy matrix — declared column-write contract', () => {
       }
 
       expect(mismatches, mismatches.join('\n')).toEqual([]);
+      // Guards against a scenario whose row is invisible (every probe "denied" by RLS):
+      // if anything is declared writable, at least one write must actually succeed.
+      const declaresWritable = Object.values(scenario.columns).some((d) => 'writable' in d && d.writable);
+      if (declaresWritable) {
+        expect(allowedCount, `${scenario.table} as ${scenario.persona}: no write was allowed at all`).toBeGreaterThan(0);
+      }
     });
   }
 });

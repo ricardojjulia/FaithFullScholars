@@ -52,6 +52,9 @@ AS $$
   LIMIT 1;
 $$;
 
+-- Note: these DEFINER lookups are callable by anon/authenticated (the INVOKER
+-- triggers need that) and would act as lookup oracles if `private` were ever
+-- exposed through the API. It must stay out of "Exposed schemas".
 -- Owner-privileged lookups so the guard triggers can stay SECURITY INVOKER
 -- (and therefore fail closed on current_user) while reading related rows.
 CREATE OR REPLACE FUNCTION private.contract_parties(target_contract_id UUID)
@@ -113,6 +116,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
+  -- Members currently have no INSERT policy on this table; this branch is
+  -- defense in depth should one be added.
   IF TG_OP = 'INSERT' THEN
     IF NEW.tier <> 'basic' OR NEW.status <> 'active'
        OR NEW.seats_limit <> 1 OR NEW.monthly_inquiry_limit <> 5
@@ -290,6 +295,33 @@ BEGIN
 END;
 $$;
 
+-- Deleting a milestone after the scholar has responded would erase compensation
+-- and payment records the "amounts lock after acceptance" rule protects.
+CREATE OR REPLACE FUNCTION private.guard_contract_milestones_delete()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+  parent RECORD;
+BEGIN
+  IF NOT private.is_restricted_caller() THEN
+    RETURN OLD;
+  END IF;
+  SELECT * INTO parent FROM private.contract_parties(OLD.contract_id);
+  IF parent.status IS NULL OR parent.status NOT IN ('draft', 'offered') THEN
+    RAISE EXCEPTION 'Unauthorized: milestones cannot be deleted once the scholar has responded' USING ERRCODE = '42501';
+  END IF;
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_guard_contract_milestones_delete ON public.contract_milestones;
+CREATE TRIGGER trg_guard_contract_milestones_delete
+  BEFORE DELETE ON public.contract_milestones
+  FOR EACH ROW EXECUTE FUNCTION private.guard_contract_milestones_delete();
+
 DROP TRIGGER IF EXISTS trg_guard_contract_milestones ON public.contract_milestones;
 CREATE TRIGGER trg_guard_contract_milestones
   BEFORE INSERT OR UPDATE ON public.contract_milestones
@@ -367,6 +399,11 @@ BEGIN
   END IF;
 
   IF NEW.status IS DISTINCT FROM OLD.status THEN
+    -- Active terms stay frozen: an active license can only be terminated, never
+    -- walked back to an editable state.
+    IF OLD.status = 'active' AND NEW.status <> 'terminated' THEN
+      RAISE EXCEPTION 'Unauthorized: an active license can only be terminated' USING ERRCODE = '42501';
+    END IF;
     IF NEW.status = 'active'
        AND (NEW.signed_by_scholar_at IS NULL OR NEW.signed_by_institution_at IS NULL) THEN
       RAISE EXCEPTION 'Unauthorized: a license is active only when both parties have signed' USING ERRCODE = '42501';
@@ -481,7 +518,7 @@ BEGIN
       RAISE EXCEPTION 'Unauthorized: only the founding institution leads a consortium' USING ERRCODE = '42501';
     END IF;
     IF NEW.status = 'active' AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'active') THEN
-      RAISE EXCEPTION 'Unauthorized: an institution must accept a consortium invitation itself' USING ERRCODE = '42501';
+      RAISE EXCEPTION 'Unauthorized: a consortium can list another institution as active only after platform staff confirm it (no self-service acceptance flow yet)' USING ERRCODE = '42501';
     END IF;
   END IF;
   RETURN NEW;
@@ -496,6 +533,7 @@ CREATE TRIGGER trg_guard_consortium_members
 REVOKE EXECUTE ON FUNCTION private.guard_institution_subscriptions() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION private.guard_institution_contracts() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION private.guard_contract_milestones() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.guard_contract_milestones_delete() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION private.guard_course_licensing() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION private.guard_institution_endorsements() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION private.guard_consortiums() FROM PUBLIC;

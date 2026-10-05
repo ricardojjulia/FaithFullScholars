@@ -221,7 +221,8 @@ describe('Trust guards phase 2 — real authenticated callers', () => {
       );
     };
     await as({ sub: INST_USER_ACCOUNT }, licenseFixture, async () => {
-      await denied(`UPDATE public.course_licensing_agreements SET signed_by_scholar_at = now() WHERE id = $1`, [LICENSE]);
+      // now() is the transaction start, identical to the fixture's value; use a distinct time.
+      await denied(`UPDATE public.course_licensing_agreements SET signed_by_scholar_at = now() + interval '1 day' WHERE id = $1`, [LICENSE]);
       // Lowering the royalty after the scholar signed must clear the scholar's signature…
       await allowed(`UPDATE public.course_licensing_agreements SET royalty_amount = 1 WHERE id = $1`, [LICENSE]);
       const row = await client.query(`SELECT signed_by_scholar_at FROM public.course_licensing_agreements WHERE id = $1`, [LICENSE]);
@@ -279,6 +280,36 @@ describe('Trust guards phase 2 — real authenticated callers', () => {
         await denied(add, [CONSORTIUM, INST_B, 'active']);
         await allowed(add, [CONSORTIUM, INST_B, 'pending']);
         await denied(`UPDATE public.consortium_members SET status = 'active' WHERE consortium_id = $1 AND institution_id = $2`, [CONSORTIUM, INST_B]);
+      }
+    );
+  });
+
+  it('milestones cannot be deleted once the scholar has responded', async () => {
+    await as({ sub: INST_USER_ACCOUNT }, () => contractFixture('accepted'), async () => {
+      await denied(`DELETE FROM public.contract_milestones WHERE id = $1`, [MILESTONE]);
+    });
+    await as({ sub: INST_USER_ACCOUNT }, () => contractFixture('offered'), async () => {
+      await allowed(`DELETE FROM public.contract_milestones WHERE id = $1`, [MILESTONE]);
+    });
+  });
+
+  it('an active license can only be terminated, never walked back to an editable state', async () => {
+    await as(
+      { sub: INST_USER_ACCOUNT },
+      async () => {
+        await memberOfA();
+        await client.query(
+          `INSERT INTO public.course_licensing_agreements
+             (id, course_id, scholar_id, institution_id, license_type, term_duration, royalty_amount, status,
+              signed_by_scholar_at, signed_by_institution_at)
+           VALUES ($1, $2, $3, $4, 'syllabus_only', '1_semester', 500, 'active', now(), now())`,
+          [LICENSE, courseOfA, scholarA, INST_A]
+        );
+      },
+      async () => {
+        await denied(`UPDATE public.course_licensing_agreements SET status = 'requested' WHERE id = $1`, [LICENSE]);
+        await denied(`UPDATE public.course_licensing_agreements SET royalty_amount = 1 WHERE id = $1`, [LICENSE]);
+        await allowed(`UPDATE public.course_licensing_agreements SET status = 'terminated' WHERE id = $1`, [LICENSE]);
       }
     );
   });
