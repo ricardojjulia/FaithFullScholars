@@ -86,7 +86,7 @@ Initial ADRs:
 - **Seminary Consortia & Multi-Campus System Accounts (ADR 0012):**
   - **Federated Theological Networks:** System accounts (`public.consortiums`, `public.consortium_members`) enabling multi-campus seminaries (e.g. RTS 6-campus system) and regional federations (ARTS, BTI, ACTS) to share candidate pools, cross-register adjunct faculty, and pool recruitment pipelines.
   - **Dean Workspace:** Dedicated collaborative hub (`/institution/consortium`) displaying system leadership, sister campuses, and direct candidate discovery links.
-  - **Security & Authorization:** 7 PostgreSQL RLS policies, covering indexes on foreign keys, and an AI Matcher (`POST /api/ai/match-faculty`) requiring authenticated institution roles and active paid subscription tiers. Consortium tables are not yet guarded against any-member writes (ADR 0023 follow-up).
+  - **Security & Authorization:** 7 PostgreSQL RLS policies, covering indexes on foreign keys, and an AI Matcher (`POST /api/ai/match-faculty`) requiring authenticated institution roles and active paid subscription tiers. Consortium tables are guarded (ADR 0023): only approved institutions found consortiums, and invitations start pending.
 - **Theological Conference Speaker Directory & Institutional Speaking Bureau (ADR 0009):**
   - **Speaking Bureau Directory:** Dedicated public speaking bureau (`/speakers`) featuring verified faculty, keynote topics, target audience chips (`academic`, `pastoral`, `church_wide`, `undergraduate`), and real-time search.
   - **Keynote Topic Showcases:** Canonical lecture and address listings with target audience categorization, descriptions, display ordering, and sample recording media links (`sample_media_url`).
