@@ -1,0 +1,476 @@
+[
+  {
+    "surface": "action:lib/auth/auth-actions.loginWithPassword",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "action:lib/auth/auth-actions.signOutAction",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:DELETE /api/institution/consortium/members",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:DELETE /api/scholars/media/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:DELETE /api/scholars/speaker-topics",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/admin/reviews/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/dashboard/contracts",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/dashboard/licensing",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/institution/consortium",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/institution/contracts",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/institution/contracts/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/institution/licensing",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/institution/subscription",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/postings",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/scholars/[id]/endorsements",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/scholars/media",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /api/scholars/speaker-topics",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:GET /auth/signout",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:PATCH /api/institution/contracts/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:PATCH /api/scholars/media/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:PATCH /api/scholars/speaker-topics",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/admin/institutions/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/admin/reports/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/admin/reviews/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/ai/match-faculty",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/dashboard/contracts/[id]/accept",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/dashboard/licensing/[id]/sign",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/consortium",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/consortium/members",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/contracts",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/licensing",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/saved-courses",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/institution/subscription/upgrade",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/scholars/[id]/endorsements",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/scholars/media",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /api/scholars/speaker-topics",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "api:POST /auth/signout",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/admin/reports",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/admin/reviews/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/admin/triage",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/courses",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/courses/[slug]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/analytics",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/availability",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/contracts",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/courses",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/inquiries",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/licensing",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/media",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/onboarding",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/preview",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dashboard/profile",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/dev/status",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/disciplines",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/disciplines/[slug]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/forgot-password",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/conferences",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/consortium",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/contracts",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/contracts/[id]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/endorsements",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/inquiries",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/licensing",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/postings",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/postings/new",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/profile",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/saved/accreditation",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/saved/dossier",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/institution/subscription",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/opportunities",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/opportunities/[slug]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/scholars",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/scholars/[slug]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/scholars/[slug]/dossier",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/signup",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/speakers",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/traditions",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  },
+  {
+    "surface": "page:/traditions/[slug]",
+    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
+    "owner": "ricardojjulia",
+    "expires": "2026-12-02"
+  }
+]

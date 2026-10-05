@@ -65,6 +65,12 @@ vi.mock('@/lib/postings/applicant-service', () => ({ getPostingApplicantReport }
 import { requireInstitutionMember, requireSignedIn, requireStaffPage } from '@/lib/auth/guards';
 import AdminReviewsPage from '@/app/(admin)/admin/reviews/page';
 import PostingApplicantsPage from '@/app/(institution)/institution/postings/[id]/applicants/page';
+import { covers } from '../support/covers';
+
+covers(
+  'page:/admin/reviews',
+  'page:/institution/postings/[id]/applicants'
+);
 
 describe('page-level authorization guards', () => {
   beforeEach(() => {

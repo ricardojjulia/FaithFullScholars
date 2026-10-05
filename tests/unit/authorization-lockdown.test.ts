@@ -88,6 +88,21 @@ import { POST as createPosting } from '@/app/api/postings/route';
 import { POST as issueEndorsement } from '@/app/api/institution/endorsements/route';
 import { POST as expressInterest } from '@/app/api/postings/[id]/express-interest/route';
 import { GET as listReviews } from '@/app/api/admin/reviews/route';
+import { covers } from '../support/covers';
+
+covers(
+  'api:GET /api/inquiries',
+  'api:POST /api/inquiries',
+  'api:PATCH /api/inquiries/[id]',
+  'api:GET /api/institution/saved-scholars',
+  'api:POST /api/institution/saved-scholars',
+  'api:GET /api/institution/saved-courses',
+  'api:GET /api/institution/saved-scholars/export',
+  'api:POST /api/postings',
+  'api:POST /api/institution/endorsements',
+  'api:POST /api/postings/[id]/express-interest',
+  'api:GET /api/admin/reviews'
+);
 
 const SCHOLAR_A = 'f1000000-0000-0000-0000-00000000000a';
 const SCHOLAR_B = 'f1000000-0000-0000-0000-00000000000b';

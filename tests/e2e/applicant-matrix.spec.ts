@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
+
+// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
+test.use({ storageState: storageStatePath('institution') });
 
 test.describe('Search Committee Applicant Matrix & Confessional Common App (ADR 0020)', () => {
   test('navigates from institution postings to applicant matrix and renders candidate comparison table', async ({ page }) => {

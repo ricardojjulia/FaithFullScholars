@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
+
+// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
+test.use({ storageState: storageStatePath('institution') });
 
 test.describe('Tiered Subscriptions & Engagement Contracts', () => {
   test('renders institutional subscription and quota management view', async ({ page }) => {
@@ -27,7 +31,8 @@ test.describe('Tiered Subscriptions & Engagement Contracts', () => {
     await expect(page.locator('text=Manage Quota')).toBeVisible();
   });
 
-  test('renders scholar workspace contracts inbox', async ({ page }) => {
+  test('renders scholar workspace contracts inbox', async ({ browser }) => {
+    const page = await (await browser.newContext({ storageState: storageStatePath('scholar') })).newPage();
     await page.goto('/dashboard/contracts');
     await page.waitForLoadState('domcontentloaded');
 

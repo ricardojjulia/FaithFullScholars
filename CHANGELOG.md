@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **CI patterns adopted from ChurchCore-LMS** (`docs/testing/test-surface.md`):
+  - **Test-surface gate** (`scripts/test-surface.mjs`, `npm run test:surface`, CI job `test-surface`). Every page, API method, and Server Action needs a `covers()`-tagged test or a dated exemption that expires within 60 days. Typos and stale or expired exemptions fail CI. Baseline: 24/103 covered; 79 exemptions expire on 2026-12-02. The gate's own unit tests prove it fails on bad input.
+  - **E2E workflow** (`.github/workflows/e2e.yml`). Playwright runs on every PR against a production build and a local Supabase stack. Admin, scholar, and institution personas sign in through the real `/login` flow, using a per-run masked password.
+  - **`tests/e2e/role-boundaries.spec.ts`** checks page- and API-level access for each persona.
+  - The nine legacy specs that relied on anonymous demo access now sign in as the matching persona.
+- **CI hardening.** Action versions moved to `actions/checkout@v5`, `actions/setup-node@v5`, and `supabase/setup-cli@v3`. Workflows keep least-privilege `contents: read`. Repository auto-merge is enabled, and the branch rules on `main` still gate it on green CI.
+
 ### Security
 - **Trust guards phase 2 (ADR 0023, migration `20261005150000_trust_guards_phase2.sql`).** Closes Council Review 12 finding C-1 using the ADR 0022 trigger pattern, which is fail-closed and `SECURITY INVOKER`.
   - Subscriptions: members can no longer set their own tier or limits; usage can only increase by one. The upgrade route now says plan changes go through the team, and its broken form is replaced.
