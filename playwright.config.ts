@@ -19,7 +19,10 @@ export default defineConfig({
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: process.env.BASE_URL || 'http://127.0.0.1:3845',
-    trace: 'retain-on-failure',
+    // No traces in CI: they record request bodies and cookies (the persona
+    // password and session tokens) and failed-run artifacts are public.
+    trace: process.env.CI ? 'off' : 'retain-on-failure',
+    screenshot: 'only-on-failure',
   },
   projects: [
     {

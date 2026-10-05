@@ -16,6 +16,8 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 export const MAX_EXEMPTION_DAYS = 60
+// Sanity floor: a wrong cwd or a layout change that discovers almost nothing must fail.
+export const MIN_SURFACES = 50
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']
 const SOURCE_EXT = /\.(ts|tsx|js|jsx|mjs)$/
 const SKIP_DIRS = new Set(['node_modules', '.next', '.git', 'coverage', 'playwright-report', 'test-results', '.auth'])
@@ -54,8 +56,12 @@ export function discoverSurfaces(root) {
       const src = readFileSync(file, 'utf8')
       const route = routeFromAppPath(path.dirname(rel))
       for (const m of HTTP_METHODS) {
-        const re = new RegExp(`export\\s+(?:async\\s+function\\s+${m}\\b|function\\s+${m}\\b|const\\s+${m}\\b)`)
-        if (re.test(src)) surfaces.push({ id: `api:${m} ${route}`, file: toPosix(path.relative(root, file)) })
+        const re = new RegExp(
+          `export\\s+(?:async\\s+function\\s+${m}\\b|function\\s+${m}\\b|const\\s+${m}\\b)` +
+            // re-exports: export { GET } / export { handler as GET } / export const { GET } = …
+            `|export\\s*\\{[^}]*\\b${m}\\b[^}]*\\}|export\\s+const\\s*\\{[^}]*\\b${m}\\b[^}]*\\}`
+        )
+        if (re.test(stripComments(src))) surfaces.push({ id: `api:${m} ${route}`, file: toPosix(path.relative(root, file)) })
       }
     }
   }
@@ -64,11 +70,13 @@ export function discoverSurfaces(root) {
   for (const dir of ['app', 'lib']) {
     for (const file of walk(path.join(root, dir))) {
       if (!SOURCE_EXT.test(file) || isTestFile(file)) continue
-      const src = readFileSync(file, 'utf8')
+      const src = stripComments(readFileSync(file, 'utf8'))
       if (!/^\s*['"]use server['"]/.test(src)) continue
       const key = toPosix(path.relative(root, file)).replace(SOURCE_EXT, '')
-      for (const m of src.matchAll(/^export\s+async\s+function\s+(\w+)/gm)) {
-        surfaces.push({ id: `action:${key}.${m[1]}`, file: toPosix(path.relative(root, file)) })
+      // export async function x() {} and export const x = async (…) => {}
+      for (const m of src.matchAll(/^export\s+(?:async\s+function\s+(\w+)|const\s+(\w+)\s*=\s*async\b)/gm)) {
+        const name = m[1] ?? m[2]
+        surfaces.push({ id: `action:${key}.${name}`, file: toPosix(path.relative(root, file)) })
       }
     }
   }
@@ -180,7 +188,7 @@ export function loadExemptions(root) {
   return parsed
 }
 
-export function evaluate({ surfaces, covered, exemptions, today = new Date() }) {
+export function evaluate({ surfaces, covered, exemptions, today = new Date(), minSurfaces = 0 }) {
   const ids = new Set(surfaces.map((s) => s.id))
   const todayStr = today.toISOString().slice(0, 10)
   const maxDate = new Date(today.getTime() + MAX_EXEMPTION_DAYS * 86_400_000).toISOString().slice(0, 10)
@@ -189,19 +197,27 @@ export function evaluate({ surfaces, covered, exemptions, today = new Date() }) 
 
   for (const e of exemptions) {
     const where = `exemption ${JSON.stringify(e.surface ?? '(missing surface)')}`
-    if (!e.surface || !e.reason || !e.owner || !e.expires) {
-      problems.push({ kind: 'invalid-exemption', id: e.surface ?? '', detail: `${where} needs surface, reason, owner, expires` })
+    if (!e.surface || !e.reason || !e.owner || !e.expires || !e.added) {
+      problems.push({ kind: 'invalid-exemption', id: e.surface ?? '', detail: `${where} needs surface, reason, owner, added, expires` })
       continue
     }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.expires)) {
-      problems.push({ kind: 'invalid-exemption', id: e.surface, detail: `${where} expires must be YYYY-MM-DD` })
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.expires) || !/^\d{4}-\d{2}-\d{2}$/.test(e.added)) {
+      problems.push({ kind: 'invalid-exemption', id: e.surface, detail: `${where} added/expires must be YYYY-MM-DD` })
       continue
     }
+    // The cap runs from when the exemption was granted, not from today, so
+    // "renewing" one requires a visible change to its added date in review.
+    const capFromAdded = new Date(new Date(`${e.added}T00:00:00Z`).getTime() + MAX_EXEMPTION_DAYS * 86_400_000).toISOString().slice(0, 10)
     if (!ids.has(e.surface)) problems.push({ kind: 'unknown-exemption', id: e.surface, detail: `${where} names a surface that no longer exists` })
     else if (covered.has(e.surface)) problems.push({ kind: 'stale-exemption', id: e.surface, detail: `${where} is now covered — delete the exemption` })
     else if (e.expires < todayStr) problems.push({ kind: 'expired-exemption', id: e.surface, detail: `${where} expired on ${e.expires}` })
-    else if (e.expires > maxDate) problems.push({ kind: 'invalid-exemption', id: e.surface, detail: `${where} expires more than ${MAX_EXEMPTION_DAYS} days out (${e.expires} > ${maxDate})` })
+    else if (e.added > todayStr) problems.push({ kind: 'invalid-exemption', id: e.surface, detail: `${where} added date ${e.added} is in the future` })
+    else if (e.expires > capFromAdded || e.expires > maxDate) problems.push({ kind: 'invalid-exemption', id: e.surface, detail: `${where} expires more than ${MAX_EXEMPTION_DAYS} days after it was added (${e.expires} > ${capFromAdded})` })
     else exempt.set(e.surface, e)
+  }
+
+  if (surfaces.length < minSurfaces) {
+    problems.push({ kind: 'too-few-surfaces', id: '', detail: `discovered only ${surfaces.length} surfaces (< ${minSurfaces}); wrong working directory or a layout change?` })
   }
 
   const uncovered = surfaces.filter((s) => !covered.has(s.id) && !exempt.has(s.id))
@@ -251,7 +267,7 @@ function main() {
     for (const s of surfaces) console.log(s.id)
     return
   }
-  const result = evaluate({ surfaces, covered: scanCoverage(root), exemptions: loadExemptions(root) })
+  const result = evaluate({ surfaces, covered: scanCoverage(root), exemptions: loadExemptions(root), minSurfaces: MIN_SURFACES })
   const a11yFile = path.join(root, 'tests/surface/a11y-known.json')
   if (existsSync(a11yFile)) {
     const extra = validateA11yKnown(JSON.parse(readFileSync(a11yFile, 'utf8')), new Set(surfaces.map((s) => s.id)))

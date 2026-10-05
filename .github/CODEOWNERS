@@ -5,3 +5,8 @@
 /AGENTS.md             @ricardojjulia
 /improve-software.md   @ricardojjulia
 /CHECK_IN_POLICY.md    @ricardojjulia
+# Test-surface gate: coverage tags, exemptions and the gate itself
+/scripts/test-surface.mjs      @ricardojjulia
+/tests/surface/                @ricardojjulia
+/tests/support/covers.ts       @ricardojjulia
+/eslint.config.mjs             @ricardojjulia

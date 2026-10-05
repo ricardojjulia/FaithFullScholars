@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Admin area returns 404 to non-staff at the layout too.** It used to answer 200 with an "Access Restricted" card, which revealed that the admin area exists. The triage page uses the same guard. An anonymous or expired-session admin now sees a 404 rather than a login redirect, by design (Council Review 12 C-3).
+- **E2E artifacts:** Playwright traces are off in CI, so public failed-run artifacts can't contain the persona password or session cookies.
+
 ### Added
 - **CI patterns adopted from ChurchCore-LMS** (`docs/testing/test-surface.md`):
   - **Test-surface gate** (`scripts/test-surface.mjs`, `npm run test:surface`, CI job `test-surface`). Every page, API method, and Server Action needs a `covers()`-tagged test or a dated exemption that expires within 60 days. Typos and stale or expired exemptions fail CI. Baseline: 24/103 covered; 79 exemptions expire on 2026-12-02. The gate's own unit tests prove it fails on bad input.
