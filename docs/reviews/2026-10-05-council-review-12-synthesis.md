@@ -119,3 +119,29 @@ Unspoken assumptions behind the bug class:
 - AI-matcher theological-integrity and GDPR redesign (A-5).
 - Audit log (A-7).
 - README honesty pass (A-4), done by the Documenter.
+
+## 7. Outcome (Documenter, 2026-10-05)
+
+**Owner decision:** the owner approved the A, B, C sequence. Prompt D awaits a hosted-project DB connection string from the owner.
+
+**Prompt A, applied in PR #47:**
+- `private.is_restricted_caller` fails closed, and the guard triggers run as `SECURITY INVOKER` (P-1).
+- Only the recipient scholar or an admin can reopen an accepted or declined inquiry; `accreditation_body` is guarded on institution INSERT (P-2).
+- Missing real-role tests added (P-3).
+- `/auth/callback` `next` restricted to a same-origin relative path, with a unit test (A-1).
+- Signup no longer promises an invitation flow (C-2, interim).
+- ADR 0022 wording on `/dev/status` corrected (P-4).
+
+**Verification (session owner):**
+- CI run `37360500352` on `fix/authz-lockdown-v2`: green, 55/55 test files, migrations `20261004120000` and `20261005090000` applied, `audit:rls` and `audit:security` pass.
+- Without `20261004120000`: `infinite recursion detected in policy for relation "institution_users"`, and 6 of 9 RLS tests fail.
+- Without `20261005090000`: 5/5 escalation tests fail, including the `accounts.role = 'admin'` self-grant.
+- With the pre-Council-12 version of `20261005090000`: exactly the fail-closed and inquiry-reopen tests fail.
+- `audit:rls` and `audit:security` passed on all of these vulnerable probe databases, so they verify that policies exist, not what they permit.
+
+**Remaining:**
+- **B (separate PR, ADR 0023):** trust guards phase 2 for subscriptions, contracts, licensing, endorsements, and consortiums, plus the generated policy-matrix gate (C-1). C-1 stays open and Critical until it merges.
+- **C (separate PR):** hygiene (A-2 error messages, gate `SEED_CANDIDATES`, non-member page and admin denial consistency, deterministic institution choice, service-role import wall).
+- **D (owner action):** hosted-project checks (admin rows, unreviewed approvals, *Exposed schemas* excludes `private`, consider disabling signup until deployed). A-8 stays open until done.
+- **Roadmap:** scholar draft persistence, express-interest model, invitations, persistent rate limiter, AI-matcher integrity/GDPR, audit log.
+- **README honesty pass (A-4):** done in this close-out. README and the plan now mark express-interest, the applicant matrix, the conference hub, the AI matcher seed candidates, and sessionStorage-only scholar drafts as known-broken or demo-only.

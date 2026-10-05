@@ -51,8 +51,11 @@ See `docs/reviews/2026-10-05-council-review-12-synthesis.md`. The owner approved
 | Mutation checks | ✅ authorization tests fail on old routes and auth; page-guard tests fail on `main`'s pages; signup tests fail on `main`'s signup |
 | `next build` | ✅ (from a local-disk copy; Turbopack's cache cannot `fsync` on the shared volume) |
 | Migration on Postgres | ✅ PR #46 CI applied it, and 9/9 `rls-authenticated` tests, `audit:rls`, and `audit:security` passed |
-| RLS test fails without the migration | See the CI probe result recorded in the PR (`ci-probe/rls-without-migration`) |
-| Integration tests on this branch | ⏳ CI (no local database) |
+| Integration tests on this branch | ✅ CI run `37360500352`: 55/55 test files, migrations `20261004120000` and `20261005090000` applied, `audit:rls` and `audit:security` pass |
+| Probe: without `20261004120000` | `infinite recursion detected in policy for relation "institution_users"`; 6/9 RLS tests fail |
+| Probe: without `20261005090000` | 5/5 escalation tests fail, including the `accounts.role = 'admin'` self-grant |
+| Probe: pre-Council-12 `20261005090000` | exactly the fail-closed and inquiry-reopen tests fail |
+| `audit:rls` / `audit:security` on the probe databases | PASS (they verify that policies exist, not what they permit) |
 
 ## 6. Residual Risk
 - Institution self-signup allows slug squatting, and its "already exists" message reveals which institutions are registered. Consider admin-reviewed registration keyed on a verified domain.
@@ -60,10 +63,13 @@ See `docs/reviews/2026-10-05-council-review-12-synthesis.md`. The owner approved
 - Hosted Supabase: confirm that *Exposed schemas* excludes `private`.
 - `getSessionContext` runs three queries per call and is not cached per request.
 - The inquiry rate limiter is in-memory.
-- Scholar express-interest always fails under RLS (scholars cannot insert `inquiries`).
+- Scholar express-interest always fails under RLS (scholars cannot insert `inquiries`), so the applicant matrix has no real applicants.
+- Scholar draft revisions and submit are `sessionStorage`-only (`app/dashboard/profile/page.tsx`).
+- The AI matcher prepends fictional `SEED_CANDIDATES` in all environments (Prompt C).
+- Trust-column guards cover only `accounts`, `scholars`, `institutions`, and `inquiries`. Subscriptions, contracts, licensing, endorsements, and consortiums remain open (Prompt B, ADR 0023).
+- Hosted project: the admin self-grant was live before this deploy; existing rows have not been audited (Prompt D, awaiting a DB connection string).
 - Conference interviews (`lib/conferences`) are in-memory demo data. The ATS matrix shows seed candidates outside production.
 - The client `user-menu` reads `user_metadata.role` for display only.
-- `docs/adr/README.md` index lists only ADRs 0001–0008.
 
 ## 7. Follow-up
 1. Member invitations for existing institutions.
