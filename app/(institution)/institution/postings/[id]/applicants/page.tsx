@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { getPostingApplicantReport } from '@/lib/postings/applicant-service';
 import { PostingApplicantMatrix } from '@/components/institution/posting-applicant-matrix';
 
@@ -20,23 +21,8 @@ export default async function PostingApplicantsPage({
   const { id } = await params;
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let institutionId = 'e1000000-0000-0000-0000-000000000001'; // Default partner seminary
-
-  if (user) {
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('institution_id')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    if (instUser) {
-      institutionId = instUser.institution_id;
-    }
-  }
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  const { institutionId } = await requireInstitutionMember(supabase);
 
   const report = await getPostingApplicantReport(id, institutionId);
 

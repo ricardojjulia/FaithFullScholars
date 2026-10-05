@@ -1,7 +1,14 @@
 import { PublicNav } from '@/components/shell/public-nav';
 import { ScholarDashboardNav } from '@/components/scholar/scholar-dashboard-nav';
+import { requireSignedIn } from '@/lib/auth/guards';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  // UX redirect for signed-out visitors. Not a security boundary on its own:
+  // pages that load data must call a guard themselves (see lib/auth/guards.ts).
+  await requireSignedIn();
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       {/* Universal Top Application Bar */}

@@ -703,6 +703,8 @@ Acceptance:
 
 ### Phase 2: Authentication and Roles
 
+> **Status:** Largely implemented, with security corrections (ADR 0022, Council Review 12, 2026-10-05). Signup, login, logout, and recovery exist (`app/(auth)`, `app/auth`, `lib/auth/auth-actions.ts`). Roles are read from `public.accounts` only. Protected pages guard themselves (`lib/auth/guards.ts`) rather than relying on layouts. Institution self-signup creates only new pending institutions. Database-level trust-column guard triggers (fail closed) protect `accounts.role`, scholar and institution approval fields, and inquiry status; only the recipient scholar can reopen an accepted or declined inquiry. CI run `37360500352` (PR #47) verified this with real-role tests. **Still open:** inviting members to an existing institution (no invitation flow exists; signup now says so honestly), role-boundary tests through the real login flow (Playwright), and the same column/state-transition guards for `institution_subscriptions`, `institution_contracts`, `course_licensing_agreements`, `institution_endorsements`, and consortium tables (ADR 0023, follow-up PR).
+
 1. Implement signup, login, logout, and account recovery.
 2. Implement scholar, institution-user, and admin roles.
 3. Implement protected routes.
@@ -737,7 +739,7 @@ Acceptance:
 
 ### Phase 4: Scholar Dashboard (Completed)
 
-> **Status:** Completed (Assisted CV onboarding with heuristic parsing, revision staging manager preserving published profiles, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
+> **Status:** Partially complete (Council Review 12 correction: scholar draft edits and submit-for-review are held in `sessionStorage` only in `app/dashboard/profile/page.tsx`, so the revision staging UI does not persist drafts or create submissions; persistence is roadmap work). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
 
 1. Build profile editor.
 2. Build CV and publication manager.
@@ -771,7 +773,7 @@ Acceptance:
 
 ### Phase 6: Institution Workflows (Completed)
 
-> **Status:** Completed (Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
+> **Status:** Completed, with caveats (Council 12: rate limiting is in-memory and per instance; inquiry `contact_email` is client-supplied; `/institution` and `/dashboard` metrics and `/institution/saved` are partly hard-coded fixtures; scholar express-interest is covered under Phase 17). Built: Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
 
 1. Build institution profiles and membership.
 2. Build saved scholars and courses.
@@ -826,6 +828,8 @@ Acceptance:
 ### Phase 10: Tiered Institutional Subscriptions & Booking Contracts Workflow (Completed)
 
 > **Status:** Completed (Three-tier institutional membership in `public.institution_subscriptions` with automated quota meters at `/institution/subscription`, formal academic engagement contracts in `public.institution_contracts` and `public.contract_milestones` at `/institution/contracts` & `/dashboard/contracts`, 100% RLS coverage across 32 tables, and full verification: 158 vitest tests across 30 suites, 15 Playwright E2E browser tests, 0 Splinter findings, 16 deployment pre-flight checks).
+>
+> **Council Review 12 (2026-10-05):** Built, but not authorization-safe. Any institution member could set its own tier and limits (the upgrade route had no payment or owner check). An institution could accept a contract on the scholar's behalf, and a scholar could rewrite contract compensation. Fixed in ADR 0023 (trust guards phase 2); plan changes become staff-managed until billing exists.
 
 1. [x] Create `institution_subscriptions`, `institution_contracts`, and `contract_milestones` tables with 16 RLS policies, covering foreign key indexes (Splinter 0001), and pinned updated_at triggers (`supabase/migrations/20260922000000_institutional_subscriptions_and_contracts.sql`).
 2. [x] Implement `subscription-service.ts` for quota consumption, search committee seats, and tier upgrades (Basic, Verified Seminary, Premier Partner).
@@ -838,6 +842,8 @@ Acceptance:
 ### Phase 11: Seminary Consortia & Multi-Campus System Accounts (Completed)
 
 > **Status:** Completed (Collaborative dean workspace at `/institution/consortium`, consortia and multi-campus federation in `public.consortiums` and `public.consortium_members`, 100% RLS coverage with 7 policies, covering indexes, full REST APIs, universal navigation link, and complete verification: unit, integration, and Playwright tests).
+>
+> **Council Review 12 (2026-10-05):** "100% RLS coverage" meant policies exist, not that they are safe. A pending institution could found a consortium and list any institution as an *active* member without its consent. Fixed in ADR 0023 (approved founders only; invitations start pending).
 
 1. [x] Create `consortiums` and `consortium_members` tables with 7 RLS policies, foreign key covering indexes (Splinter 0001), and pinned updated_at triggers (`supabase/migrations/20260923140000_seminary_consortiums.sql`).
 2. [x] Implement `lib/consortium/consortium-service.ts` for atomic consortia creation, member invitations, and cross-campus candidate discovery.
@@ -850,6 +856,8 @@ Acceptance:
 ### Phase 12: Course Licensing, Syllabus Distribution Agreements & ATS/ABHE Accreditation Badges (Completed)
 
 > **Status:** Completed (Institutional licensing portal at `/institution/licensing`, scholar licensing dashboard at `/dashboard/licensing`, syllabus distribution requests in `public.course_licensing_agreements`, ATS/ABHE/TRACS/HLC accreditation badges, 100% RLS coverage across 35 tables, 123 policies, and full verification: 194 vitest tests across 41 suites, 36 Playwright E2E browser tests, 0 Splinter security findings, 21 deployment pre-flight checks).
+>
+> **Council Review 12 (2026-10-05):** Licensing policies allowed four abuses: forged counterparty signatures, `active` status without both signatures, terms swapped after signing, and licenses for courses the scholar doesn't offer. Fixed in ADR 0023.
 
 1. [x] Create `course_licensing_agreements` table with 6 RLS policies, covering indexes (Splinter 0001), and search-path-pinned updated_at triggers (`supabase/migrations/20260924000000_course_licensing_and_accreditation.sql`).
 2. [x] Extend `public.institutions` with `accreditation_body`, `accreditation_status`, and `accreditation_verified_at` attributes.
@@ -905,7 +913,7 @@ Acceptance:
 
 ### Phase 17: Confessional Common Application & Search Committee Applicant Matrix (Completed)
 
-> **Status:** Completed (ADR 0020: 1-click Common Application interest expression linking verified scholar dossiers to faculty search opportunities, search committee candidate matrix at `/institution/postings/[id]/applicants`, candidate triage status workflow, ATS Standard 3 terminal doctorate and confessional fit scoring, RFC-4180 CSV export, candidate dossier modal, shell/API security hardening, bilingual i18n parity; 251 unit/integration tests across 49 suites, 41 Playwright E2E tests, 35/35 tables RLS enforced, 6/6 Splinter checks passing, 22 deployment pre-flight checks).
+> **Status:** Built but not working end to end (Council Review 12 correction: `POST /api/postings/[id]/express-interest` always fails under RLS because scholars cannot insert `inquiries`, so the applicant matrix has no real applicants, and an application model is roadmap work. The "hardened API authorization" in this phase was rebuilt in ADR 0022; the earlier version accepted anonymous institution IDs outside production). Intended scope: 1-click Common Application interest expression linking verified scholar dossiers to faculty search opportunities, search committee candidate matrix at `/institution/postings/[id]/applicants`, candidate triage status workflow, ATS Standard 3 terminal doctorate and confessional fit scoring, RFC-4180 CSV export, candidate dossier modal, shell/API security hardening, bilingual i18n parity; 251 unit/integration tests across 49 suites, 41 Playwright E2E tests, 35/35 tables RLS enforced, 6/6 Splinter checks passing, 22 deployment pre-flight checks).
 
 1. [x] Implement `lib/postings/applicant-service.ts` compiling applicant reports, ATS Standard 3 doctorates, confessional fit, and CSV export.
 2. [x] Build search committee candidate matrix UI (`components/institution/posting-applicant-matrix.tsx`) with status filtering, CSV export, and print styles.
@@ -920,7 +928,7 @@ Acceptance:
 
 ### Phase 18: Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (Completed)
 
-> **Status:** Completed (ADR 0021: Search committee mobile convention suite at `/institution/conferences` for the November ETS/SBL/EPS annual meetings, candidate floor docket with 30-min interview booking, confidential committee deliberation rubrics scoring scholarship, pedagogy, and confessional alignment, scholar profile presentation badge `<ConferencePresentationBadge />` on `/scholars/[slug]`, accessible interview booking modal `<ConferenceInterviewModal />`, shell print-hiding, PublicNav active link detection, error sanitization, bilingual i18n parity, and comprehensive verification: 261 passing unit/integration tests across 50 suites, 43 Playwright E2E browser tests across 16 spec files, 35/35 tables RLS enforced, 6/6 Splinter security checks).
+> **Status:** UI built on in-memory demo data only (Council Review 12 correction: `lib/conferences` does not persist bookings or rubric scores; live loaders are roadmap work). Intended scope: ADR 0021: Search committee mobile convention suite at `/institution/conferences` for the November ETS/SBL/EPS annual meetings, candidate floor docket with 30-min interview booking, confidential committee deliberation rubrics scoring scholarship, pedagogy, and confessional alignment, scholar profile presentation badge `<ConferencePresentationBadge />` on `/scholars/[slug]`, accessible interview booking modal `<ConferenceInterviewModal />`, shell print-hiding, PublicNav active link detection, error sanitization, bilingual i18n parity, and comprehensive verification: 261 passing unit/integration tests across 50 suites, 43 Playwright E2E browser tests across 16 spec files, 35/35 tables RLS enforced, 6/6 Splinter security checks).
 
 1. [x] Model annual meetings (ETS 2026, SBL/AAR 2026, EPS 2026), paper presentations, session rooms, and interview appointments in `lib/conferences/conference-types.ts`.
 2. [x] Implement `lib/conferences/conference-service.ts` for conference attendees queries, convention interview booking, slot collision defense, and confidential committee deliberation scoring.

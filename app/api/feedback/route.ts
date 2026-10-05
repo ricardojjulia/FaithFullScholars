@@ -143,10 +143,8 @@ export async function POST(request: NextRequest) {
 
       if (user) {
         userEmail = user.email || null;
-        userRole =
-          user.app_metadata?.role ||
-          user.user_metadata?.role ||
-          'authenticated';
+        // Telemetry label only. Never read user_metadata: it is user-editable (ADR 0022).
+        userRole = user.app_metadata?.role || 'authenticated';
       }
     } catch {
       // Unauthenticated / anonymous visitor

@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getInstitutionConsortiums } from '@/lib/consortium/consortium-service';
@@ -20,6 +21,9 @@ export const metadata: Metadata = {
 };
 
 export default async function InstitutionConsortiumPage() {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireInstitutionMember();
+
   const supabase = await createClient();
   const {
     data: { user },

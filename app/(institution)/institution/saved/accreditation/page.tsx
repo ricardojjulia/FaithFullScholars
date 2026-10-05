@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { fetchATSAccreditationReport } from '@/lib/accreditation/ats-matrix-service';
 import { ATSComplianceMatrixTable } from '@/components/institution/ats-compliance-matrix-table';
 import { ATSComplianceReport } from '@/lib/accreditation/ats-matrix-generator';
@@ -12,27 +13,12 @@ export const metadata: Metadata = {
 
 export default async function AccreditationMatrixPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let targetInstitutionId = 'f2000000-0000-0000-0000-000000000001';
-
-  if (user) {
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('institution_id')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    if (instUser?.institution_id) {
-      targetInstitutionId = instUser.institution_id;
-    }
-  }
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  const { institutionId: targetInstitutionId } = await requireInstitutionMember(supabase);
 
   let report: ATSComplianceReport;
   try {
-    report = await fetchATSAccreditationReport(targetInstitutionId);
+    report = await fetchATSAccreditationReport(supabase, targetInstitutionId);
   } catch (err) {
     console.error('Failed to compile ATS matrix report:', err);
     report = {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getContractById } from '@/lib/contracts/contract-service';
@@ -15,6 +16,9 @@ export default async function ContractDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireInstitutionMember();
+
   const { id } = await params;
   const contract = await getContractById(id);
 

@@ -16,7 +16,7 @@ export function ShortlistButton({
   scholarId,
   scholarName,
   initialSaved = false,
-  institutionId = 'f2000000-0000-0000-0000-000000000001',
+  institutionId, // omitted → server uses the caller's own institution membership
   variant = 'button',
 }: ShortlistButtonProps) {
   const { t } = useTranslation();

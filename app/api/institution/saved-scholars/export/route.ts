@@ -1,42 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
 import { fetchShortlistDossier, generateShortlistCsv } from '@/lib/inquiries/export-dossier';
 
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { searchParams } = new URL(req.url);
 
-    let targetInstitutionId: string;
-
-    if (user) {
-      // Authenticated institutional caller: strictly enforce tenancy
-      const { data: instUser } = await supabase
-        .from('institution_users')
-        .select('institution_id')
-        .eq('account_id', user.id)
-        .maybeSingle();
-
-      if (!instUser) {
-        return NextResponse.json({ error: 'Institutional account required.' }, { status: 403 });
-      }
-      targetInstitutionId = instUser.institution_id;
-    } else {
-      // In dev/test/demo preview or when ENABLE_DEV_ROUTES is active
-      const isDevOrTest = process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEV_ROUTES === 'true';
-      if (!isDevOrTest) {
-        return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
-      }
-      const { searchParams } = new URL(req.url);
-      targetInstitutionId = searchParams.get('institutionId') || 'f2000000-0000-0000-0000-000000000001';
+    const access = resolveInstitutionAccess(
+      await getSessionContext(supabase),
+      searchParams.get('institutionId')
+    );
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
-    const { searchParams } = new URL(req.url);
     const format = searchParams.get('format') || 'csv';
-
-    const dossier = await fetchShortlistDossier(targetInstitutionId);
+    const dossier = await fetchShortlistDossier(supabase, access.institutionId);
 
     if (format === 'json') {
       return NextResponse.json({ dossier });
@@ -59,8 +40,7 @@ export async function GET(req: NextRequest) {
       }
     });
   } catch (err: unknown) {
-    console.error('Shortlist export failed:', err);
-    const message = process.env.NODE_ENV === 'production' ? 'Failed to export shortlist dossier' : (err instanceof Error ? err.message : 'Internal error');
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('GET /api/institution/saved-scholars/export failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

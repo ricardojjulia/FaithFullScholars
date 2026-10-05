@@ -24,6 +24,10 @@ import {
 } from '@/lib/notifications/email-service';
 import { RevisionSnapshotData } from '@/lib/domain/types';
 
+// Business-flow journeys run with the service role; RLS isolation is covered
+// as real users in tests/integration/rls-authenticated.test.ts.
+const admin = () => createAdminClient();
+
 const dbUrl =
   process.env.DATABASE_URL ||
   process.env.DB_URL ||
@@ -353,6 +357,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
   describe('Journey 4: Institutional Outreach & Shortlist Lifecycle', () => {
     it('allows approved institution to bookmark scholar on recruitment shortlist', async () => {
       const saveResult = await toggleSaveScholar(
+        admin(),
         testInstitutionId,
         testScholarId,
         'Top candidate for Fall 2027 Apologetics block modular intensive'
@@ -361,10 +366,10 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
       expect(saveResult.success).toBe(true);
       expect(saveResult.data?.saved).toBe(true);
 
-      const isSaved = await checkIsScholarSaved(testInstitutionId, testScholarId);
+      const isSaved = await checkIsScholarSaved(admin(), testInstitutionId, testScholarId);
       expect(isSaved).toBe(true);
 
-      const savedList = await fetchSavedScholars(testInstitutionId);
+      const savedList = await fetchSavedScholars(admin(), testInstitutionId);
       expect(savedList.some((s) => s.scholar_id === testScholarId)).toBe(true);
     });
 
@@ -372,6 +377,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
       clearDispatchedNotifications();
 
       const inquiryResult = await sendInquiry(
+        admin(),
         {
           institution_id: testInstitutionId,
           scholar_id: testScholarId,
@@ -403,7 +409,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
       clearDispatchedNotifications();
 
       // Scholar inspects inbox
-      const inbox = await fetchScholarInquiries(testScholarId);
+      const inbox = await fetchScholarInquiries(admin(), testScholarId);
       const target = inbox.find((i) => i.id === createdInquiryId);
       expect(target).toBeDefined();
       expect(target?.status).toBe('pending');
@@ -411,9 +417,11 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
 
       // Scholar accepts inquiry
       const acceptResult = await respondToInquiry(
+        admin(),
         createdInquiryId,
         'accepted',
-        'I would be honored to accept. Fall 2027 block format suits my research sabbatical schedule.'
+        'I would be honored to accept. Fall 2027 block format suits my research sabbatical schedule.',
+        testScholarId
       );
       expect(acceptResult.success).toBe(true);
 
@@ -425,7 +433,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
       expect(responseEmail?.subject).toContain('Accepted');
 
       // Verify institution outbox reflects accepted status
-      const outbox = await fetchInstitutionInquiries(testInstitutionId);
+      const outbox = await fetchInstitutionInquiries(admin(), testInstitutionId);
       const outboxItem = outbox.find((i) => i.id === createdInquiryId);
       expect(outboxItem?.status).toBe('accepted');
     });

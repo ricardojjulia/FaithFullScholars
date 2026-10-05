@@ -1,8 +1,15 @@
 import React from 'react';
 import { PublicNav } from '@/components/shell/public-nav';
 import { InstitutionNav } from '@/components/institution/institution-nav';
+import { requireInstitutionMember } from '@/lib/auth/guards';
 
-export default function InstitutionLayout({ children }: { children: React.ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function InstitutionLayout({ children }: { children: React.ReactNode }) {
+  // UX redirect for signed-out visitors. Not a security boundary on its own:
+  // pages that load data must call a guard themselves (see lib/auth/guards.ts).
+  await requireInstitutionMember();
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
       <div className="print:hidden">

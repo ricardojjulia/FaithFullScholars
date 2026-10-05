@@ -51,15 +51,23 @@ export interface PostingApplicantReport {
 
 /**
  * Compiles a comprehensive applicant comparison report for a faculty opening.
+ *
+ * Reads with the service role, so `institutionId` is REQUIRED and must come from
+ * the caller's verified membership (requireInstitutionMember): it is the only
+ * thing scoping the report to the posting's owner.
  */
 export async function getPostingApplicantReport(
   postingId: string,
-  institutionId?: string
+  institutionId: string
 ): Promise<PostingApplicantReport | null> {
+  if (!institutionId) {
+    return null;
+  }
+
   const adminDb = createAdminClient();
 
   // 1. Fetch posting
-  let postingQuery = adminDb
+  const postingQuery = adminDb
     .from('institution_postings')
     .select(`
       id,
@@ -72,11 +80,8 @@ export async function getPostingApplicantReport(
       confessional_requirements,
       traditions(name)
     `)
-    .eq('id', postingId);
-
-  if (institutionId) {
-    postingQuery = postingQuery.eq('institution_id', institutionId);
-  }
+    .eq('id', postingId)
+    .eq('institution_id', institutionId);
 
   const { data: posting, error: postingError } = await postingQuery.maybeSingle();
 
@@ -222,31 +227,6 @@ export async function getPostingApplicantReport(
     fullConfessionalMatchCount,
     applicants,
   };
-}
-
-/**
- * Updates applicant review status.
- */
-export async function updateApplicantReviewStatus(
-  inquiryId: string,
-  newStatus: InquiryStatus
-): Promise<{ success: boolean; error?: string }> {
-  const adminDb = createAdminClient();
-
-  const { error } = await adminDb
-    .from('inquiries')
-    .update({
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', inquiryId);
-
-  if (error) {
-    console.error('Error updating applicant review status:', error);
-    return { success: false, error: 'Failed to update applicant review status.' };
-  }
-
-  return { success: true };
 }
 
 /**

@@ -34,9 +34,10 @@ describe('fetchATSAccreditationReport (Service)', () => {
       .spyOn(exportDossierModule, 'fetchShortlistDossier')
       .mockResolvedValue(mockDossier);
 
-    const report = await fetchATSAccreditationReport('inst-test-123');
+    const fakeClient = {} as Parameters<typeof fetchATSAccreditationReport>[0];
+    const report = await fetchATSAccreditationReport(fakeClient, 'inst-test-123');
 
-    expect(spy).toHaveBeenCalledWith('inst-test-123');
+    expect(spy).toHaveBeenCalledWith(fakeClient, 'inst-test-123');
     expect(report.institution_id).toBe('inst-test-123');
     expect(report.institution_name).toBe('Geneva Reformed Seminary');
     expect(report.summary.total_faculty).toBe(1);

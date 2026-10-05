@@ -1,47 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
 import { sendInquiry } from '@/lib/inquiries/actions';
 import { fetchScholarInquiries, fetchInstitutionInquiries } from '@/lib/inquiries/queries';
+import type { InquiryStatus } from '@/lib/domain/types';
 
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required. Only verified institutional accounts may dispatch inquiries.' },
-        { status: 401 }
-      );
-    }
-
-    // Verify authenticated institution membership and approved status
-    const { data: instUser } = await supabase
-      .from('institution_users')
-      .select('institution_id, institutions(id, status)')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    const institution = (instUser?.institutions as unknown) as { id: string; status: string } | null;
-    if (!instUser || !institution || institution.status !== 'approved') {
-      return NextResponse.json(
-        { error: 'Only authorized members of approved institutions may dispatch inquiries.' },
-        { status: 403 }
-      );
-    }
-
+    const session = await getSessionContext(supabase);
     const body = await req.json();
 
-    // Enforce verified institution_id and senderAccountId from authenticated session
+    const access = resolveInstitutionAccess(session, body?.institution_id);
+    if (!access.ok) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
     const result = await sendInquiry(
-      {
-        ...body,
-        institution_id: instUser.institution_id,
-      },
-      user.id
+      supabase,
+      { ...body, institution_id: access.institutionId },
+      session!.userId
     );
 
     if (!result.success) {
@@ -54,63 +32,42 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, inquiryId: result.data?.inquiryId });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('POST /api/inquiries failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    const session = await getSessionContext(supabase);
+    if (!session) {
+      return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const scholarId = searchParams.get('scholarId');
     const institutionId = searchParams.get('institutionId');
-    const status = searchParams.get('status') as 'pending' | 'read' | 'accepted' | 'declined' | 'archived' | null;
-
-    if (scholarId) {
-      const { data: scholar } = await supabase
-        .from('scholars')
-        .select('id')
-        .eq('account_id', user.id)
-        .eq('id', scholarId)
-        .maybeSingle();
-
-      if (!scholar) {
-        return NextResponse.json({ error: 'Unauthorized to view these inquiries' }, { status: 403 });
-      }
-
-      const inquiries = await fetchScholarInquiries(scholarId, status || 'all');
-      return NextResponse.json({ inquiries });
-    }
+    const status = (searchParams.get('status') as InquiryStatus | null) || 'all';
 
     if (institutionId) {
-      const { data: instUser } = await supabase
-        .from('institution_users')
-        .select('institution_id')
-        .eq('account_id', user.id)
-        .eq('institution_id', institutionId)
-        .maybeSingle();
-
-      if (!instUser) {
-        return NextResponse.json({ error: 'Unauthorized to view these inquiries' }, { status: 403 });
+      const access = resolveInstitutionAccess(session, institutionId);
+      if (!access.ok) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
       }
-
-      const inquiries = await fetchInstitutionInquiries(institutionId, status || 'all');
+      const inquiries = await fetchInstitutionInquiries(supabase, access.institutionId, status);
       return NextResponse.json({ inquiries });
     }
 
-    return NextResponse.json({ error: 'scholarId or institutionId parameter required' }, { status: 400 });
+    // Scholar inbox: only the caller's own inbox, regardless of any requested id.
+    if (!session.scholarId || (scholarId && scholarId !== session.scholarId)) {
+      return NextResponse.json({ error: 'You can only view your own inquiries.' }, { status: 403 });
+    }
+
+    const inquiries = await fetchScholarInquiries(supabase, session.scholarId, status);
+    return NextResponse.json({ inquiries });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('GET /api/inquiries failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

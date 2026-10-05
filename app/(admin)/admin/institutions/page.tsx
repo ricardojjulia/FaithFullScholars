@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireStaffPage } from '@/lib/auth/guards';
 import { fetchPendingInstitutions } from '@/lib/admin/queries';
 import { Building2, Globe, Mail, MapPin } from 'lucide-react';
 import { InstitutionActionButtons } from './institution-action-buttons';
@@ -6,6 +7,9 @@ import { InstitutionActionButtons } from './institution-action-buttons';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminInstitutionsPage() {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireStaffPage();
+
   const institutions = await fetchPendingInstitutions();
 
   return (

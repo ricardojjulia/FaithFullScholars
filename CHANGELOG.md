@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **Authorization lockdown (ADR 0022)**:
+  - **Institution signup takeover closed.** `signupInstitution` matched institutions by name with the service role and linked the new account using the free-text "role title" as its membership role. Anyone could register as `owner` of an existing approved institution. Self-signup now only creates a new *pending* institution owned by the registrant, and refuses an existing institution name before creating a login. New-institution signup also no longer fails on non-existent columns (`type` → `institution_type`; adds required `contact_email`).
+  - **Page-level guards.** `/admin/reviews`, `/admin/reviews/[id]`, `/admin/reports`, and `/admin/institutions` loaded service-role data relying only on the admin layout. Per the Next.js docs, a layout does not stop a page from rendering or reaching the RSC payload. These pages, plus the institution postings, applicants, endorsements, and accreditation pages, now call guards from `lib/auth/guards.ts` before fetching.
+  - **No anonymous "demo" tenancy.** In non-production, or with `ENABLE_DEV_ROUTES=true`, shortlist, saved-course, and export routes had accepted an anonymous caller's `institutionId` (or a seed default). Institution pages had defaulted to a seed institution, which exposed `/institution/postings/[id]/applicants`. All of this now requires a signed-in member, and identity comes only from the session (`lib/auth/session.ts`).
+  - **Admin role from `public.accounts` only.** `verifyStaffUser` and `/dev/status` no longer honour self-editable `user_metadata.role`. The `NODE_ENV` / `ENABLE_DEV_ROUTES` authorization bypasses are removed from admin routes and pages, and from `PATCH /api/inquiries/[id]`.
+  - **RLS-scoped clients on request paths.** Inquiry, shortlist, and export logic, the ATS accreditation report, and the AI faculty matcher read through the caller's client instead of the service role. Only the recipient scholar may accept or decline an inquiry.
+- **Self-grantable trust columns closed (migration `20261005090000_protect_trust_columns.sql`).** Found in the `pr-review` gate. Through PostgREST, any signed-in user could:
+  - set their own `accounts.role = 'admin'`;
+  - approve, verify, or publish their own scholar profile;
+  - approve their own institution or set its accreditation;
+  - as an institution, accept an inquiry or rewrite its content;
+  - insert inquiries from an unapproved institution.
+
+  Triggers now protect these columns for non-admin `anon` and `authenticated` callers, following the existing `prevent_scholar_tier_escalation` pattern. The inquiry INSERT policy requires an approved institution and an approved scholar. The admin self-grant predates this release.
+- **Council Review 12 fixes (Prompt A).**
+  - The trust-column guards now fail closed. A session that switches to `anon`/`authenticated` without JWT claims is still restricted. The guard triggers run as `SECURITY INVOKER`, so they see the caller's role.
+  - Only the recipient scholar can reopen an accepted or declined inquiry.
+  - `accreditation_body` is now guarded on institution insert.
+  - **Open redirect fixed** in `/auth/callback`: `next` must be a same-origin relative path (`lib/auth/redirect.ts`).
+  - Institution signup no longer promises an invitation flow that does not exist.
+- **Verification (PR #47, CI run `37360500352`):** green, 55/55 test files, both migrations applied, `audit:rls` and `audit:security` pass. Probes confirmed the tests fail without each migration (recursion error without `20261004120000`; 5/5 escalation tests without `20261005090000`). `audit:rls` and `audit:security` still passed on those vulnerable databases, so they check policy existence, not behaviour. Follow-ups: trust guards phase 2 and a policy-matrix gate (ADR 0023), then hygiene.
+- **Remaining data-loading pages guarded:** institution contracts, contract detail, subscription, consortium, and licensing; scholar contracts and licensing. `getPostingApplicantReport` now requires an institution scope, and the unused, unscoped `updateApplicantReviewStatus` (a service-role write) is removed.
+- **Corrective migration `20261004120000_fix_rls_helper_recursion.sql`.** It completes the recursion fix begun in `20260921110000`. `is_admin()` and `get_current_scholar_id()` still recursed through the policies of the tables they read, and the `FOR ALL` `institution_users` policy still referenced its own table. Owner-privileged helpers now live in a non-exposed `private` schema behind unchanged `public` wrappers. No table, column, or row changes.
+
+### Fixed
+- **Scholar signup never created a profile.** It wrote non-existent `scholars` columns (`preferred_title`, `primary_institution`), ignored the error, and reported success. It now writes `title` and `current_institution`.
+- **Both signup flows now check every write.** A failure rolls back the half-created login, so there are no orphaned logins and no false success. They insert `accounts` rather than upserting, so an existing role is never rewritten, and they reject institution names that produce an empty slug.
+- **ATS accreditation matrix:** fabricated seed candidates are now shown only under local `next dev`. Previously this also happened with `ENABLE_DEV_ROUTES=true`, including in production.
+- **Feedback telemetry** no longer records the user-editable `user_metadata.role`.
+
+### Added
+- `lib/auth/session.ts` (`getSessionContext`, `resolveInstitutionAccess`) and `lib/auth/guards.ts` (`requireStaffPage`, `requireInstitutionMember`, `requireSignedIn`).
+- `tests/unit/authorization-lockdown.test.ts` (21), `tests/unit/page-guards.test.ts` (6), and `tests/unit/institution-signup.test.ts` (6, covering institution and scholar signup). Each was confirmed to fail against the previous code.
+- `tests/unit/auth-callback-redirect.test.ts` (9).
+- `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`. It also attempts each self-grant escalation (admin role, scholar approval, institution approval and accreditation, inquiry accept and rewrite, pending-institution insert) and confirms the legitimate edits still succeed. Council Review 12 added: admin positive paths, a service-role bypass check, fail-closed without claims, `accounts` insert with role `admin`, inquiry to an unapproved scholar, and reopening a declined inquiry.
+
 ### Verified
 - **Full System Health & Operational Audit Baseline (October 2, 2026)**:
   - Verified 100% test pass rate across 50 Vitest suites (261 tests) and 43 Playwright E2E browser tests (16 test files across all personas).

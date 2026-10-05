@@ -7,6 +7,7 @@
  * ==============================================================================
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { fetchShortlistDossier, ShortlistDossierCandidate } from '@/lib/inquiries/export-dossier';
 import {
   generateAccreditationMatrix,
@@ -14,9 +15,11 @@ import {
 } from './ats-matrix-generator';
 
 export async function fetchATSAccreditationReport(
+  supabase: SupabaseClient,
   institutionId: string
 ): Promise<ATSComplianceReport> {
-  const dossier = await fetchShortlistDossier(institutionId);
+  // `supabase` is the caller's RLS-scoped client: only that institution's members can read its shortlist.
+  const dossier = await fetchShortlistDossier(supabase, institutionId);
 
   // If live database returned saved candidates, generate matrix from live data
   if (dossier.candidates.length > 0) {
@@ -29,7 +32,8 @@ export async function fetchATSAccreditationReport(
 
   // In test / dev environments when no shortlist rows exist in the local DB,
   // provide deterministic seed candidates matching the saved shortlist preview
-  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEV_ROUTES === 'true') {
+  // Local `next dev` only: never serve fabricated candidates in a deployed environment.
+  if (process.env.NODE_ENV === 'development') {
     const seedCandidates: ShortlistDossierCandidate[] = [
       {
         id: 'seed-save-1',
