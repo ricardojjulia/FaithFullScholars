@@ -16,6 +16,10 @@
 --                                 consortia and list any institution as an
 --                                 active member without its consent
 --
+-- Party flags are COALESCEd to false: `scholar_id = get_current_scholar_id()` is
+-- NULL (not false) for non-scholars, and NOT NULL would silently skip a refusal
+-- (caught by the policy-matrix gate on its first run).
+--
 -- Restrictions apply only to callers private.is_restricted_caller() reports as
 -- restricted (non-admin anon/authenticated, fail-closed). Service role and
 -- server-side admin actions are unaffected. No tables, columns, or rows change.
@@ -158,8 +162,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  is_inst := private.is_institution_user(NEW.institution_id);
-  is_scholar := NEW.scholar_id = private.get_current_scholar_id();
+  is_inst := COALESCE(private.is_institution_user(NEW.institution_id), false);
+  is_scholar := COALESCE(NEW.scholar_id = private.get_current_scholar_id(), false);
 
   IF TG_OP = 'INSERT' THEN
     IF NOT is_inst OR NOT private.is_approved_institution(NEW.institution_id) THEN
@@ -243,8 +247,8 @@ BEGIN
 
   SELECT * INTO parent FROM private.contract_parties(NEW.contract_id);
 
-  is_inst := private.is_institution_user(parent.institution_id);
-  is_scholar := parent.scholar_id = private.get_current_scholar_id();
+  is_inst := COALESCE(private.is_institution_user(parent.institution_id), false);
+  is_scholar := COALESCE(parent.scholar_id = private.get_current_scholar_id(), false);
 
   IF TG_OP = 'INSERT' THEN
     IF NOT is_inst OR parent.status NOT IN ('draft', 'offered')
@@ -309,8 +313,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  is_inst := private.is_institution_user(NEW.institution_id);
-  is_scholar := NEW.scholar_id = private.get_current_scholar_id();
+  is_inst := COALESCE(private.is_institution_user(NEW.institution_id), false);
+  is_scholar := COALESCE(NEW.scholar_id = private.get_current_scholar_id(), false);
 
   IF TG_OP = 'INSERT' THEN
     IF NOT is_inst OR NOT private.is_approved_institution(NEW.institution_id) THEN
