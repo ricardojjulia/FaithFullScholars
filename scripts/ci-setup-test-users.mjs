@@ -9,7 +9,8 @@
  *   admin        accounts.role = 'admin'
  *   scholar      accounts.role = 'scholar' + a draft scholar profile
  *   institution  accounts.role = 'institution_user' + owner of the approved
- *                seed institution (Westminster, e1000000-…0001)
+ *                seed institution (Westminster, e1000000-…0001) with a
+ *                two-scholar shortlist
  *
  * Refuses to run against anything but a local stack.
  */
@@ -78,6 +79,18 @@ for (const [name, persona] of Object.entries(PERSONAS)) {
       admin.from('institution_users').upsert(
         { institution_id: APPROVED_INSTITUTION, account_id: id, role: 'owner' },
         { onConflict: 'account_id,institution_id' }
+      )
+    );
+    // A real shortlist (approved seed scholars), so shortlist, export and the
+    // ATS accreditation matrix exercise live data rather than demo fixtures.
+    await must(
+      'institution shortlist',
+      admin.from('saved_scholars').upsert(
+        [
+          { institution_id: APPROVED_INSTITUTION, scholar_id: 'f1000000-0000-0000-0000-000000000001', notes: 'E2E shortlist' },
+          { institution_id: APPROVED_INSTITUTION, scholar_id: 'f1000000-0000-0000-0000-000000000002', notes: 'E2E shortlist' },
+        ],
+        { onConflict: 'institution_id,scholar_id' }
       )
     );
   }
