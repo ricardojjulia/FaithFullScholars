@@ -22,7 +22,7 @@ Always check:
 - Docs and changelog are updated for meaningful changes.
 - Existing patterns and ADRs are respected.
 - `npm run lint`, `npm run test`, `npm run audit:rls`, and `npm run build` status is reported.
-- Identity and privilege (ADR 0022): no service-role client on a request path; no client-supplied tenant/scholar id used for authorization; no `user_metadata` role checks; no environment-variable auth bypass; every server page that loads protected data calls a guard from `lib/auth/guards.ts` itself (layouts do not stop pages rendering).
+- Identity and privilege (ADR 0022): no service-role client on a request path (exceptions: staff-only modules reached only after `verifyStaffUser`/`requireStaffPage`, and server-only reads whose result is never returned to the caller); no client-supplied tenant/scholar id used for authorization; no `user_metadata` role checks; no environment-variable auth bypass; every server page that loads protected data calls a guard from `lib/auth/guards.ts` itself (layouts do not stop pages rendering).
 - Trust signals (verified badges, endorsements, approvals, membership roles) cannot be self-granted or set from client input; users are never told something succeeded when it did not (`docs/factory/review-personas.md`).
 - New or changed RLS policies are exercised by a test running as a real `anon`/`authenticated` role, not only by catalog checks.
 

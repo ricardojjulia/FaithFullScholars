@@ -12,7 +12,7 @@ This protocol governs the automated, daily 1:00 PM development cycle for FaithFu
 1. **Triage & Closeout:** Identify any unfinished tasks, open PRs, or unmerged feature branches from the previous run, validate them, complete them, and close them out cleanly.
 2. **Roadmap Traversal:** If the workspace is clean (or once cleaned), consult the master plan ([`docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`](file:///Users/rjulia/programs/FaithFullScholars/docs/FAITHFULL_SCHOLARS_FULL_PLAN.md)) to identify the next sequential phase/milestone.
 3. **Execution & Test Engineering:** Implement the next slice on a dedicated feature branch, writing comprehensive test suites and enforcing PostgreSQL Row Level Security (RLS) and multi-tenant isolation.
-4. **Software Factory Protocol:** Execute the mandatory Council review (4 read-only audit agents + synthesis), Documenter closeout, and pre-merge `pr-review` gate.
+4. **Software Factory Protocol:** Execute the mandatory Council review (read-only audit Agents 1–5 and 7 + synthesis), Documenter closeout, and pre-merge `pr-review` gate.
 5. **Report Generation:** Publish a committed, timestamped run report in `docs/reviews/run-reports/`.
 
 ---

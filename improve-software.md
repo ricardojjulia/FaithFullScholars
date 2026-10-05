@@ -10,9 +10,9 @@ This protocol defines the repeatable cycle of auditing code (the read-only audit
 
 The Council is seven agents:
 - **Agents 1–4:** read-only baseline audit — data/API, routes/pages, UX/shell, feature/competitive.
-- **Agent 7 — Stakeholder & Trust Lens:** read-only. Reviews the change through the six domain lenses in [`docs/factory/review-personas.md`](docs/factory/review-personas.md): scholar advocate, search committee, trust and moderation, theological integrity, privacy and data protection, and adversary. Numbered 7 so historic seat numbers (Agent 5 Wildcard, Agent 6 Documenter) stay stable in past review records. Runs in parallel with Agents 1–5.
 - **Agent 5 — The Wildcard (Innovation & Improvement Catalyst):** read-only lateral thinker. Operates either as a random callout to think outside the box and challenge orthodoxies, or via direct invitation to propose high-impact software improvements that get fed into the Council synthesis for consideration and approval.
 - **Agent 6 — Documenter:** write role. Runs after synthesis and after factory execution verifies cleanly. Updates the planning doc, `CHANGELOG.md`, README/docs, finalizes ADRs, commits the Council's own output, and writes memory/handoff notes.
+- **Agent 7 — Stakeholder & Trust Lens:** read-only. Reviews the change through the six domain lenses in [`docs/factory/review-personas.md`](docs/factory/review-personas.md): scholar advocate, search committee, trust and moderation, theological integrity, privacy and data protection, and adversary. Numbered 7 so historic seat numbers (Agent 5 Wildcard, Agent 6 Documenter) stay stable in past review records. Runs in parallel with Agents 1–5.
 
 Do not let audits run and stop at "findings noted" with no Documenter step — that is how planning docs and changelogs silently drift out of sync with what actually shipped.
 
@@ -24,7 +24,7 @@ Do not let audits run and stop at "findings noted" with no Documenter step — t
 graph TD
     A[Trigger council review] --> B[Run Agents 1-4 Baseline Audits]
     A --> W[Spawn Agent 5 Wildcard: Innovation & Lateral Thinking]
-    A --> T[Run Agent 7 Stakeholder & Trust Lens]
+    A --> T[Spawn Agent 7 Stakeholder & Trust Lens]
     B --> C[Synthesize Consensus, Findings & Wildcard Proposals]
     W --> C
     T --> C
@@ -67,10 +67,10 @@ Produce a structured report covering:
 5. Seed/fixture data — check `supabase/seed.sql`. Are theological disciplines, traditions, confessional standards, sample scholars, courses, and inquiries realistic? What's missing (edge cases, pending revisions, exception notes)?
 6. Top 5 critical gaps for data/API security and completeness — specifically verify RLS policies, multi-tenant isolation, and draft vs. published profile separation (ADR 0005).
 7. RLS as real callers — "RLS enabled + policy exists" is not evidence that a policy works. For every new or changed policy, cite the test that exercises it as a real `anon` / `authenticated` role (pattern: `tests/integration/rls-authenticated.test.ts`), including rows where the policy's `OR` does not short-circuit. Flag `SECURITY INVOKER` helpers that read RLS-protected tables whose policies call them back (recursion), and `SECURITY DEFINER` functions in API-exposed schemas.
-8. Identity & privilege paths — flag any service-role (`createAdminClient`) use on a request path, any client-supplied tenant/scholar id used for authorization, any `user_metadata` role check, any environment-variable auth bypass, and any page that loads protected data relying only on its layout for authorization (Next.js layouts do not stop pages rendering — ADR 0022).
+8. Identity & privilege paths — flag any service-role (`createAdminClient`) use on a request path (exception: staff-only modules such as `lib/admin/*` reached only after `verifyStaffUser` / `requireStaffPage`, and server-only reads whose result is never returned to the caller — state which exception applies), any client-supplied tenant/scholar id used for authorization, any `user_metadata` role check, any environment-variable auth bypass, and any page that loads protected data relying only on its layout for authorization (Next.js layouts do not stop pages rendering — ADR 0022).
 9. Migrations — for each new migration: backward compatible with the running app? Rollback path stated? Idempotent where re-run is possible?
 
-Every finding cites file:line or command output; "no gap" must state what was checked. Return concise structured markdown, 600–800 words. Name every gap specifically.
+Every finding cites file:line or command output; "no gap" must state what was checked; an item that does not apply to the change (e.g. no migrations) gets one line saying "not applicable" and why. Return concise structured markdown, 600–800 words. Name every gap specifically.
 ```
 
 ### Agent 2 — Route & Page Audit
