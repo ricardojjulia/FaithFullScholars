@@ -32,7 +32,8 @@ export async function fetchATSAccreditationReport(
 
   // In test / dev environments when no shortlist rows exist in the local DB,
   // provide deterministic seed candidates matching the saved shortlist preview
-  if (process.env.NODE_ENV !== 'production' || process.env.ENABLE_DEV_ROUTES === 'true') {
+  // Local `next dev` only: never serve fabricated candidates in a deployed environment.
+  if (process.env.NODE_ENV === 'development') {
     const seedCandidates: ShortlistDossierCandidate[] = [
       {
         id: 'seed-save-1',

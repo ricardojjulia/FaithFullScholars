@@ -187,4 +187,136 @@ describe('RLS enforced for real anon / authenticated callers', () => {
       expect(res.rows[0].admin).toBe(true);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Self-granted trust signals (20261005090000_protect_trust_columns.sql)
+  // ---------------------------------------------------------------------------
+  const PENDING_INST = 'e1000000-0000-0000-0000-0000000000fe';
+
+  it('a signed-in user cannot make themselves admin by updating accounts.role', async () => {
+    await inTransaction(async () => {}, { role: 'authenticated', sub: SCHOLAR_A_ACCOUNT }, async () => {
+      await expect(
+        client.query(`UPDATE public.accounts SET role = 'admin' WHERE id = $1`, [SCHOLAR_A_ACCOUNT])
+      ).rejects.toThrow(/Unauthorized/);
+    });
+  });
+
+  it('a scholar cannot approve, verify, or publish their own profile — but can edit their biography', async () => {
+    const resetToDraft = async () => {
+      // Seed scholar A is approved & published; start from an unverified draft so each attempt is a real change.
+      await client.query(
+        `UPDATE public.scholars SET profile_status = 'draft', verification_status = 'unverified' WHERE id = $1`,
+        [scholarA]
+      );
+    };
+    await inTransaction(resetToDraft, { role: 'authenticated', sub: SCHOLAR_A_ACCOUNT }, async () => {
+      for (const assignment of [
+        `profile_status = 'approved'`,
+        `verification_status = 'verified'`,
+        `published_revision_id = NULL`,
+      ]) {
+        await client.query('SAVEPOINT attempt');
+        await expect(
+          client.query(`UPDATE public.scholars SET ${assignment} WHERE id = $1`, [scholarA])
+        ).rejects.toThrow(/Unauthorized/);
+        await client.query('ROLLBACK TO SAVEPOINT attempt');
+      }
+      const ok = await client.query(
+        `UPDATE public.scholars SET biography = 'Updated by the scholar' WHERE id = $1`,
+        [scholarA]
+      );
+      expect(ok.rowCount).toBe(1);
+    });
+  });
+
+  it('an institution member cannot approve its own institution or set accreditation', async () => {
+    await inTransaction(
+      async () => {
+        await client.query(
+          `INSERT INTO public.institutions (id, name, slug, institution_type, status, contact_email)
+           VALUES ($1, 'Pending Probe Seminary', 'pending-probe-seminary', 'seminary', 'pending', 'probe@pending.edu')`,
+          [PENDING_INST]
+        );
+        await client.query(
+          `INSERT INTO public.institution_users (institution_id, account_id, role) VALUES ($1, $2, 'owner')`,
+          [PENDING_INST, INST_USER_ACCOUNT]
+        );
+      },
+      { role: 'authenticated', sub: INST_USER_ACCOUNT },
+      async () => {
+        for (const assignment of [`status = 'approved'`, `accreditation_status = 'accredited'`]) {
+          await client.query('SAVEPOINT attempt');
+          await expect(
+            client.query(`UPDATE public.institutions SET ${assignment} WHERE id = $1`, [PENDING_INST])
+          ).rejects.toThrow(/Unauthorized/);
+          await client.query('ROLLBACK TO SAVEPOINT attempt');
+        }
+        const ok = await client.query(
+          `UPDATE public.institutions SET website = 'https://pending.example.edu' WHERE id = $1`,
+          [PENDING_INST]
+        );
+        expect(ok.rowCount).toBe(1);
+      }
+    );
+  });
+
+  it('a member of a pending institution cannot insert inquiries directly', async () => {
+    await inTransaction(
+      async () => {
+        await client.query(
+          `INSERT INTO public.institutions (id, name, slug, institution_type, status, contact_email)
+           VALUES ($1, 'Pending Probe Seminary', 'pending-probe-seminary', 'seminary', 'pending', 'probe@pending.edu')`,
+          [PENDING_INST]
+        );
+        await client.query(
+          `INSERT INTO public.institution_users (institution_id, account_id, role) VALUES ($1, $2, 'owner')`,
+          [PENDING_INST, INST_USER_ACCOUNT]
+        );
+      },
+      { role: 'authenticated', sub: INST_USER_ACCOUNT },
+      async () => {
+        await expect(
+          client.query(
+            `INSERT INTO public.inquiries (institution_id, scholar_id, sender_account_id, opportunity_type, message, contact_email)
+             VALUES ($1, $2, $3, 'adjunct_teaching', 'Inquiry from an unapproved institution.', 'probe@pending.edu')`,
+            [PENDING_INST, scholarA, INST_USER_ACCOUNT]
+          )
+        ).rejects.toThrow(/row-level security/);
+      }
+    );
+  });
+
+  it('an institution cannot accept its own inquiry; the recipient scholar can', async () => {
+    let inquiryId = '';
+    const setup = async () => {
+      await seedInquiry(scholarA);
+      const res = await client.query(
+        `SELECT id FROM public.inquiries WHERE scholar_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [scholarA]
+      );
+      inquiryId = res.rows[0].id;
+    };
+
+    await inTransaction(setup, { role: 'authenticated', sub: INST_USER_ACCOUNT }, async () => {
+      await client.query('SAVEPOINT attempt');
+      await expect(
+        client.query(`UPDATE public.inquiries SET status = 'accepted' WHERE id = $1`, [inquiryId])
+      ).rejects.toThrow(/Unauthorized/);
+      await client.query('ROLLBACK TO SAVEPOINT attempt');
+
+      await client.query('SAVEPOINT attempt2');
+      await expect(
+        client.query(`UPDATE public.inquiries SET message = 'Rewritten after sending.' WHERE id = $1`, [inquiryId])
+      ).rejects.toThrow(/Unauthorized/);
+      await client.query('ROLLBACK TO SAVEPOINT attempt2');
+
+      const archived = await client.query(`UPDATE public.inquiries SET status = 'archived' WHERE id = $1`, [inquiryId]);
+      expect(archived.rowCount).toBe(1);
+    });
+
+    await inTransaction(setup, { role: 'authenticated', sub: SCHOLAR_A_ACCOUNT }, async () => {
+      const accepted = await client.query(`UPDATE public.inquiries SET status = 'accepted' WHERE id = $1`, [inquiryId]);
+      expect(accepted.rowCount).toBe(1);
+    });
+  });
 });

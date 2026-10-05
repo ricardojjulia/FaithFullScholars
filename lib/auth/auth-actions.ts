@@ -9,6 +9,31 @@ import {
 } from './types';
 import { redirect } from 'next/navigation';
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+}
+
+/**
+ * Removes a half-created signup so a failed registration never leaves an orphaned
+ * login (which would block a retry with "email already registered") or tell the
+ * user it succeeded. Rows referencing the auth user cascade on delete.
+ */
+async function rollBackSignup(
+  adminDb: ReturnType<typeof createAdminClient>,
+  userId: string,
+  institutionId?: string
+): Promise<void> {
+  if (institutionId) {
+    const { error } = await adminDb.from('institutions').delete().eq('id', institutionId);
+    if (error) console.error('Signup rollback: failed to remove institution:', error);
+  }
+  const { error } = await adminDb.auth.admin.deleteUser(userId);
+  if (error) console.error('Signup rollback: failed to remove auth user:', error);
+}
+
 export async function loginWithPassword(formData: FormData): Promise<AuthActionResult> {
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
@@ -93,27 +118,36 @@ export async function signupScholar(input: ScholarSignupInput): Promise<AuthActi
   const userId = authData.user.id;
   const adminDb = createAdminClient();
 
-  // Upsert account record
-  await adminDb.from('accounts').upsert({
+  // Insert (never upsert): an existing accounts row must not have its role rewritten.
+  const { error: accountError } = await adminDb.from('accounts').insert({
     id: userId,
     email,
     role: 'scholar',
   });
 
-  // Create initial draft scholar profile record
-  const slug = fullName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '') + '-' + userId.slice(0, 4);
+  if (accountError) {
+    console.error('Scholar signup: failed to create account:', accountError);
+    await rollBackSignup(adminDb, userId);
+    return { success: false, error: 'Unable to register account. Please try again later.' };
+  }
 
-  await adminDb.from('scholars').upsert({
+  // Create initial draft scholar profile record
+  const slug = `${slugify(fullName) || 'scholar'}-${userId.slice(0, 4)}`;
+
+  const { error: scholarError } = await adminDb.from('scholars').insert({
     account_id: userId,
     full_name: fullName,
-    preferred_title: preferredTitle || 'Professor',
+    title: preferredTitle || 'Professor',
     slug,
     profile_status: 'draft',
-    primary_institution: 'Independent Scholar',
+    current_institution: 'Independent Scholar',
   });
+
+  if (scholarError) {
+    console.error('Scholar signup: failed to create scholar profile:', scholarError);
+    await rollBackSignup(adminDb, userId);
+    return { success: false, error: 'Unable to register account. Please try again later.' };
+  }
 
   return { success: true, redirectUrl: '/dashboard/onboarding' };
 }
@@ -139,10 +173,10 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
   // owner, via the free-text role title) of an already-approved institution.
   // Joining an existing institution requires an invitation from its owner.
   // Checked before auth.signUp so a rejected signup leaves no orphaned login.
-  const instSlug = institutionName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '');
+  const instSlug = slugify(institutionName);
+  if (!instSlug) {
+    return { success: false, error: 'Please enter a valid institution name.' };
+  }
 
   const { data: existingInstitution } = await createAdminClient()
     .from('institutions')
@@ -179,12 +213,18 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
   const userId = authData.user.id;
   const adminDb = createAdminClient();
 
-  // Upsert account record
-  await adminDb.from('accounts').upsert({
+  // Insert (never upsert): an existing accounts row must not have its role rewritten.
+  const { error: accountError } = await adminDb.from('accounts').insert({
     id: userId,
     email,
     role: 'institution_user',
   });
+
+  if (accountError) {
+    console.error('Institution signup: failed to create account:', accountError);
+    await rollBackSignup(adminDb, userId);
+    return { success: false, error: 'Unable to register institution. Please try again later.' };
+  }
 
   const { data: institution, error: institutionError } = await adminDb
     .from('institutions')
@@ -199,7 +239,9 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
     .single();
 
   if (institutionError || !institution) {
+    // Includes losing a same-slug race to a concurrent signup (slug is UNIQUE).
     console.error('Institution signup: failed to create institution:', institutionError);
+    await rollBackSignup(adminDb, userId);
     return { success: false, error: 'Unable to register institution. Please try again later.' };
   }
 
@@ -213,6 +255,7 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
 
   if (membershipError) {
     console.error('Institution signup: failed to link owner:', membershipError);
+    await rollBackSignup(adminDb, userId, institution.id);
     return { success: false, error: 'Unable to register institution. Please try again later.' };
   }
 

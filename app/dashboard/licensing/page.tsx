@@ -1,4 +1,5 @@
 import React from 'react';
+import { requireSignedIn } from '@/lib/auth/guards';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getScholarLicensingAgreements } from '@/lib/licensing/licensing-service';
@@ -12,6 +13,9 @@ export const metadata: Metadata = {
 };
 
 export default async function ScholarLicensingPage() {
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  await requireSignedIn();
+
   const supabase = await createClient();
   const {
     data: { user },

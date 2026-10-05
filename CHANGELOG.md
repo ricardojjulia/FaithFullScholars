@@ -14,12 +14,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **No anonymous "demo" tenancy.** In non-production, or with `ENABLE_DEV_ROUTES=true`, shortlist, saved-course, and export routes had accepted an anonymous caller's `institutionId` (or a seed default). Institution pages had defaulted to a seed institution, which exposed `/institution/postings/[id]/applicants`. All of this now requires a signed-in member, and identity comes only from the session (`lib/auth/session.ts`).
   - **Admin role from `public.accounts` only.** `verifyStaffUser` and `/dev/status` no longer honour self-editable `user_metadata.role`. The `NODE_ENV` / `ENABLE_DEV_ROUTES` authorization bypasses are removed from admin routes and pages, and from `PATCH /api/inquiries/[id]`.
   - **RLS-scoped clients on request paths.** Inquiry, shortlist, and export logic, the ATS accreditation report, and the AI faculty matcher read through the caller's client instead of the service role. Only the recipient scholar may accept or decline an inquiry.
+- **Self-grantable trust columns closed (migration `20261005090000_protect_trust_columns.sql`).** Found in the `pr-review` gate. Through PostgREST, any signed-in user could:
+  - set their own `accounts.role = 'admin'`;
+  - approve, verify, or publish their own scholar profile;
+  - approve their own institution or set its accreditation;
+  - as an institution, accept an inquiry or rewrite its content;
+  - insert inquiries from an unapproved institution.
+
+  Triggers now protect these columns for non-admin `anon` and `authenticated` callers, following the existing `prevent_scholar_tier_escalation` pattern. The inquiry INSERT policy requires an approved institution and an approved scholar. The admin self-grant predates this release.
+- **Remaining data-loading pages guarded:** institution contracts, contract detail, subscription, consortium, and licensing; scholar contracts and licensing. `getPostingApplicantReport` now requires an institution scope, and the unused, unscoped `updateApplicantReviewStatus` (a service-role write) is removed.
 - **Corrective migration `20261004120000_fix_rls_helper_recursion.sql`.** It completes the recursion fix begun in `20260921110000`. `is_admin()` and `get_current_scholar_id()` still recursed through the policies of the tables they read, and the `FOR ALL` `institution_users` policy still referenced its own table. Owner-privileged helpers now live in a non-exposed `private` schema behind unchanged `public` wrappers. No table, column, or row changes.
+
+### Fixed
+- **Scholar signup never created a profile.** It wrote non-existent `scholars` columns (`preferred_title`, `primary_institution`), ignored the error, and reported success. It now writes `title` and `current_institution`.
+- **Both signup flows now check every write.** A failure rolls back the half-created login, so there are no orphaned logins and no false success. They insert `accounts` rather than upserting, so an existing role is never rewritten, and they reject institution names that produce an empty slug.
+- **ATS accreditation matrix:** fabricated seed candidates are now shown only under local `next dev`. Previously this also happened with `ENABLE_DEV_ROUTES=true`, including in production.
+- **Feedback telemetry** no longer records the user-editable `user_metadata.role`.
 
 ### Added
 - `lib/auth/session.ts` (`getSessionContext`, `resolveInstitutionAccess`) and `lib/auth/guards.ts` (`requireStaffPage`, `requireInstitutionMember`, `requireSignedIn`).
-- `tests/unit/authorization-lockdown.test.ts` (21), `tests/unit/page-guards.test.ts` (6), and `tests/unit/institution-signup.test.ts` (2). Each was confirmed to fail against the previous code.
-- `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`.
+- `tests/unit/authorization-lockdown.test.ts` (21), `tests/unit/page-guards.test.ts` (6), and `tests/unit/institution-signup.test.ts` (6, covering institution and scholar signup). Each was confirmed to fail against the previous code.
+- `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`. It also attempts each self-grant escalation (admin role, scholar approval, institution approval and accreditation, inquiry accept and rewrite, pending-institution insert) and confirms the legitimate edits still succeed.
 
 ### Verified
 - **Full System Health & Operational Audit Baseline (October 2, 2026)**:

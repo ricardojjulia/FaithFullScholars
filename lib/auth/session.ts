@@ -49,6 +49,17 @@ export async function getSessionContext(
     supabase.from('institution_users').select('institution_id').eq('account_id', user.id),
   ]);
 
+  // A failed lookup must not silently look like "no role / no membership".
+  for (const [label, res] of [
+    ['accounts', accountRes],
+    ['scholars', scholarRes],
+    ['institution_users', membershipRes],
+  ] as const) {
+    if (res.error) {
+      console.error(`getSessionContext: ${label} lookup failed:`, res.error);
+    }
+  }
+
   return {
     userId: user.id,
     email: user.email,

@@ -10,6 +10,8 @@ const state = vi.hoisted(() => ({
   existingSlugs: new Set<string>(),
   signUp: vi.fn(async () => ({ data: { user: { id: 'new-user' } }, error: null })),
   inserts: [] as Array<{ table: string; row: Record<string, unknown> }>,
+  failInsertInto: null as string | null,
+  deleteUser: vi.fn(async () => ({ error: null })),
 }));
 
 vi.mock('@/lib/auth/captcha', () => ({
@@ -36,21 +38,26 @@ function adminQuery(table: string) {
     },
     insert: (row: Record<string, unknown>) => {
       state.inserts.push({ table, row });
-      const result = { data: { id: table === 'institutions' ? 'new-inst' : 'row' }, error: null };
-      return Object.assign(Promise.resolve({ error: null }), {
+      const error = state.failInsertInto === table ? { message: 'simulated failure' } : null;
+      const result = { data: error ? null : { id: table === 'institutions' ? 'new-inst' : 'row' }, error };
+      return Object.assign(Promise.resolve({ error }), {
         select: () => ({ single: async () => result }),
       });
     },
+    delete: () => ({ eq: async () => ({ error: null }) }),
   };
   return builder;
 }
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ auth: { signUp: state.signUp } }),
-  createAdminClient: () => ({ from: (table: string) => adminQuery(table) }),
+  createAdminClient: () => ({
+    from: (table: string) => adminQuery(table),
+    auth: { admin: { deleteUser: state.deleteUser } },
+  }),
 }));
 
-import { signupInstitution } from '@/lib/auth/auth-actions';
+import { signupInstitution, signupScholar } from '@/lib/auth/auth-actions';
 
 const base = {
   email: 'attacker@example.org',
@@ -63,7 +70,9 @@ describe('signupInstitution', () => {
   beforeEach(() => {
     state.existingSlugs = new Set(['westminster-theological-seminary']);
     state.signUp.mockClear();
+    state.deleteUser.mockClear();
     state.inserts = [];
+    state.failInsertInto = null;
   });
 
   it('refuses to join an existing institution, even with role title "owner", before creating a login', async () => {
@@ -91,5 +100,44 @@ describe('signupInstitution', () => {
 
     const membership = state.inserts.find((i) => i.table === 'institution_users')!.row;
     expect(membership).toEqual({ institution_id: 'new-inst', account_id: 'new-user', role: 'owner' });
+  });
+
+  it('rejects institution names that produce an empty slug', async () => {
+    const res = await signupInstitution({ ...base, institutionName: '!!!' });
+    expect(res.success).toBe(false);
+    expect(state.signUp).not.toHaveBeenCalled();
+  });
+
+  it('rolls back the login and institution when linking the owner fails', async () => {
+    state.failInsertInto = 'institution_users';
+    const res = await signupInstitution({ ...base, institutionName: 'New Covenant Bible Institute' });
+    expect(res.success).toBe(false);
+    expect(state.deleteUser).toHaveBeenCalledWith('new-user');
+  });
+});
+
+describe('signupScholar', () => {
+  beforeEach(() => {
+    state.signUp.mockClear();
+    state.deleteUser.mockClear();
+    state.inserts = [];
+    state.failInsertInto = null;
+  });
+
+  it('creates the account and a draft profile using real scholars columns', async () => {
+    const res = await signupScholar({ ...base, preferredTitle: 'Dr.' });
+    expect(res.success).toBe(true);
+    expect(state.inserts.find((i) => i.table === 'accounts')!.row).toMatchObject({ role: 'scholar' });
+    const scholar = state.inserts.find((i) => i.table === 'scholars')!.row;
+    expect(scholar).toMatchObject({ title: 'Dr.', current_institution: 'Independent Scholar', profile_status: 'draft' });
+    expect(scholar).not.toHaveProperty('preferred_title');
+    expect(scholar).not.toHaveProperty('primary_institution');
+  });
+
+  it('never reports success when the profile was not created, and removes the half-created login', async () => {
+    state.failInsertInto = 'scholars';
+    const res = await signupScholar(base);
+    expect(res.success).toBe(false);
+    expect(state.deleteUser).toHaveBeenCalledWith('new-user');
   });
 });
