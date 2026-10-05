@@ -73,7 +73,8 @@ export async function updateSubscriptionTier(
     .single();
 
   if (error) {
-    return { success: false, error: error.message };
+    console.error('updateSubscriptionTier failed:', error);
+    return { success: false, error: 'Failed to update subscription.' };
   }
 
   return { success: true, subscription: data as InstitutionSubscription };

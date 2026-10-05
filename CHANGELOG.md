@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Hygiene (Council Review 12, Prompt C).**
+  - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.
+  - **AI faculty matcher:** fictional `SEED_CANDIDATES` are used only under local `next dev`. Deployed builds no longer present invented scholars as real matches.
+  - **Deterministic institution choice:** lookups for users in more than one institution pick the earliest membership. They previously errored on `.maybeSingle()` or picked an unordered row.
+  - **Service-role import wall:** ESLint `no-restricted-imports` blocks `createAdminClient` outside a reviewed allow-list in `eslint.config.mjs` (Council Wildcard proposal 3).
+
 ### Security
 - **Admin area returns 404 to non-staff at the layout too.** It used to answer 200 with an "Access Restricted" card, which revealed that the admin area exists. The triage page uses the same guard. An anonymous or expired-session admin now sees a 404 rather than a login redirect, by design (Council Review 12 C-3).
 - **E2E artifacts:** Playwright traces are off in CI, so public failed-run artifacts can't contain the persona password or session cookies.

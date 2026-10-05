@@ -15,8 +15,8 @@ export async function GET(
     const endorsements = await getApprovedEndorsements(id);
     return NextResponse.json({ endorsements });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/scholars/[id]/endorsements failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
@@ -74,7 +74,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, endorsement: result.endorsement }, { status: 201 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/scholars/[id]/endorsements failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

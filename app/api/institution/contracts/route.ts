@@ -22,6 +22,8 @@ export async function GET() {
       .from('institution_users')
       .select('institution_id')
       .eq('account_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
     if (!instUser) {
@@ -31,8 +33,8 @@ export async function GET() {
     const contracts = await getInstitutionContracts(instUser.institution_id);
     return NextResponse.json({ contracts });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/institution/contracts failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, contract: result.contract });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/institution/contracts failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

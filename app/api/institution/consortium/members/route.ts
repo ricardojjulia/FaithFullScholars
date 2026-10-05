@@ -33,6 +33,8 @@ export async function POST(req: NextRequest) {
       .from('institution_users')
       .select('institution_id')
       .eq('account_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
     const { data: account } = await supabase
@@ -104,6 +106,8 @@ export async function DELETE(req: NextRequest) {
       .from('institution_users')
       .select('institution_id')
       .eq('account_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
     const { data: account } = await supabase

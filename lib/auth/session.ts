@@ -46,7 +46,12 @@ export async function getSessionContext(
   const [accountRes, scholarRes, membershipRes] = await Promise.all([
     supabase.from('accounts').select('role').eq('id', user.id).maybeSingle(),
     supabase.from('scholars').select('id').eq('account_id', user.id).maybeSingle(),
-    supabase.from('institution_users').select('institution_id').eq('account_id', user.id),
+    supabase
+      .from('institution_users')
+      .select('institution_id')
+      .eq('account_id', user.id)
+      // Deterministic: the earliest membership is the default institution.
+      .order('created_at', { ascending: true }),
   ]);
 
   // A failed lookup must not silently look like "no role / no membership".
