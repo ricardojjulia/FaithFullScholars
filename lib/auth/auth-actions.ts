@@ -188,7 +188,8 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
     return {
       success: false,
       error:
-        'An account for this institution already exists. Please ask its administrator to invite you.',
+        // No invitation flow exists yet (Council Review 12, C-2): don't promise one.
+        'An account for this institution already exists. Adding colleagues to an existing institution is not available yet — please contact the FaithFull Scholars team.',
     };
   }
 

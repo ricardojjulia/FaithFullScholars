@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - insert inquiries from an unapproved institution.
 
   Triggers now protect these columns for non-admin `anon` and `authenticated` callers, following the existing `prevent_scholar_tier_escalation` pattern. The inquiry INSERT policy requires an approved institution and an approved scholar. The admin self-grant predates this release.
+- **Council Review 12 fixes (Prompt A).**
+  - The trust-column guards now fail closed. A session that switches to `anon`/`authenticated` without JWT claims is still restricted. The guard triggers run as `SECURITY INVOKER`, so they see the caller's role.
+  - Only the recipient scholar can reopen an accepted or declined inquiry.
+  - `accreditation_body` is now guarded on institution insert.
+  - **Open redirect fixed** in `/auth/callback`: `next` must be a same-origin relative path (`lib/auth/redirect.ts`).
+  - Institution signup no longer promises an invitation flow that does not exist.
 - **Remaining data-loading pages guarded:** institution contracts, contract detail, subscription, consortium, and licensing; scholar contracts and licensing. `getPostingApplicantReport` now requires an institution scope, and the unused, unscoped `updateApplicantReviewStatus` (a service-role write) is removed.
 - **Corrective migration `20261004120000_fix_rls_helper_recursion.sql`.** It completes the recursion fix begun in `20260921110000`. `is_admin()` and `get_current_scholar_id()` still recursed through the policies of the tables they read, and the `FOR ALL` `institution_users` policy still referenced its own table. Owner-privileged helpers now live in a non-exposed `private` schema behind unchanged `public` wrappers. No table, column, or row changes.
 
@@ -34,7 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `lib/auth/session.ts` (`getSessionContext`, `resolveInstitutionAccess`) and `lib/auth/guards.ts` (`requireStaffPage`, `requireInstitutionMember`, `requireSignedIn`).
 - `tests/unit/authorization-lockdown.test.ts` (21), `tests/unit/page-guards.test.ts` (6), and `tests/unit/institution-signup.test.ts` (6, covering institution and scholar signup). Each was confirmed to fail against the previous code.
-- `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`. It also attempts each self-grant escalation (admin role, scholar approval, institution approval and accreditation, inquiry accept and rewrite, pending-institution insert) and confirms the legitimate edits still succeed.
+- `tests/unit/auth-callback-redirect.test.ts` (9).
+- `tests/integration/rls-authenticated.test.ts` evaluates RLS as real `anon` / `authenticated` roles, including rows that do not short-circuit the policy `OR`. It also attempts each self-grant escalation (admin role, scholar approval, institution approval and accreditation, inquiry accept and rewrite, pending-institution insert) and confirms the legitimate edits still succeed. Council Review 12 added: admin positive paths, a service-role bypass check, fail-closed without claims, `accounts` insert with role `admin`, inquiry to an unapproved scholar, and reopening a declined inquiry.
 
 ### Verified
 - **Full System Health & Operational Audit Baseline (October 2, 2026)**:

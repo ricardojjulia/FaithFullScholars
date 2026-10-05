@@ -15,7 +15,12 @@
 --
 -- Fix: BEFORE INSERT/UPDATE triggers, following the existing pattern of
 -- public.prevent_scholar_tier_escalation (20260924140000): restrictions apply to
--- `anon` / `authenticated` callers who are not platform admins. The service
+-- `anon` / `authenticated` callers who are not platform admins. A caller counts
+-- as restricted if EITHER its database role or its JWT role is anon/authenticated,
+-- so a session that switches role without JWT claims fails closed. The guard
+-- functions are SECURITY INVOKER so `current_user` is the caller's role (inside a
+-- SECURITY DEFINER function it would be the owner); they call the owner-privileged
+-- private.is_admin() / get_current_scholar_id() helpers. The service
 -- role and direct database sessions (migrations, seeds, server-side admin
 -- actions) are unaffected. The inquiry INSERT policy additionally requires an
 -- approved institution and an approved scholar.
@@ -30,11 +35,14 @@ CREATE OR REPLACE FUNCTION private.is_restricted_caller()
 RETURNS BOOLEAN
 LANGUAGE sql
 STABLE
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
-  SELECT COALESCE((SELECT auth.role()), '') IN ('authenticated', 'anon')
-     AND NOT private.is_admin();
+  SELECT (
+      current_user IN ('authenticated', 'anon')
+      OR COALESCE((SELECT auth.role()), '') IN ('authenticated', 'anon')
+    )
+    AND NOT private.is_admin();
 $$;
 
 REVOKE EXECUTE ON FUNCTION private.is_restricted_caller() FROM PUBLIC;
@@ -46,7 +54,7 @@ GRANT EXECUTE ON FUNCTION private.is_restricted_caller() TO anon, authenticated,
 CREATE OR REPLACE FUNCTION private.guard_accounts()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
@@ -76,7 +84,7 @@ CREATE TRIGGER trg_guard_accounts
 CREATE OR REPLACE FUNCTION private.guard_scholars()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
@@ -109,13 +117,14 @@ CREATE TRIGGER trg_guard_scholars
 CREATE OR REPLACE FUNCTION private.guard_institutions()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
   IF private.is_restricted_caller() THEN
     IF TG_OP = 'INSERT' THEN
       IF NEW.status <> 'pending'
+         OR COALESCE(NEW.accreditation_body, 'none') <> 'none'
          OR COALESCE(NEW.accreditation_status, 'none') <> 'none'
          OR NEW.accreditation_verified_at IS NOT NULL THEN
         RAISE EXCEPTION 'Unauthorized: new institutions start pending and unaccredited' USING ERRCODE = '42501';
@@ -144,7 +153,7 @@ CREATE TRIGGER trg_guard_institutions
 CREATE OR REPLACE FUNCTION private.guard_inquiries()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path = ''
 AS $$
 BEGIN
@@ -163,10 +172,12 @@ BEGIN
          OR NEW.opportunity_type IS DISTINCT FROM OLD.opportunity_type THEN
         RAISE EXCEPTION 'Unauthorized: inquiry parties and content cannot be changed' USING ERRCODE = '42501';
       END IF;
+      -- Moving INTO or OUT OF accepted/declined is the recipient scholar's decision
+      -- (so a sender cannot accept on the scholar's behalf, or reopen a decision).
       IF NEW.status IS DISTINCT FROM OLD.status
-         AND NEW.status IN ('accepted', 'declined')
+         AND (NEW.status IN ('accepted', 'declined') OR OLD.status IN ('accepted', 'declined'))
          AND OLD.scholar_id IS DISTINCT FROM private.get_current_scholar_id() THEN
-        RAISE EXCEPTION 'Unauthorized: only the recipient scholar can accept or decline an inquiry' USING ERRCODE = '42501';
+        RAISE EXCEPTION 'Unauthorized: only the recipient scholar can accept, decline, or reopen a decided inquiry' USING ERRCODE = '42501';
       END IF;
     END IF;
   END IF;

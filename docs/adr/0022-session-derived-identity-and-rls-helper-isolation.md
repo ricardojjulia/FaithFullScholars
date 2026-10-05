@@ -29,7 +29,7 @@ An authorization review on 2026-10-04 against `main` @ `e3da2fa` found:
 ### Identity comes from the session, never the request
 - `lib/auth/session.ts#getSessionContext` resolves the caller from `auth.getUser()` and reads role and tenancy from `accounts`, `scholars`, and `institution_users`.
 - `resolveInstitutionAccess` honours a requested institution only if the caller is a member of it.
-- The admin role is `public.accounts.role = 'admin'`, the same source RLS uses. No authorization decision reads auth `user_metadata` (the client user menu still uses it for display only). There are no environment-based authorization bypasses.
+- The admin role is `public.accounts.role = 'admin'`, the same source RLS uses. No authorization decision reads auth `user_metadata` (the client user menu still uses it for display only). There are no environment-based authorization bypasses, with one deliberate exception: `/dev/status` (connectivity diagnostics only, no data) is open under local `next dev` (`NODE_ENV=development`), which a deployed build never sets.
 
 ### Every protected server page guards itself
 - `lib/auth/guards.ts` provides `requireStaffPage()` (404), `requireInstitutionMember()` (redirect to `/login`, or 404 for non-members), and `requireSignedIn()`.
@@ -43,6 +43,7 @@ An authorization review on 2026-10-04 against `main` @ `e3da2fa` found:
 - Migration `20261004120000_fix_rls_helper_recursion.sql` adds `private.is_admin()`, `private.get_current_scholar_id()`, `private.is_institution_user(uuid)`, and `private.is_institution_owner(uuid)`. They are `SECURITY DEFINER` with `search_path = ''`.
 - `private` is not exposed by PostgREST (`supabase/config.toml` `[api].schemas`), so these are not `/rest/v1/rpc` endpoints. This also keeps Splinter lints 0028/0029 clean.
 - The `public.*` helpers keep their names and signatures as `SECURITY INVOKER` wrappers. `is_institution_user` had already been made `SECURITY DEFINER` by `20260921110000`, so only `is_admin` and `get_current_scholar_id` were still recursing; it now also sits behind a wrapper, which moves it out of the exposed schema. The self-referencing `institution_users` `FOR ALL` policy is replaced. Institution owners can still add any account as a member; that is by design until an invitation and consent flow exists.
+- **Fail closed:** `private.is_restricted_caller()` treats a caller as restricted when *either* its database role (`current_user`) *or* its JWT role is `anon`/`authenticated`, so a session that switches role without JWT claims is still guarded. The guard trigger functions are `SECURITY INVOKER` so `current_user` reflects the caller. Moving an inquiry into or out of `accepted`/`declined` is reserved to the recipient scholar (or an admin).
 - **Deployment note:** `private` must not be in the hosted project's *Exposed schemas* setting (Dashboard → API). `supabase/config.toml` covers only local development and `config push`.
 
 ### Trust and privilege columns are protected in the database

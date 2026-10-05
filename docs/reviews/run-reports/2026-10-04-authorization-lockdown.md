@@ -25,6 +25,19 @@ Close authorization and tenant-isolation defects found in a codebase review befo
 | 12 | *(pr-review)* Scholar signup wrote non-existent columns, ignored errors, and reported success. Signup failures left orphaned logins. `accounts.upsert` could rewrite an existing role. Empty institution slug was accepted. | Important | Checked inserts with rollback; correct columns; slug validation |
 | 13 | *(pr-review)* `user_metadata.role` in feedback telemetry; ATS seed candidates could be served in production via `ENABLE_DEV_ROUTES` | Minor | Removed; local `next dev` only |
 
+### Council Review 12 (2026-10-05)
+See `docs/reviews/2026-10-05-council-review-12-synthesis.md`. The owner approved the A → B → C sequence.
+- **Prompt A was applied to this PR:**
+  - fail-closed `is_restricted_caller` with invoker guard triggers (P-1);
+  - inquiry reopen and `accreditation_body` guards (P-2);
+  - missing real-role tests (P-3);
+  - the open redirect in `/auth/callback` (A-1);
+  - honest signup message (C-2);
+  - ADR wording on `/dev/status` (P-4).
+- **Prompt B (follow-up PR):** extend the guards to subscriptions, contracts, licensing, endorsements, and consortiums, and add the generated policy-matrix gate.
+- **Prompt C (follow-up PR):** hygiene.
+- **Prompt D (operations):** production checks on the hosted project.
+
 ## 4. Architecture Impact
 - ADR 0022: session-derived identity; page-level guards; RLS helpers as `SECURITY DEFINER` functions in a non-exposed `private` schema.
 - `lib/inquiries/*` and `fetchATSAccreditationReport` now take a `SupabaseClient` parameter. Business-flow integration tests pass the service-role client explicitly.

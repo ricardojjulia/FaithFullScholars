@@ -319,4 +319,120 @@ describe('RLS enforced for real anon / authenticated callers', () => {
       expect(accepted.rowCount).toBe(1);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Council Review 12 (P-1..P-3): positive paths, bypass premises, fail-closed
+  // ---------------------------------------------------------------------------
+  it('admins can still approve scholars and institutions through the user-scoped path', async () => {
+    await inTransaction(
+      async () => {
+        await client.query(`UPDATE public.scholars SET profile_status = 'submitted' WHERE id = $1`, [scholarA]);
+        await client.query(
+          `INSERT INTO public.institutions (id, name, slug, institution_type, status, contact_email)
+           VALUES ($1, 'Pending Probe Seminary', 'pending-probe-seminary', 'seminary', 'pending', 'probe@pending.edu')`,
+          [PENDING_INST]
+        );
+      },
+      { role: 'authenticated', sub: ADMIN_ACCOUNT },
+      async () => {
+        const scholar = await client.query(
+          `UPDATE public.scholars SET profile_status = 'approved', verification_status = 'verified' WHERE id = $1`,
+          [scholarA]
+        );
+        expect(scholar.rowCount).toBe(1);
+        const institution = await client.query(`UPDATE public.institutions SET status = 'approved' WHERE id = $1`, [PENDING_INST]);
+        expect(institution.rowCount).toBe(1);
+      }
+    );
+  });
+
+  it('the service role is not restricted by the trust-column guards', async () => {
+    await client.query('BEGIN');
+    try {
+      await client.query('SET LOCAL ROLE service_role');
+      await client.query(`SELECT set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ role: 'service_role' })]);
+      const res = await client.query(`UPDATE public.scholars SET verification_status = 'flagged' WHERE id = $1`, [scholarA]);
+      expect(res.rowCount).toBe(1);
+    } finally {
+      await client.query('ROLLBACK');
+    }
+  });
+
+  it('a session that switches to an API role without JWT claims is still restricted (fails closed)', async () => {
+    for (const role of ['authenticated', 'anon']) {
+      await client.query('BEGIN');
+      try {
+        await client.query(`SET LOCAL ROLE ${role}`);
+        const res = await client.query(`SELECT private.is_restricted_caller() AS restricted`);
+        expect(res.rows[0].restricted, role).toBe(true);
+      } finally {
+        await client.query('ROLLBACK');
+      }
+    }
+  });
+
+  it('a signed-in user cannot create an account row with the admin role', async () => {
+    const NEW_ACCOUNT = 'a1000000-0000-0000-0000-0000000000fe';
+    await inTransaction(
+      async () => {
+        await client.query(
+          `INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+             raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+           VALUES ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'probe-admin@example.org',
+             '', now(), '{}', '{}', now(), now())`,
+          [NEW_ACCOUNT]
+        );
+      },
+      { role: 'authenticated', sub: NEW_ACCOUNT },
+      async () => {
+        await expect(
+          client.query(`INSERT INTO public.accounts (id, email, role) VALUES ($1, 'probe-admin@example.org', 'admin')`, [NEW_ACCOUNT])
+        ).rejects.toThrow(/Unauthorized|row-level security/);
+      }
+    );
+  });
+
+  it('an approved institution cannot send an inquiry to an unapproved scholar', async () => {
+    await inTransaction(
+      async () => {
+        await client.query(
+          `INSERT INTO public.institution_users (institution_id, account_id, role) VALUES ($1, $2, 'owner') ON CONFLICT DO NOTHING`,
+          [INST_A, INST_USER_ACCOUNT]
+        );
+        await client.query(`UPDATE public.scholars SET profile_status = 'draft' WHERE id = $1`, [scholarA]);
+      },
+      { role: 'authenticated', sub: INST_USER_ACCOUNT },
+      async () => {
+        await expect(
+          client.query(
+            `INSERT INTO public.inquiries (institution_id, scholar_id, sender_account_id, opportunity_type, message, contact_email)
+             VALUES ($1, $2, $3, 'adjunct_teaching', 'Inquiry to a draft scholar profile.', 'dean@wts.edu')`,
+            [INST_A, scholarA, INST_USER_ACCOUNT]
+          )
+        ).rejects.toThrow(/row-level security/);
+      }
+    );
+  });
+
+  it('an institution cannot reopen an inquiry the scholar declined', async () => {
+    let inquiryId = '';
+    await inTransaction(
+      async () => {
+        await seedInquiry(scholarA);
+        const res = await client.query(
+          `UPDATE public.inquiries SET status = 'declined'
+           WHERE id = (SELECT id FROM public.inquiries WHERE scholar_id = $1 ORDER BY created_at DESC LIMIT 1)
+           RETURNING id`,
+          [scholarA]
+        );
+        inquiryId = res.rows[0].id;
+      },
+      { role: 'authenticated', sub: INST_USER_ACCOUNT },
+      async () => {
+        await expect(
+          client.query(`UPDATE public.inquiries SET status = 'pending' WHERE id = $1`, [inquiryId])
+        ).rejects.toThrow(/Unauthorized/);
+      }
+    );
+  });
 });
