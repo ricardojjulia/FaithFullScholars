@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { updateSubscriptionTier } from '@/lib/subscriptions/subscription-service';
-import { SubscriptionTier, BillingCycle } from '@/lib/subscriptions/types';
+import { SubscriptionTier } from '@/lib/subscriptions/types';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +32,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const tier = body.tier as SubscriptionTier;
-    const billingCycle = (body.billing_cycle as BillingCycle) || 'monthly';
 
     if (!tier || !['basic', 'verified_seminary', 'premier_partner'].includes(tier)) {
       return NextResponse.json(
@@ -42,14 +40,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await updateSubscriptionTier(instUser.institution_id, tier, billingCycle);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, subscription: result.subscription });
+    // Self-service plan changes would grant paid limits without payment (ADR 0023).
+    // Until billing exists, plan changes are made by FaithFull Scholars staff.
+    return NextResponse.json(
+      {
+        error:
+          'Plan changes are not self-service yet. Please contact the FaithFull Scholars team to change your subscription.',
+      },
+      { status: 403 }
+    );
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/institution/subscription/upgrade failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

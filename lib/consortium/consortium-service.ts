@@ -245,15 +245,34 @@ export async function addConsortiumMember(
         consortium_id: input.consortiumId,
         institution_id: input.institutionId,
         role,
-        status: 'active',
+        // Invitations start pending (ADR 0023): the database refuses to list another
+        // institution as active on the lead's say-so. There is no self-service
+        // acceptance flow yet; platform staff confirm memberships.
+        status: 'pending',
         joined_at: new Date().toISOString(),
       },
-      { onConflict: 'consortium_id,institution_id' }
+      // Never overwrite an existing membership (re-inviting must not demote an
+      // active member to pending or reset joined_at).
+      { onConflict: 'consortium_id,institution_id', ignoreDuplicates: true }
     )
     .select('*')
-    .single();
+    .maybeSingle();
 
-  if (memberErr || !member) {
+  // Already a member: return the existing row unchanged.
+  const result =
+    member ??
+    (memberErr
+      ? null
+      : (
+          await supabase
+            .from('consortium_members')
+            .select('*')
+            .eq('consortium_id', input.consortiumId)
+            .eq('institution_id', input.institutionId)
+            .maybeSingle()
+        ).data);
+
+  if (memberErr || !result) {
     console.error('Failed to add consortium member:', memberErr);
     return {
       success: false,
@@ -261,7 +280,7 @@ export async function addConsortiumMember(
     };
   }
 
-  return { success: true, member: member as ConsortiumMember };
+  return { success: true, member: result as ConsortiumMember };
 }
 
 /**
