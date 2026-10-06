@@ -53,7 +53,6 @@ Initial ADRs:
 > - **Conference interview hub** (`/institution/conferences`): in-memory demo data; nothing persists.
 > - **AI Faculty Matcher:** prepends three fictional seed candidates to every result, in all environments (fix scheduled in the hygiene PR).
 > - **`/institution/saved`, `/institution` and `/dashboard` metrics:** partly hard-coded fixtures.
-> - **Scholar draft revisions and submit-for-review:** held in `sessionStorage` only (`app/dashboard/profile/page.tsx`); there is no persisted draft or submission flow yet.
 > - **Institution invitations:** none. Institution self-signup only creates a new pending institution.
 > - **Subscription plan changes** are staff-managed until billing exists (ADR 0023); the upgrade button now says so instead of upgrading for free.
 > - **Rate limiting** is in-memory and per instance.

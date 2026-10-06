@@ -1,96 +1,139 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import { ScholarProfileForm } from '@/components/forms/scholar-profile-form';
+import { RevisionStatusBanner } from '@/components/dashboard/revision-status-banner';
+import {
+  RevisionState,
+  describeFailure,
+  fetchRevisionState,
+  saveRevision,
+  submitRevision,
+  withdrawRevision
+} from '@/components/dashboard/revision-client';
 import { RevisionSnapshotData } from '@/lib/domain/types';
 import { buildDraftSnapshot } from '@/lib/profiles/revision-actions';
 
-const DEFAULT_PUBLISHED_SNAPSHOT: RevisionSnapshotData = {
-  full_name: 'Dr. Benjamin H. Edwards, Ph.D.',
-  title: 'Professor of New Testament Studies',
-  current_institution: 'Westminster Theological Seminary',
-  institutional_role: 'Professor',
-  biography:
-    'Dr. Edwards specializes in Pauline epistles, the New Perspective on Paul, and biblical Greek syntax. He has taught for over fifteen years in theological higher education.',
-  location: 'Glenside, PA, USA',
-  timezone: 'America/New_York',
-  doctrinal_statement_text:
-    'I affirm the plenary inspiration and inerrancy of the Holy Scriptures. I heartily subscribe to the Westminster Confession of Faith and Catechisms.',
-  disciplines: ['New Testament & Early Christianity', 'Biblical Languages'],
-  traditions: ['Reformed & Presbyterian'],
-  confessions: [
-    {
-      confessional_standard_id: 'standard-westminster',
-      confessional_standard_name: 'Westminster Confession of Faith (1646)',
-      adherence_level: 'full_subscription'
-    },
-    {
-      confessional_standard_id: 'standard-nicene',
-      confessional_standard_name: 'Nicene-Constantinopolitan Creed (381)',
-      adherence_level: 'full_subscription'
-    }
-  ],
-  credentials: [
-    {
-      degree: 'Ph.D.',
-      field_of_study: 'New Testament',
-      institution_name: 'University of Cambridge',
-      year_awarded: 2018,
-      is_terminal: true
-    },
-    {
-      degree: 'Th.M.',
-      field_of_study: 'Biblical Studies',
-      institution_name: 'Westminster Theological Seminary',
-      year_awarded: 2014,
-      is_terminal: false
-    }
-  ],
-  publications: [
-    {
-      title: 'The Gospel According to Paul: Justification and Union with Christ',
-      publication_type: 'book',
-      year: 2021,
-      citation_text: 'Baker Academic, 2021'
-    }
-  ]
-};
+const OPEN_STATUSES = ['draft', 'submitted', 'changes_requested'];
 
 export default function ProfileEditorPage() {
-  const [draft, setDraft] = useState<RevisionSnapshotData>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem('fs_draft_revision');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          return buildDraftSnapshot(DEFAULT_PUBLISHED_SNAPSHOT, parsed);
-        }
-      } catch {
-        // fallback
+  const router = useRouter();
+  const [state, setState] = useState<RevisionState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Bumped whenever server state replaces the editor contents, remounting the form.
+  const [formKey, setFormKey] = useState(0);
+
+  const refresh = useCallback(async (): Promise<boolean> => {
+    const res = await fetchRevisionState();
+    if (!res.ok) {
+      if (res.status === 401) {
+        router.push('/login');
+        return false;
       }
+      setLoadError(
+        res.status === 404 ? 'No scholar profile was found for this account.' : describeFailure(res)
+      );
+      return false;
     }
-    return DEFAULT_PUBLISHED_SNAPSHOT;
-  });
+    setLoadError(null);
+    setState(res.data);
+    setFormKey((k) => k + 1);
+    return true;
+  }, [router]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      await refresh();
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [refresh]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400" role="status">
+        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+        <span>Loading your profile draft...</span>
+      </div>
+    );
+  }
+
+  if (!state) {
+    return (
+      <div role="alert" className="p-4 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs space-y-2">
+        <p>{loadError ?? 'Unable to load your profile.'}</p>
+        <button
+          type="button"
+          onClick={async () => {
+            setLoading(true);
+            await refresh();
+            setLoading(false);
+          }}
+          className="px-3 py-1.5 bg-rose-700 text-white rounded-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  const { revision, baseline } = state;
+  const status = revision?.status ?? null;
+  const openRevisionId = revision && OPEN_STATUSES.includes(revision.status) ? revision.id : undefined;
+  const initialDraft: RevisionSnapshotData = buildDraftSnapshot(
+    baseline.snapshot,
+    revision?.snapshot_data ?? {}
+  );
+  const readOnly = status === 'submitted';
+  const isPublished = state.scholar.profile_status === 'approved';
+
+  /** Saves the editor contents. Returns the revision id to act on, or an error. */
+  async function persist(updated: RevisionSnapshotData): Promise<{ id: string } | { error: string }> {
+    const res = await saveRevision(updated, openRevisionId);
+    if (res.ok) {
+      setState((prev) => (prev ? { ...prev, revision: res.data.revision } : prev));
+      return { id: res.data.revision.id };
+    }
+    if (res.status === 409) {
+      await refresh();
+    }
+    return { error: describeFailure(res) };
+  }
 
   async function handleSaveDraft(updated: RevisionSnapshotData) {
-    try {
-      sessionStorage.setItem('fs_draft_revision', JSON.stringify(updated));
-      setDraft(updated);
-      return { success: true };
-    } catch {
-      return { success: false, error: 'Could not write draft to local session.' };
-    }
+    setNotice(null);
+    const saved = await persist(updated);
+    return 'error' in saved ? { success: false, error: saved.error } : { success: true };
   }
 
   async function handleSubmitReview(updated: RevisionSnapshotData) {
-    try {
-      sessionStorage.setItem('fs_draft_revision', JSON.stringify(updated));
-      sessionStorage.setItem('fs_revision_status', 'submitted');
-      setDraft(updated);
-      return { success: true };
-    } catch {
-      return { success: false, error: 'Could not submit revision.' };
+    setNotice(null);
+    const saved = await persist(updated);
+    if ('error' in saved) return { success: false, error: saved.error };
+    const res = await submitRevision(saved.id);
+    if (!res.ok) {
+      if (res.status === 409) await refresh();
+      return { success: false, error: describeFailure(res) };
     }
+    await refresh();
+    return { success: true };
+  }
+
+  async function handleWithdraw() {
+    setNotice(null);
+    setBusy(true);
+    const res = await withdrawRevision(revision?.id);
+    if (!res.ok) setNotice(describeFailure(res));
+    await refresh();
+    setBusy(false);
   }
 
   return (
@@ -106,9 +149,29 @@ export default function ProfileEditorPage() {
         </div>
       </div>
 
+      <RevisionStatusBanner
+        status={status}
+        adminNotes={revision?.admin_notes ?? null}
+        isPublished={isPublished}
+        isBusy={busy}
+        onWithdraw={handleWithdraw}
+        onStartNewDraft={() => {
+          // The next save omits revisionId (rejected is not open) and creates a fresh draft.
+          setNotice('Edit the profile and save to start a new draft.');
+        }}
+      />
+
+      {notice && (
+        <div role="alert" className="p-3.5 rounded-xl text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200">
+          {notice}
+        </div>
+      )}
+
       <ScholarProfileForm
-        initialDraft={draft}
-        publishedSnapshot={DEFAULT_PUBLISHED_SNAPSHOT}
+        key={formKey}
+        initialDraft={initialDraft}
+        publishedSnapshot={baseline.snapshot}
+        readOnly={readOnly}
         onSaveDraft={handleSaveDraft}
         onSubmitForReview={handleSubmitReview}
       />

@@ -18,6 +18,7 @@ export function ReviewActionPanel({
   auditHistory,
 }: ReviewActionPanelProps) {
   const router = useRouter();
+  const isSubmitted = currentStatus === 'submitted';
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [loadingAction, setLoadingAction] = useState<ReviewAction | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -33,8 +34,14 @@ export function ReviewActionPanel({
         body: JSON.stringify({ action, feedbackNotes }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
+      if (res.status === 404) {
+        throw new Error('This revision no longer exists. Return to the review queue.');
+      }
+      if (res.status === 409) {
+        throw new Error('Only submitted revisions can be reviewed. This one may have been withdrawn or already decided; refresh to see its current status.');
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to process action');
       }
@@ -72,6 +79,7 @@ export function ReviewActionPanel({
 
       {feedbackMessage && (
         <div
+          role={feedbackMessage.type === 'error' ? 'alert' : 'status'}
           className={`p-3.5 rounded-xl text-xs font-medium ${
             feedbackMessage.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300'
@@ -82,6 +90,8 @@ export function ReviewActionPanel({
         </div>
       )}
 
+      {isSubmitted ? (
+        <>
       {/* Editorial Notes */}
       <div className="space-y-2">
         <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -142,7 +152,15 @@ export function ReviewActionPanel({
           )}
           <span>Reject Submission</span>
         </button>
+      </div>
+        </>
+      ) : (
+        <p className="text-xs text-slate-600 dark:text-slate-400">
+          This revision is <span className="font-semibold capitalize">{currentStatus.replace('_', ' ')}</span> and cannot be reviewed. Only submitted revisions can be approved, sent back, or rejected.
+        </p>
+      )}
 
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           type="button"
           disabled={loadingAction !== null}
