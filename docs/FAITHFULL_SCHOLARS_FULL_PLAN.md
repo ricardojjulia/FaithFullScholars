@@ -271,6 +271,19 @@ Revision Staging Model (ADR 0005):
 - Modifications are saved to a versioned draft revision that is submitted for admin review.
 - Admins review changes as structured diffs; approval promotes the revision to the published snapshot.
 
+Implemented lifecycle (ADR 0024, PR #56; migration `20261006090000` not yet applied to production):
+
+- Revisions are persisted in `scholar_profile_revisions`; `sessionStorage` drafts and the hard-coded demo scholar are removed. The editor, onboarding, and preview load and save the real revision.
+- Statuses: `draft`, `submitted`, `changes_requested`, `approved`, `superseded`, `rejected`. One open revision (draft, submitted, changes_requested) per scholar, enforced by a partial unique index. A database guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edit or resubmit; the database assigns `revision_number`.
+- Endpoints: `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, `POST /api/scholars/revisions/withdraw` (session identity, RLS-scoped client, `revisionId` pin returns 409 on a stale tab, 256 KB cap returns 413). Admin decisions go through `POST /api/admin/reviews/[id]` and the service-role-only `review_profile_revision()` RPC (atomic decision plus `profile_reviews` audit row). Feedback notes are required for request-changes and reject and capped at 2000 characters (reversible default chosen during review; owner-visible decision).
+- Revisions are readable only by the owning scholar and admins.
+- Approval copies scalar fields only. Disciplines, traditions, confessions, credentials, and publications are not promoted to relational tables, so public pages and match-faculty do not yet reflect approved revisions.
+
+Known gaps (accepted residual risk, see ADR 0024):
+
+- HIGH, pre-existing: a scholar can still UPDATE live `scholars` content columns and child tables (`scholar_disciplines`, `scholar_confessions`, `scholar_traditions`, credentials, publications) directly under RLS, bypassing review. Next slice: lock content columns to the review path, paired with relational promotion on approval.
+- Rejected and superseded snapshots (possible religious-belief data, GDPR Art. 9) are retained indefinitely and admin-readable; belongs to the GDPR retention/erasure slice.
+
 Verification status:
 
 - Self-reported.
@@ -739,7 +752,7 @@ Acceptance:
 
 ### Phase 4: Scholar Dashboard (Completed)
 
-> **Status:** Partially complete (Council Review 12 correction: scholar draft edits and submit-for-review are held in `sessionStorage` only in `app/dashboard/profile/page.tsx`, so the revision staging UI does not persist drafts or create submissions; persistence is roadmap work). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
+> **Status:** Partially complete (PR #56, awaiting owner approval and production migration `20261006090000`: scholar drafts now persist as real revisions and can be submitted, withdrawn, and reviewed; `sessionStorage` is removed. Remaining: live-row content columns and child tables are still directly writable by the scholar under RLS (HIGH, next slice), and approval promotes scalar fields only). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
 
 1. Build profile editor.
 2. Build CV and publication manager.
