@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionContext } from '@/lib/auth/session';
-import { REVISION_SELECT_COLUMNS, findOpenRevision } from '@/lib/profiles/revision-service';
+import { REVISION_SELECT_COLUMNS, findOpenRevision, readRevisionPin } from '@/lib/profiles/revision-service';
 
 export const dynamic = 'force-dynamic';
 
 const GENERIC_ERROR = 'Unable to withdraw the revision. Please try again.';
 
-export async function POST() {
+export async function POST(req: Request) {
   try {
+    const revisionPin = await readRevisionPin(req);
     const supabase = await createClient();
     const session = await getSessionContext(supabase);
     if (!session) {
@@ -21,6 +22,13 @@ export async function POST() {
     const { revision, failed } = await findOpenRevision(supabase, session.scholarId);
     if (failed) {
       return NextResponse.json({ error: GENERIC_ERROR }, { status: 500 });
+    }
+    // A stale tab must not act on a revision it never saw.
+    if (revisionPin && revision?.id !== revisionPin) {
+      return NextResponse.json(
+        { error: 'This draft is no longer current. Reload and try again.' },
+        { status: 409 }
+      );
     }
     if (!revision || revision.status !== 'submitted') {
       return NextResponse.json({ error: 'There is no submitted revision to withdraw.' }, { status: 409 });

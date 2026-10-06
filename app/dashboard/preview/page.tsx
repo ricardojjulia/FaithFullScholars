@@ -84,7 +84,7 @@ export default function DraftPreviewPage() {
       <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
         <h1 className="text-lg font-display font-bold text-slate-900 dark:text-white">No draft to preview</h1>
         <p className="text-xs text-slate-600 dark:text-slate-400">
-          You have not saved a draft revision yet. Start one in the profile editor to see how it will look.
+          You have no unpublished draft. Start one in the profile editor to see how your changes will look.
         </p>
         <Link
           href="/dashboard/profile"
@@ -208,6 +208,9 @@ export default function DraftPreviewPage() {
             </span>
             <span className="text-xs font-medium">
               This preview reflects your staged changes. Public visitors continue to see your approved live profile.
+            </span>
+            <span className="text-[11px] font-medium block mt-1">
+              On approval, your name, titles, biography, location, links and doctrinal statement are published. Disciplines, traditions, confessional standards, credentials and publications are reviewed but not yet published automatically.
             </span>
           </div>
         </div>

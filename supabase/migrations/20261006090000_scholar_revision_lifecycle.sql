@@ -15,9 +15,37 @@
 -- private.is_restricted_caller()), private DEFINER lookups, tightened policies,
 -- and one service_role-only SECURITY DEFINER function for admin review.
 -- Service role and direct database sessions are unaffected by the guards.
--- No rows are changed. Preflight: there must be at most one open revision
--- (draft/submitted/changes_requested) per scholar before the unique index is built.
+-- No rows are changed. A preflight block (section 0) aborts with a clear message
+-- if any scholar has more than one open revision or any snapshot is malformed.
 -- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 0. Preflight: refuse to run on data the new constraints would reject, with a
+--    clear message instead of an opaque constraint error. Nothing is changed.
+-- ------------------------------------------------------------------------------
+DO $$
+DECLARE
+  v_dupes INTEGER;
+  v_bad INTEGER;
+BEGIN
+  SELECT count(*) INTO v_dupes FROM (
+    SELECT r.scholar_id FROM public.scholar_profile_revisions r
+    WHERE r.status IN ('draft', 'submitted', 'changes_requested')
+    GROUP BY r.scholar_id HAVING count(*) > 1
+  ) d;
+  IF v_dupes > 0 THEN
+    RAISE EXCEPTION 'Preflight failed: % scholar(s) have more than one open revision; resolve them before applying this migration', v_dupes;
+  END IF;
+
+  SELECT count(*) INTO v_bad FROM public.scholar_profile_revisions r
+  WHERE r.snapshot_data IS NULL
+     OR jsonb_typeof(r.snapshot_data) <> 'object'
+     OR octet_length(r.snapshot_data::text) > 262144;
+  IF v_bad > 0 THEN
+    RAISE EXCEPTION 'Preflight failed: % revision(s) have a snapshot that is not a JSON object of 256 KB or less', v_bad;
+  END IF;
+END;
+$$;
 
 -- ------------------------------------------------------------------------------
 -- 1. Constraints and index
@@ -269,15 +297,25 @@ BEGIN
     RAISE EXCEPTION 'invalid_review_action' USING ERRCODE = '22023';
   END IF;
 
-  SELECT * INTO v_rev FROM public.scholar_profile_revisions r WHERE r.id = p_revision_id FOR UPDATE;
+  -- Lock the scholar row before the revision row: a scholar UPDATE of
+  -- draft_revision_id locks the scholar row and then takes an FK lock on the
+  -- revision, so the same order here avoids a lock-order deadlock.
+  SELECT * INTO v_sch FROM public.scholars s
+    WHERE s.id = (SELECT r.scholar_id FROM public.scholar_profile_revisions r WHERE r.id = p_revision_id)
+    FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'revision_not_found' USING ERRCODE = 'P0002';
+  END IF;
+
+  SELECT * INTO v_rev FROM public.scholar_profile_revisions r
+    WHERE r.id = p_revision_id AND r.scholar_id = v_sch.id
+    FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'revision_not_found' USING ERRCODE = 'P0002';
   END IF;
   IF v_rev.status <> 'submitted' THEN
     RAISE EXCEPTION 'revision_not_reviewable' USING ERRCODE = '55000';
   END IF;
-
-  SELECT * INTO v_sch FROM public.scholars s WHERE s.id = v_rev.scholar_id FOR UPDATE;
   v_snap := COALESCE(v_rev.snapshot_data, '{}'::jsonb);
 
   IF p_action = 'approve' THEN
@@ -351,5 +389,7 @@ BEGIN
 END;
 $$;
 
+-- p_reviewer is trusted as given: only service_role may call this, and the app
+-- passes the session's staff identity, never a client value.
 REVOKE ALL ON FUNCTION public.review_profile_revision(UUID, TEXT, TEXT, UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.review_profile_revision(UUID, TEXT, TEXT, UUID) TO service_role;

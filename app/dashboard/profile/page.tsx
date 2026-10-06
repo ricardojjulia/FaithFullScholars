@@ -28,7 +28,8 @@ export default function ProfileEditorPage() {
   // Bumped whenever server state replaces the editor contents, remounting the form.
   const [formKey, setFormKey] = useState(0);
 
-  const refresh = useCallback(async (): Promise<boolean> => {
+  // remount=false keeps the scholar's unsaved edits in the editor (used after a conflict).
+  const refresh = useCallback(async (remount = true): Promise<boolean> => {
     const res = await fetchRevisionState();
     if (!res.ok) {
       if (res.status === 401) {
@@ -42,7 +43,7 @@ export default function ProfileEditorPage() {
     }
     setLoadError(null);
     setState(res.data);
-    setFormKey((k) => k + 1);
+    if (remount) setFormKey((k) => k + 1);
     return true;
   }, [router]);
 
@@ -94,6 +95,7 @@ export default function ProfileEditorPage() {
   );
   const readOnly = status === 'submitted';
   const isPublished = state.scholar.profile_status === 'approved';
+  const isHidden = state.scholar.profile_status === 'hidden';
 
   /** Saves the editor contents. Returns the revision id to act on, or an error. */
   async function persist(updated: RevisionSnapshotData): Promise<{ id: string } | { error: string }> {
@@ -102,10 +104,14 @@ export default function ProfileEditorPage() {
       setState((prev) => (prev ? { ...prev, revision: res.data.revision } : prev));
       return { id: res.data.revision.id };
     }
-    if (res.status === 409) {
-      await refresh();
-    }
+    if (res.status === 409) await handleConflict(describeFailure(res));
     return { error: describeFailure(res) };
+  }
+
+  /** The revision changed elsewhere: reload server state but keep the editor contents. */
+  async function handleConflict(message: string) {
+    await refresh(false);
+    setNotice(`${message} Your unsaved edits are still in the editor; save again to keep them, or reload the page to discard them.`);
   }
 
   async function handleSaveDraft(updated: RevisionSnapshotData) {
@@ -120,7 +126,7 @@ export default function ProfileEditorPage() {
     if ('error' in saved) return { success: false, error: saved.error };
     const res = await submitRevision(saved.id);
     if (!res.ok) {
-      if (res.status === 409) await refresh();
+      if (res.status === 409) await handleConflict(describeFailure(res));
       return { success: false, error: describeFailure(res) };
     }
     await refresh();
@@ -153,7 +159,7 @@ export default function ProfileEditorPage() {
         status={status}
         adminNotes={revision?.admin_notes ?? null}
         isPublished={isPublished}
-        isHidden={state?.scholar.profile_status === 'hidden'}
+        isHidden={isHidden}
         isBusy={busy}
         onWithdraw={handleWithdraw}
         onStartNewDraft={() => {

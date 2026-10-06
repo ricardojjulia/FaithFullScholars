@@ -12,6 +12,13 @@ interface ReviewActionPanelProps {
   auditHistory: ProfileReview[];
 }
 
+const ACTION_LABELS: Record<ReviewAction, string> = {
+  approve: 'Approval',
+  request_changes: 'Change request',
+  reject: 'Rejection',
+  hide: 'Hide',
+};
+
 export function ReviewActionPanel({
   revisionId,
   currentStatus,
@@ -22,8 +29,15 @@ export function ReviewActionPanel({
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [loadingAction, setLoadingAction] = useState<ReviewAction | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  // Once a decision is recorded the panel stays locked until the redirect.
+  const [decided, setDecided] = useState(false);
+  const busy = loadingAction !== null || decided;
 
   async function handleAction(action: ReviewAction) {
+    if ((action === 'request_changes' || action === 'reject') && !feedbackNotes.trim()) {
+      setFeedbackMessage({ type: 'error', text: 'Add feedback notes so the scholar knows what to change or why it was rejected.' });
+      return;
+    }
     setLoadingAction(action);
     setFeedbackMessage(null);
 
@@ -46,9 +60,10 @@ export function ReviewActionPanel({
         throw new Error(data.error || 'Failed to process action');
       }
 
+      setDecided(true);
       setFeedbackMessage({
         type: 'success',
-        text: `Action '${action}' processed successfully.`,
+        text: `${ACTION_LABELS[action]} recorded. Returning to the review queue...`,
       });
 
       router.refresh();
@@ -94,18 +109,20 @@ export function ReviewActionPanel({
         <>
       {/* Editorial Notes */}
       <div className="space-y-2">
-        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+        <label htmlFor="review-feedback-notes" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
           Editorial / Revision Feedback Notes
         </label>
         <textarea
+          id="review-feedback-notes"
           rows={3}
+          maxLength={2000}
           value={feedbackNotes}
           onChange={(e) => setFeedbackNotes(e.target.value)}
           placeholder="e.g. Approved. Confirmed Ph.D. degree at Cambridge. Doctrinal statement conforms to institutional baseline..."
           className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-950 p-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <span className="text-[11px] text-slate-400 dark:text-slate-500 block">
-          Notes are stored in the audit log and transmitted to the scholar if changes are requested.
+          Notes are stored in the audit log and shown to the scholar. Required when requesting changes or rejecting.
         </span>
       </div>
 
@@ -113,42 +130,42 @@ export function ReviewActionPanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
         <button
           type="button"
-          disabled={loadingAction !== null}
+          disabled={busy}
           onClick={() => handleAction('approve')}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
         >
           {loadingAction === 'approve' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
           )}
           <span>Approve & Publish Live</span>
         </button>
 
         <button
           type="button"
-          disabled={loadingAction !== null}
+          disabled={busy}
           onClick={() => handleAction('request_changes')}
           className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold transition-colors disabled:opacity-50 shadow-xs cursor-pointer"
         >
           {loadingAction === 'request_changes' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <MessageSquare className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" aria-hidden="true" />
           )}
           <span>Request Changes</span>
         </button>
 
         <button
           type="button"
-          disabled={loadingAction !== null}
+          disabled={busy}
           onClick={() => handleAction('reject')}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
         >
           {loadingAction === 'reject' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <XCircle className="h-4 w-4" />
+            <XCircle className="h-4 w-4" aria-hidden="true" />
           )}
           <span>Reject Submission</span>
         </button>
@@ -163,14 +180,14 @@ export function ReviewActionPanel({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <button
           type="button"
-          disabled={loadingAction !== null}
+          disabled={busy}
           onClick={() => handleAction('hide')}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer"
         >
           {loadingAction === 'hide' ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : (
-            <EyeOff className="h-4 w-4" />
+            <EyeOff className="h-4 w-4" aria-hidden="true" />
           )}
           <span>Hide from Public Listing</span>
         </button>

@@ -11,6 +11,8 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+// The stored snapshot exceeded the database size check (stored JSON can be larger than the request).
+const TOO_LARGE_ERROR = 'The profile is too large to save. Shorten some entries and try again.';
 const GENERIC_ERROR = 'Unable to process the request. Please try again.';
 
 function isCode(error: unknown, code: string): boolean {
@@ -100,6 +102,9 @@ export async function PUT(req: NextRequest) {
 
         if (insertError) {
           if (isCode(insertError, '23505') && attempt === 0) continue;
+          if (isCode(insertError, '23514')) {
+            return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
+          }
           if (isCode(insertError, '23505') || isCode(insertError, '42501')) {
             return NextResponse.json({ error: GENERIC_ERROR }, { status: 409 });
           }
@@ -136,6 +141,9 @@ export async function PUT(req: NextRequest) {
         .select(REVISION_SELECT_COLUMNS);
 
       if (updateError) {
+        if (isCode(updateError, '23514')) {
+          return NextResponse.json({ error: TOO_LARGE_ERROR }, { status: 413 });
+        }
         if (isCode(updateError, '42501')) {
           return NextResponse.json({ error: GENERIC_ERROR }, { status: 409 });
         }

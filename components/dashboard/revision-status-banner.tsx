@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, FileEdit, Hourglass, MessageSquare, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle2, EyeOff, FileEdit, Hourglass, MessageSquare, XCircle, Loader2 } from 'lucide-react';
 import type { RevisionStatus } from '@/lib/domain/types';
 
 interface RevisionStatusBannerProps {
@@ -86,11 +86,15 @@ export function RevisionStatusBanner({
       Icon = CheckCircle2;
       title = 'Approved — your latest revision is published';
       detail = isHidden
-        ? 'Your latest revision is approved, but your profile is currently hidden by moderators.'
+        ? 'Your latest revision is approved.'
         : 'Your profile is live. Edits are staged as a new draft until approved.';
       break;
     default:
-      if (isPublished) {
+      if (isHidden) {
+        Icon = EyeOff;
+        title = 'Hidden by moderators';
+        detail = 'Your profile is not shown in public discovery. You can still edit and submit revisions; approval keeps it hidden until moderators restore it.';
+      } else if (isPublished) {
         tone = 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-300';
         Icon = CheckCircle2;
         title = 'Published';
@@ -102,6 +106,13 @@ export function RevisionStatusBanner({
       }
   }
 
+  // Moderation state is independent of revision status, so it is always shown
+  // (the default branch already says it when there is no revision).
+  const hiddenNote =
+    isHidden && status !== null
+      ? 'Your profile is currently hidden by moderators. Approving a revision does not make it visible again.'
+      : null;
+
   // The live region stays mounted so status changes are announced.
   return (
     <div role="status" aria-live="polite" data-testid="revision-status-banner">
@@ -112,6 +123,7 @@ export function RevisionStatusBanner({
             <div className="space-y-1">
               <p className="text-xs font-bold">{title}</p>
               {detail && <p className="text-[11px] opacity-90">{detail}</p>}
+              {hiddenNote && <p className="text-[11px] font-semibold">{hiddenNote}</p>}
               {notesLabel && adminNotes && (
                 <p className="text-[11px]">
                   <span className="font-semibold">{notesLabel}: </span>

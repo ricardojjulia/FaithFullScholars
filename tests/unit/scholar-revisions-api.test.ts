@@ -112,6 +112,12 @@ const putReq = (body: unknown, raw?: string) =>
     body: raw ?? JSON.stringify(body),
   });
 
+const postReq = (body?: unknown) =>
+  new Request('http://localhost:3845/api/scholars/revisions/action', {
+    method: 'POST',
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+
 const revisionRow = (overrides: Record<string, unknown> = {}) => ({
   id: 'r1',
   scholar_id: SCHOLAR_ID,
@@ -275,27 +281,37 @@ describe('PUT /api/scholars/revisions', () => {
     expect(failed.status).toBe(500);
     expect(JSON.stringify(await failed.json())).not.toContain('secret_table');
   });
+
+  it('maps the database snapshot size check (23514) to 413', async () => {
+    revisionHandler = (call) =>
+      call.op === 'update'
+        ? { data: null, error: { code: '23514', message: 'violates check constraint secret' } }
+        : { data: revisionRow(), error: null };
+    const res = await PUT(putReq({ snapshot: { full_name: 'Dr. A' } }));
+    expect(res.status).toBe(413);
+    expect(JSON.stringify(await res.json())).not.toContain('secret');
+  });
 });
 
 describe('POST /api/scholars/revisions/submit', () => {
   it('401 and 404', async () => {
     user = null;
-    expect((await submit()).status).toBe(401);
+    expect((await submit(postReq())).status).toBe(401);
     user = { id: 'account-a' };
     scholarId = null;
-    expect((await submit()).status).toBe(404);
+    expect((await submit(postReq())).status).toBe(404);
   });
 
   it('409 when there is nothing submittable', async () => {
-    expect((await submit()).status).toBe(409);
+    expect((await submit(postReq())).status).toBe(409);
     revisionHandler = () => ({ data: revisionRow({ status: 'submitted' }), error: null });
-    expect((await submit()).status).toBe(409);
+    expect((await submit(postReq())).status).toBe(409);
     expect(revisionCalls('update')).toHaveLength(0);
   });
 
   it('400 when the stored snapshot fails validation', async () => {
     revisionHandler = () => ({ data: revisionRow({ snapshot_data: { full_name: '' } }), error: null });
-    const res = await submit();
+    const res = await submit(postReq());
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(Array.isArray(body.errors)).toBe(true);
@@ -309,7 +325,7 @@ describe('POST /api/scholars/revisions/submit', () => {
       call.op === 'update'
         ? { data: [revisionRow({ status: 'submitted' })], error: null }
         : { data: revisionRow(), error: null };
-    const res = await submit();
+    const res = await submit(postReq());
     expect(res.status).toBe(200);
     expect((await res.json()).revision.status).toBe('submitted');
     const [update] = revisionCalls('update');
@@ -322,31 +338,41 @@ describe('POST /api/scholars/revisions/submit', () => {
 
   it('409 when the conditional update matched no row; generic 500 on database failure', async () => {
     revisionHandler = (call) => (call.op === 'update' ? { data: [], error: null } : { data: revisionRow(), error: null });
-    expect((await submit()).status).toBe(409);
+    expect((await submit(postReq())).status).toBe(409);
 
     revisionHandler = (call) =>
       call.op === 'update'
         ? { data: null, error: { code: 'XX000', message: 'boom secret' } }
         : { data: revisionRow(), error: null };
-    const res = await submit();
+    const res = await submit(postReq());
     expect(res.status).toBe(500);
     expect(JSON.stringify(await res.json())).not.toContain('secret');
+  });
+
+  it('409 for a stale revisionId pin, without writing; a matching pin proceeds', async () => {
+    revisionHandler = (call) =>
+      call.op === 'update'
+        ? { data: [revisionRow({ status: 'submitted' })], error: null }
+        : { data: revisionRow(), error: null };
+    expect((await submit(postReq({ revisionId: 'other' }))).status).toBe(409);
+    expect(revisionCalls('update')).toHaveLength(0);
+    expect((await submit(postReq({ revisionId: 'r1' }))).status).toBe(200);
   });
 });
 
 describe('POST /api/scholars/revisions/withdraw', () => {
   it('401 and 404', async () => {
     user = null;
-    expect((await withdraw()).status).toBe(401);
+    expect((await withdraw(postReq())).status).toBe(401);
     user = { id: 'account-a' };
     scholarId = null;
-    expect((await withdraw()).status).toBe(404);
+    expect((await withdraw(postReq())).status).toBe(404);
   });
 
   it('409 unless the open revision is submitted', async () => {
-    expect((await withdraw()).status).toBe(409);
+    expect((await withdraw(postReq())).status).toBe(409);
     revisionHandler = () => ({ data: revisionRow({ status: 'draft' }), error: null });
-    expect((await withdraw()).status).toBe(409);
+    expect((await withdraw(postReq())).status).toBe(409);
     expect(revisionCalls('update')).toHaveLength(0);
   });
 
@@ -355,7 +381,7 @@ describe('POST /api/scholars/revisions/withdraw', () => {
       call.op === 'update'
         ? { data: [revisionRow({ status: 'draft' })], error: null }
         : { data: revisionRow({ status: 'submitted' }), error: null };
-    const res = await withdraw();
+    const res = await withdraw(postReq());
     expect(res.status).toBe(200);
     const [update] = revisionCalls('update');
     expect(update.payload).toEqual({ status: 'draft' });
@@ -369,7 +395,13 @@ describe('POST /api/scholars/revisions/withdraw', () => {
       call.op === 'update'
         ? { data: [], error: null }
         : { data: revisionRow({ status: 'submitted' }), error: null };
-    expect((await withdraw()).status).toBe(409);
+    expect((await withdraw(postReq())).status).toBe(409);
+  });
+
+  it('409 for a stale revisionId pin, without writing', async () => {
+    revisionHandler = () => ({ data: revisionRow({ status: 'submitted' }), error: null });
+    expect((await withdraw(postReq({ revisionId: 'other' }))).status).toBe(409);
+    expect(revisionCalls('update')).toHaveLength(0);
   });
 });
 

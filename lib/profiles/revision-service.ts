@@ -309,3 +309,13 @@ export async function findOpenRevision(
 }
 
 export const REVISION_SELECT_COLUMNS = REVISION_COLUMNS;
+
+/** Reads an optional revisionId pin from the body; malformed or empty bodies pin nothing. */
+export async function readRevisionPin(req: Request): Promise<string | null> {
+  try {
+    const body = (await req.json()) as { revisionId?: unknown } | null;
+    return body && typeof body.revisionId === 'string' ? body.revisionId : null;
+  } catch {
+    return null;
+  }
+}

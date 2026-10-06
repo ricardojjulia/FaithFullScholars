@@ -15,7 +15,7 @@ export interface ReviewDecisionResult {
   scholarId: string;
   error?: string;
   /** Machine-readable failure reason for the review function. */
-  code?: 'not_found' | 'not_reviewable';
+  code?: 'not_found' | 'not_reviewable' | 'invalid_action' | 'audit_failed';
 }
 
 /**
@@ -98,6 +98,19 @@ export async function processRevisionReview(
     };
   }
 
+  // Hide is the only other action; anything else is refused rather than
+  // falling through to a destructive default.
+  if (input.action !== 'hide') {
+    return {
+      success: false,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+      error: 'Invalid review action.',
+      code: 'invalid_action',
+    };
+  }
+
   // Hide: remove the scholar profile from public discovery
   const now = new Date().toISOString();
   const { error: hideErr } = await supabase
@@ -129,7 +142,17 @@ export async function processRevisionReview(
   });
 
   if (auditErr) {
+    // The profile is hidden, but the decision is not recorded; report it rather
+    // than claiming a clean success.
     console.error('Failed to write profile_reviews audit log:', { code: (auditErr as { code?: string }).code });
+    return {
+      success: false,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+      error: 'The profile was hidden, but the audit record could not be written. Please record the decision again.',
+      code: 'audit_failed',
+    };
   }
 
   return {

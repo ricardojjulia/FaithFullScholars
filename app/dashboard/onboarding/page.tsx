@@ -116,8 +116,20 @@ export default function OnboardingPage() {
       return;
     }
     if (res.status === 409) {
-      setSubmitted(true);
-      setSaveErrors(SUBMITTED_MESSAGE);
+      // Re-read the real state: only an actual submission locks the wizard. Any
+      // other conflict (e.g. a draft changed in another tab) can be retried, and
+      // the scholar's edits here are kept.
+      const current = await fetchRevisionState();
+      if (current.ok) {
+        const rev = current.data.revision;
+        const isOpen = !!rev && ['draft', 'submitted', 'changes_requested'].includes(rev.status);
+        setOpenRevisionId(isOpen ? rev!.id : undefined);
+        if (rev?.status === 'submitted') {
+          setSubmitted(true);
+          return;
+        }
+      }
+      setSaveErrors(`${describeFailure(res)} Your edits are kept; save again to retry.`);
       return;
     }
     setSaveErrors(describeFailure(res));
@@ -137,8 +149,15 @@ export default function OnboardingPage() {
   if (loadError) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
-        <div role="alert" className="max-w-md p-4 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs">
-          {loadError}
+        <div role="alert" className="max-w-md p-4 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs space-y-2">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-3 py-1.5 bg-rose-700 text-white rounded-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );
