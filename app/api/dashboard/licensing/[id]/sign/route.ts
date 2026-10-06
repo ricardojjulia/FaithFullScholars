@@ -36,7 +36,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, agreement: result.agreement });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/dashboard/licensing/[id]/sign failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

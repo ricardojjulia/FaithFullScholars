@@ -33,7 +33,7 @@ export async function GET() {
     const subscription = await getInstitutionSubscription(instUser.institution_id);
     return NextResponse.json({ subscription });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error('/api/institution/subscription failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

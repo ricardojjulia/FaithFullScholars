@@ -222,6 +222,8 @@ export async function POST(req: NextRequest) {
       .from('institution_users')
       .select('institution_id')
       .eq('account_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
       .maybeSingle();
 
     const { data: account } = await authClient
@@ -259,7 +261,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Attempt to query database for approved scholars
-    const candidates: CandidateForMatching[] = [...SEED_CANDIDATES];
+    // Fictional seed candidates exist for local `next dev` demos only; in a deployed
+    // build they would be presented to a provost as real people (Council Review 12).
+    const candidates: CandidateForMatching[] =
+      process.env.NODE_ENV === 'development' ? [...SEED_CANDIDATES] : [];
 
     try {
       // Caller's RLS-scoped client: only rows the caller may see feed the matcher.

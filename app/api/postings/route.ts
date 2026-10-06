@@ -17,8 +17,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ postings });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : 'Internal error';
-    return NextResponse.json({ error: msg }, { status: 500 });
+    console.error('/api/postings failed:', err);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
 

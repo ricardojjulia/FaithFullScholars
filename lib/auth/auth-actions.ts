@@ -49,7 +49,9 @@ export async function loginWithPassword(formData: FormData): Promise<AuthActionR
   });
 
   if (error || !data.user) {
-    return { success: false, error: error?.message || 'Invalid email or password.' };
+    // Generic on purpose: provider messages can reveal whether an account exists.
+    if (error) console.error('Login failed:', error.message);
+    return { success: false, error: 'Invalid email or password.' };
   }
 
   // Determine user role and appropriate workspace redirect
@@ -71,6 +73,8 @@ export async function loginWithPassword(formData: FormData): Promise<AuthActionR
     .from('institution_users')
     .select('institution_id')
     .eq('account_id', userId)
+    .order('created_at', { ascending: true })
+    .limit(1)
     .maybeSingle();
 
   if (instUser) {
@@ -112,7 +116,14 @@ export async function signupScholar(input: ScholarSignupInput): Promise<AuthActi
   });
 
   if (authError || !authData.user) {
-    return { success: false, error: authError?.message || 'Unable to register account.' };
+    console.error('Signup failed:', authError?.message);
+    const alreadyRegistered = /already registered|already exists/i.test(authError?.message ?? '');
+    return {
+      success: false,
+      error: alreadyRegistered
+        ? 'An account with this email already exists. Please sign in instead.'
+        : 'Unable to register account. Please try again later.',
+    };
   }
 
   const userId = authData.user.id;
@@ -208,7 +219,14 @@ export async function signupInstitution(input: InstitutionSignupInput): Promise<
   });
 
   if (authError || !authData.user) {
-    return { success: false, error: authError?.message || 'Unable to register institution account.' };
+    console.error('Signup failed:', authError?.message);
+    const alreadyRegistered = /already registered|already exists/i.test(authError?.message ?? '');
+    return {
+      success: false,
+      error: alreadyRegistered
+        ? 'An account with this email already exists. Please sign in instead.'
+        : 'Unable to register institution account. Please try again later.',
+    };
   }
 
   const userId = authData.user.id;

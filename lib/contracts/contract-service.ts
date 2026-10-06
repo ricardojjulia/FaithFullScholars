@@ -128,7 +128,8 @@ export async function createContract(
     .single();
 
   if (error || !contract) {
-    return { success: false, error: error?.message || 'Failed to create contract.' };
+    console.error('createContract failed:', error);
+    return { success: false, error: 'Failed to create contract.' };
   }
 
   // Insert milestones if provided
