@@ -77,5 +77,5 @@ A red result is a stop condition.
 ## 🏛️ Governance Gates
 
 Per `improve-software.md` and `AGENTS.md`:
-1. **The Council**: Runs before non-trivial merges (4 read-only audit agents + synthesis + Documenter sign-off).
+1. **The Council**: Runs before non-trivial merges (read-only audit Agents 1–5 and 7 + synthesis + Agent 6 Documenter sign-off; see `docs/factory/review-personas.md` for Agent 7's lenses).
 2. **`pr-review` Gate**: The `pr-reviewer` agent must review the full branch diff before any PR opens.

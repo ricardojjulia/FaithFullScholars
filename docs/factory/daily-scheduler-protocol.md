@@ -12,7 +12,7 @@ This protocol governs the automated, daily 1:00 PM development cycle for FaithFu
 1. **Triage & Closeout:** Identify any unfinished tasks, open PRs, or unmerged feature branches from the previous run, validate them, complete them, and close them out cleanly.
 2. **Roadmap Traversal:** If the workspace is clean (or once cleaned), consult the master plan ([`docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`](file:///Users/rjulia/programs/FaithFullScholars/docs/FAITHFULL_SCHOLARS_FULL_PLAN.md)) to identify the next sequential phase/milestone.
 3. **Execution & Test Engineering:** Implement the next slice on a dedicated feature branch, writing comprehensive test suites and enforcing PostgreSQL Row Level Security (RLS) and multi-tenant isolation.
-4. **Software Factory Protocol:** Execute the mandatory Council review (4 read-only audit agents + synthesis), Documenter closeout, and pre-merge `pr-review` gate.
+4. **Software Factory Protocol:** Execute the mandatory Council review (read-only audit Agents 1–5 and 7 + synthesis), Documenter closeout, and pre-merge `pr-review` gate.
 5. **Report Generation:** Publish a committed, timestamped run report in `docs/reviews/run-reports/`.
 
 ---
@@ -191,6 +191,6 @@ Run the FaithFull Scholars daily 1:00 PM development cycle per docs/factory/dail
 3. ROADMAP TRAVERSAL: Read docs/FAITHFULL_SCHOLARS_FULL_PLAN.md §18 and docs/product/roadmap.md. Identify the next uncompleted phase or slice.
 4. EXECUTION: Create a new feature branch (git checkout -b feat/...). Implement the scoped slice following Next.js App Router rules, Supabase multi-tenant isolation, and RLS policies. Draft an ADR under docs/adr/ if new boundaries or schema patterns are added.
 5. TESTING: Write comprehensive unit, integration, and RLS test suites. Ensure npm run test, npm run lint, npm run audit:rls, and npm run build all pass green.
-6. GOVERNANCE: Execute the Council review (4-agent audit + synthesis) and Documenter closeout (update FAITHFULL_SCHOLARS_FULL_PLAN.md, CHANGELOG.md, README.md). Run the mandatory pr-review gate and resolve all Critical/Important findings.
+6. GOVERNANCE: Execute the Council review (read-only audit agents 1–5 and 7 + synthesis) and Documenter closeout (update FAITHFULL_SCHOLARS_FULL_PLAN.md, CHANGELOG.md, README.md). Run the mandatory pr-review gate and resolve all Critical/Important findings.
 7. CLOSEOUT & REPORT: Open/merge the PR into main, sync main, and write a full run report at docs/reviews/run-reports/YYYY-MM-DD-daily-run.md detailing leftovers triaged, phase delivered, test results, and next recommended slice.
 ```
