@@ -95,6 +95,10 @@ export function RevisionStatusBanner({
         Icon = CheckCircle2;
         title = 'Published';
         detail = 'Your profile is live. Edits are staged as a new draft until approved.';
+      } else {
+        // A new scholar with no revision yet: say what to do next.
+        title = 'New profile — not yet submitted';
+        detail = 'Save a draft, then submit it for review. Your profile is listed once an admin approves it.';
       }
   }
 

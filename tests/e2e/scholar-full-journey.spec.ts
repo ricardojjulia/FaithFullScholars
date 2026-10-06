@@ -63,7 +63,7 @@ test.describe('Scholar End-to-End User Journey', () => {
     // Rerun-safe: the persona may be left in submitted, rejected, or changes_requested by an
     // interrupted run. Wait for the banner to settle on a known state before branching.
     await expect(
-      banner.getByText(/Draft — not yet submitted|Awaiting review|Changes requested|Revision rejected|Published|Approved/)
+      banner.getByText(/New profile — not yet submitted|Draft — not yet submitted|Awaiting review|Changes requested|Revision rejected|Published|Approved/)
     ).toBeVisible();
 
     if (await banner.getByText('Awaiting review').isVisible()) {
