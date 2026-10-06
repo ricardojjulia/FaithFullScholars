@@ -27,7 +27,7 @@ FaithFull Scholars holds **special-category personal data** (GDPR Art. 9): relig
    - A client-supplied identifier is never used for an authorization decision.
 4. **Secrets**
    - `SUPABASE_SERVICE_ROLE_KEY` and `GEMINI_API_KEY` must never reach client bundles, logs or error messages.
-   - An ESLint rule blocks importing the service-role client from user-facing code.
+   - An ESLint rule blocks importing the service-role client outside a reviewed allow-list of staff-only and server-only modules (ADR 0022).
 5. **Errors and input**
    - Responses carry generic messages. Raw database errors, SQL detail and stack traces are never returned.
    - All external input is validated at the system boundary.

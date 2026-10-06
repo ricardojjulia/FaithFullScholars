@@ -123,7 +123,7 @@ flowchart TB
     subgraph Server ["Route Handlers & Domain Services"]
         Session["getSessionContext (session-derived identity)"]
         Validation["Boundary Validation & Allow-listed Snapshots"]
-        Review["Atomic Review RPC (service role only)"]
+        Review["Admin Review (service-role client, staff-only modules)"]
         AI["Gemini CV & Syllabus Extraction + Heuristic Fallback"]
         RateLimit["Search Abuse Gating & Rate Limits"]
     end
@@ -137,7 +137,7 @@ flowchart TB
 
     Presentation --> Server
     Server -- "RLS-scoped client (user JWT)" --> Data
-    Review -- "service_role" --> Data
+    Review -- "service_role (allow-listed)" --> Data
 ```
 
 More diagrams (request lifecycle, data model, revision lifecycle, directory layout) are in **[docs/architecture.md](./docs/architecture.md)**.
@@ -146,7 +146,12 @@ More diagrams (request lifecycle, data model, revision lifecycle, directory layo
 
 ## 🔒 Trust & Moderation Model
 
+Today, guard triggers stop scholars and institutions from publishing, verifying or promoting themselves ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). PR #56 adds the persisted draft-and-review lifecycle below. **It is not on `main` yet.**
+
 ```mermaid
+---
+title: Target revision lifecycle (ADR 0024, PR #56, not yet on main)
+---
 stateDiagram-v2
     direction LR
     [*] --> draft: scholar saves
@@ -162,10 +167,10 @@ stateDiagram-v2
     superseded --> [*]
 ```
 
-The persisted lifecycle above is defined in [ADR 0024](./docs/adr/) and lands with PR #56. Its guarantees:
-- **Scholars cannot self-publish.** The database refuses `approved`, `rejected` or `superseded` from a scholar, and refuses edits to a submitted revision.
-- **Approval is atomic.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction.
-- **Revisions are private.** Only the owning scholar and admins can read them. Public visitors see approved profiles only.
+What PR #56 adds, once merged (ADR 0024 lands with it):
+- **Database-enforced transitions.** A scholar can never set `approved`, `rejected` or `superseded`, and cannot edit a submitted revision.
+- **Atomic approval.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction. On `main` today, admin actions are separate service-role writes in `lib/admin/actions.ts`.
+- **Private revisions.** Only the owning scholar and admins can read revisions.
 - **Moderation wins.** Approving a hidden scholar's revision keeps the profile hidden.
 
 ---
@@ -173,7 +178,7 @@ The persisted lifecycle above is defined in [ADR 0024](./docs/adr/) and lands wi
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Node.js 24** (CI) or 20+
+- **Node.js 24.x** (pinned in `package.json` `engines`)
 - **Docker** and the **Supabase CLI**, for the local database
 - **npm**
 
@@ -188,7 +193,7 @@ npm install
 ```bash
 cp .env.example .env.local
 supabase start            # local Postgres, Auth and Storage; prints the keys for .env.local
-npm run seed:pilot        # optional: the 5-scholar pilot reference cohort
+npm run seed:pilot        # the 5-scholar pilot cohort (needed for the E2E personas)
 ```
 
 ### 3. Launch Development Server
@@ -203,25 +208,25 @@ See the **[HOWTO](./HOWTO.md)** for environment variables, test personas and tro
 
 ## 🧪 Quality Gates
 
-Every pull request runs these gates in GitHub Actions, and `main` is protected by required checks:
+Every pull request runs these gates in GitHub Actions. The `main` ruleset requires **lint, typecheck, unit-tests** (which includes integration) and **build** to pass. The test-surface gate and E2E also run on every PR, but are not required checks.
 
 ```bash
-npm run verify           # version check, lint, typecheck, tests, RLS and security audits, build
+npm run verify           # version check, lint, test-surface, typecheck, tests, RLS and security audits, build
 npm run test:e2e         # Playwright, signing in through the real /login flow
 npm run test:surface     # every page, route and server action must ship with a test
 ```
 
-| Gate | Layer | What it proves | Where |
+| Gate | Layer | What it proves | Required on `main` |
 | :--- | :--- | :--- | :---: |
-| **Lint & Typecheck** | Code | ESLint, including a wall against importing the service-role client in user code, plus `tsc` | ✅ CI |
-| **Unit & Integration** | Domain + DB | Vitest. Integration suites run against a live local Supabase **as real signed-in roles** | ✅ CI |
-| **Policy Matrix** | Data isolation | Every writable column per role is declared. An undeclared write, or a probe that silently does nothing, fails the build | ✅ CI |
-| **RLS & Security Audit** | Database | `audit:rls` (FORCE RLS and policy presence) and `audit:security` (Splinter advisor) | ✅ CI |
-| **Test Surface** | Coverage | Each discoverable surface has a `covers()`-tagged test or a dated exemption of at most 60 days | ✅ CI |
-| **E2E** | Browser | Admin, scholar and institution personas exercise role boundaries and full journeys | ✅ CI |
-| **Build** | Release | Next.js production build | ✅ CI |
+| **Lint & Typecheck** | Code | ESLint, including a wall against importing the service-role client outside a reviewed allow-list, plus `tsc` | ✅ |
+| **Unit & Integration** | Domain + DB | Vitest. Integration suites run against a live local Supabase **as real signed-in roles** | ✅ (`unit-tests`) |
+| **Policy Matrix** | Data isolation | Every writable column per role is declared. An undeclared write, or a probe that silently does nothing, fails | ✅ (`unit-tests`) |
+| **RLS & Security Audit** | Database | `audit:rls` (FORCE RLS and policy presence) and `audit:security` (Splinter advisor) | ✅ (`unit-tests` job) |
+| **Build** | Release | Next.js production build | ✅ |
+| **Test Surface** | Coverage | Each discoverable surface has a `covers()`-tagged test or a dated exemption of at most 60 days | runs on every PR |
+| **E2E** | Browser | Admin, scholar and institution personas exercise role boundaries and full journeys | runs on every PR |
 
-> Gates are trusted only after they have been shown to **fail on a genuinely bad state**. For example, removing a guard trigger made 10 database tests fail. See [`AGENTS.md`](./AGENTS.md).
+> A gate is trusted only after it has been shown to **fail on a genuinely bad state**, for example by removing a guard trigger and watching the database tests fail. See [`AGENTS.md`](./AGENTS.md).
 
 ---
 

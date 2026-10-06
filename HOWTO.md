@@ -7,7 +7,7 @@ Practical commands for running, testing and contributing to FaithFull Scholars. 
 ## 1. Run The App Locally
 
 ### Prerequisites
-- **Node.js 24** (the CI version; 20+ works)
+- **Node.js 24.x** (pinned in `package.json` `engines`)
 - **Docker** (for the local Supabase stack)
 - **Supabase CLI** (`brew install supabase/tap/supabase`, or see the Supabase docs)
 
@@ -23,7 +23,7 @@ supabase start
 cp .env.example .env.local
 # Paste the API URL, anon key and service-role key from `supabase status` into .env.local
 
-# 4. Optional: load the pilot reference cohort (5 approved scholars)
+# 4. Load the pilot reference cohort (5 approved scholars; required for the E2E personas)
 npm run seed:pilot
 
 # 5. Start the dev server
@@ -40,12 +40,19 @@ Open [http://localhost:3845](http://localhost:3845).
 | :--- | :---: | :--- |
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase API URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Public anon key (RLS applies) |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ server only | Admin review RPC, seeding and audits. **Never** expose it to the client; ESLint blocks importing it from user code |
-| `DATABASE_URL` / `DB_URL` | tests | Direct Postgres URL for integration tests and audits |
-| `NEXT_PUBLIC_APP_URL` | optional | Canonical site URL for SEO metadata |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | optional | AI CV and syllabus extraction. A heuristic parser is used without them |
-| `TURNSTILE_SECRET_KEY` | optional | Bot protection on public forms |
-| `NEXT_PUBLIC_PILOT_FEEDBACK_ENABLED` | optional | Pilot feedback widget |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | optional | Supabase publishable key (newer key format), in `.env.example` |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ server only | Staff-only admin actions, seeding and audits. **Never** expose it to the client. ESLint blocks importing the service-role client outside a reviewed allow-list |
+| `SUPABASE_PROJECT_ID` | optional | Supabase CLI project id, in `.env.example` |
+| `PORT` | n/a | In `.env.example`, but the `dev` and `start` scripts pin port 3845 |
+| `DATABASE_URL` / `DB_URL` ¹ | tests | Direct Postgres URL for integration tests and audits |
+| `NEXT_PUBLIC_APP_URL` ¹ | optional | Canonical site URL for SEO metadata |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` ¹ | optional | AI CV and syllabus extraction. A heuristic parser is used without them |
+| `TURNSTILE_SECRET_KEY` ¹ | optional | Cloudflare Turnstile verification on scholar and institution sign-up |
+| `NEXT_PUBLIC_PILOT_FEEDBACK_ENABLED`, `PILOT_FEEDBACK_ENABLED` ¹ | optional | Pilot feedback widget (client) and API (server) |
+| `ENABLE_DEV_ROUTES` ¹ | never in production | Guardrail flag: the app does not read it, but `npm run verify:deploy` fails if it is `true` in a production deploy |
+| `VERCEL_ENV` | automatic | Set by Vercel and used by the deploy checks |
+
+¹ Not in `.env.example`; add it manually when needed.
 | `TEST_USER_PASSWORD` | E2E | Per-run password for the E2E personas (generated and masked in CI) |
 
 Never commit `.env.local`. See [`CHECK_IN_POLICY.md`](CHECK_IN_POLICY.md).
@@ -77,6 +84,9 @@ npx vitest run tests/integration/rls-authenticated.test.ts   # RLS as real signe
 
 ### Browser E2E (Playwright)
 ```bash
+# Requires `supabase start` and `npm run seed:pilot` (the institution persona joins a seeded institution)
+export NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:<api-port>      # from `supabase status`
+export SUPABASE_SERVICE_ROLE_KEY=<local service_role key>        # from `supabase status`
 export TEST_USER_PASSWORD="$(openssl rand -base64 24)"
 node scripts/ci-setup-test-users.mjs   # creates admin / scholar / institution personas (local stack only)
 npm run build && npx playwright install chromium

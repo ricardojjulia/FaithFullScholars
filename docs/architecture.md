@@ -43,7 +43,7 @@ flowchart TB
     RSC --> Services
     Routes --> Services
     Services -- "user JWT (RLS-scoped)" --> PG
-    Services -- "service_role (admin review RPC, seeding)" --> PG
+    Services -- "service_role (allow-listed staff and server modules)" --> PG
     Services --> Auth
     Services --> Storage
     Services --> Gemini
@@ -82,16 +82,21 @@ sequenceDiagram
 - **RLS is the boundary.** Every public table has `FORCE ROW LEVEL SECURITY`. Application `WHERE` clauses are never the only protection.
 - **Trust columns are guarded.** Roles, publication status, verification status and tiers can be changed only by admins or the service role. The guard triggers fail closed through `private.is_restricted_caller()`.
 - **Helpers stay private.** SECURITY DEFINER helpers live in the unexposed `private` schema with `search_path = ''`.
-- **The service role is fenced.** An ESLint rule blocks importing the service-role client from user-facing code. Admin decisions go through one service-role-only RPC.
+- **The service role is fenced.** An ESLint rule blocks importing the service-role client outside a reviewed allow-list of staff-only and server-only modules. On `main`, admin review writes go through `lib/admin/actions.ts`. PR #56 replaces them with one atomic, service-role-only database function.
 - **Behaviour is tested, not just presence.** Integration suites sign in as real roles. The policy matrix fails on any undeclared column write or on a probe that silently changes nothing.
 
 ---
 
 ## 3. Profile Revision & Admin Review
 
-Approved profiles stay live while edits are reviewed ([ADR 0005](adr/0005-draft-published-profile-revisions.md)). The persisted lifecycle and the atomic review function are defined in ADR 0024 and land with PR #56.
+Approved profiles stay live while edits are reviewed ([ADR 0005](adr/0005-draft-published-profile-revisions.md)).
+
+> **Planned, not on `main`.** The flow below (the `/api/scholars/revisions` routes and `review_profile_revision()`) is defined in ADR 0024 and lands with PR #56. On `main`, scholar drafts are still held in the browser, and admin decisions are separate service-role writes in `lib/admin/actions.ts`.
 
 ```mermaid
+---
+title: Target flow (ADR 0024, PR #56)
+---
 sequenceDiagram
     autonumber
     actor Sch as Scholar
@@ -166,7 +171,7 @@ erDiagram
     }
 ```
 
-Later phases add subscriptions, contracts and milestones, course licensing, consortia, endorsements and speaker topics. Each is covered by RLS and, where it carries trust state, by guard triggers ([ADR 0023](adr/0023-trust-guards-phase2-and-policy-matrix.md)).
+Later phases add institution postings, subscriptions, contracts and milestones, course licensing, consortia, endorsements and speaker topics. Each is covered by RLS and, where it carries trust state, by guard triggers ([ADR 0023](adr/0023-trust-guards-phase2-and-policy-matrix.md)).
 
 ---
 
@@ -180,8 +185,10 @@ flowchart LR
     Push --> Tests["unit + integration (local Supabase, real roles, policy matrix, audit:rls, audit:security)"]
     Push --> Build["next build"]
     Push --> E2E["Playwright E2E (real /login personas)"]
-    Lint & Types & Surface & Tests & Build --> Required{"Required checks (ruleset)"}
+    Lint & Types & Tests & Build --> Required{"Required checks (ruleset)"}
+    Surface & E2E --> Advisory["Run on every PR (not required)"]
     Required --> Review["pr-review + Council + Copilot review"]
+    Advisory --> Review
     Review --> Merge["Squash merge to main"]
     Merge --> Vercel["Vercel production deploy"]
 ```
