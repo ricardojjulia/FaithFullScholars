@@ -8,6 +8,13 @@ import * as feedbackStore from '@/lib/feedback/store';
 import * as rateLimitModule from '@/lib/feedback/rate-limit';
 import * as authModule from '@/lib/feedback/auth';
 import * as supabaseServer from '@/lib/supabase/server';
+import { covers } from '../support/covers';
+
+covers(
+  'api:POST /api/feedback',
+  'api:PATCH /api/admin/triage/[id]',
+  'api:GET /api/admin/triage'
+);
 
 describe('Pilot Feedback & Error Triage System (§2.8 Playbook Tests)', () => {
   const originalEnv = process.env;

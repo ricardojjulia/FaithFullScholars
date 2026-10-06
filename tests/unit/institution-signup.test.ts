@@ -58,6 +58,12 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 import { signupInstitution, signupScholar } from '@/lib/auth/auth-actions';
+import { covers } from '../support/covers';
+
+covers(
+  'action:lib/auth/auth-actions.signupInstitution',
+  'action:lib/auth/auth-actions.signupScholar'
+);
 
 const base = {
   email: 'attacker@example.org',

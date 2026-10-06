@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
+
+// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
+test.use({ storageState: storageStatePath('institution') });
 
 test.describe('ATS/ABHE Accreditation Matrix & Error Boundary Journey (ADR 0019)', () => {
   test('navigates from saved shortlist to accreditation matrix and renders compliance KPIs', async ({ page }) => {

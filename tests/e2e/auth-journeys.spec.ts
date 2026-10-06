@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
 
 test.describe('Authentication & Role Onboarding Journeys', () => {
   test('renders login page and allows password visibility toggle', async ({ page }) => {
@@ -62,7 +63,8 @@ test.describe('Authentication & Role Onboarding Journeys', () => {
     await expect(page.locator('h1')).toContainText('Sign in to your account');
   });
 
-  test('universal navigation bar allows navigation from dashboard profile to faculty directory & courses', async ({ page }) => {
+  test('universal navigation bar allows navigation from dashboard profile to faculty directory & courses', async ({ browser }) => {
+    const page = await (await browser.newContext({ storageState: storageStatePath('scholar') })).newPage();
     await page.goto('/dashboard/profile');
     await page.waitForLoadState('domcontentloaded');
 

@@ -9,6 +9,11 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { GET } from '@/app/auth/callback/route';
 import { safeNextPath } from '@/lib/auth/redirect';
+import { covers } from '../support/covers';
+
+covers(
+  'api:GET /auth/callback'
+);
 
 describe('auth callback post-login redirect', () => {
   it.each([

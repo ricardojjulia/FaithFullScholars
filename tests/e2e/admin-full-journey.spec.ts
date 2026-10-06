@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
+
+// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
+test.use({ storageState: storageStatePath('admin') });
 
 test.describe('Admin Moderation & System Health Journey', () => {
   test('renders admin moderation portal layout and review routes', async ({ page }) => {

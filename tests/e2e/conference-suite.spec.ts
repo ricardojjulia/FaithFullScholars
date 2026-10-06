@@ -1,4 +1,8 @@
 import { test, expect } from '@playwright/test';
+import { storageStatePath } from './personas';
+
+// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
+test.use({ storageState: storageStatePath('institution') });
 
 test.describe('Theological Guild Conference Suite (ADR 0021)', () => {
   test('renders search committee conference floor docket and deliberation rubric', async ({
