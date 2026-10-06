@@ -1,5 +1,5 @@
 {
-  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A.",
+  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A, $REVISION.",
   "scenarios": [
     {
       "table": "accounts",
@@ -32,7 +32,7 @@
     {
       "table": "scholars",
       "persona": "scholar",
-      "fixture": "none",
+      "fixture": "draft_revision",
       "row": {
         "column": "id",
         "value": "$SCHOLAR_A"
@@ -102,7 +102,8 @@
           "value": "'https://scholar.google.com/citations?user=probe'"
         },
         "draft_revision_id": {
-          "skip": "nullable FK whose only safe probe value (NULL) equals the seed value; not a trust column"
+          "writable": true,
+          "value": "'$REVISION'"
         },
         "profile_status": {
           "writable": false,
@@ -819,6 +820,55 @@
         },
         "updated_at": {
           "skip": "maintained by an updated_at trigger (overwritten on every update)"
+        }
+      }
+    },
+    {
+      "table": "scholar_profile_revisions",
+      "persona": "scholar",
+      "fixture": "draft_revision",
+      "row": {
+        "column": "id",
+        "value": "$REVISION"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "revision_number": {
+          "writable": false,
+          "value": "99"
+        },
+        "status": {
+          "writable": true,
+          "value": "'submitted'"
+        },
+        "snapshot_data": {
+          "writable": true,
+          "value": "'{\"title\":\"Probe\"}'::jsonb"
+        },
+        "admin_notes": {
+          "writable": false,
+          "value": "'Probe reviewer note'"
+        },
+        "submitted_at": {
+          "writable": false,
+          "value": "now() + interval '1 day'"
+        },
+        "reviewed_at": {
+          "writable": false,
+          "value": "now() + interval '1 day'"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() + interval '1 day'"
+        },
+        "updated_at": {
+          "skip": "maintained by the revision guard trigger (overwritten on every update)"
         }
       }
     }

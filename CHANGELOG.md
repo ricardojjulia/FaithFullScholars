@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Scholar revision lifecycle, backend (ADR 0024, migration `20261006090000_scholar_revision_lifecycle.sql`).**
+  - **Database-enforced lifecycle:** a guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edits or resubmits. The database assigns `revision_number`, `submitted_at`, and `updated_at`. One open revision per scholar (partial unique index). `rejected` is now a valid status, and `snapshot_data` must be a JSON object of at most 256 KB.
+  - **API:** `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, and `POST /api/scholars/revisions/withdraw`. The snapshot is allow-listed (`profile_tier` and unknown keys are dropped) and the client can never set `scholar_id`, `status`, `revision_number`, or `admin_notes`.
+  - **Atomic admin review:** `review_profile_revision()` (service role only) approves, requests changes, or rejects submitted revisions together with the `profile_reviews` audit row. Approve supersedes the prior published revision, clears `draft_revision_id`, and keeps hidden scholars hidden. The admin route returns 404 or 409 for missing or non-submitted revisions.
+  - **Tests:** real-role lifecycle suite, policy-matrix scenario for `scholar_profile_revisions` (and `scholars.draft_revision_id` now declared), route unit tests.
+
+### Security
+- **Revisions are readable only by the owning scholar and admins.** Anonymous visitors could previously read the published revision, including `admin_notes`. A scholar could also insert a revision already marked `approved`; the database now refuses it. `scholars.draft_revision_id` can only point at the scholar's own open revision.
+
 ### Changed
 - **Hygiene (Council Review 12, Prompt C).**
   - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.

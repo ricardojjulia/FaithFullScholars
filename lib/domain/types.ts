@@ -18,7 +18,13 @@ export interface Account {
 
 export type ProfileStatus = 'draft' | 'submitted' | 'approved' | 'rejected' | 'hidden';
 export type VerificationStatus = 'unverified' | 'pending' | 'verified' | 'flagged';
-export type RevisionStatus = 'draft' | 'submitted' | 'changes_requested' | 'approved' | 'superseded';
+export type RevisionStatus =
+  | 'draft'
+  | 'submitted'
+  | 'changes_requested'
+  | 'approved'
+  | 'superseded'
+  | 'rejected';
 export type ProfileTier = 'standard' | 'distinguished_fellow';
 
 export interface ScholarProfile {

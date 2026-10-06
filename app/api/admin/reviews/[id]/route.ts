@@ -60,6 +60,12 @@ export async function POST(
     });
 
     if (!result.success) {
+      if (result.code === 'not_found') {
+        return NextResponse.json({ error: 'Revision not found' }, { status: 404 });
+      }
+      if (result.code === 'not_reviewable') {
+        return NextResponse.json({ error: 'Only submitted revisions can be reviewed' }, { status: 409 });
+      }
       return NextResponse.json({ error: result.error || 'Review processing failed' }, { status: 500 });
     }
 
