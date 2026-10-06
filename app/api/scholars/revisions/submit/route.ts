@@ -35,7 +35,7 @@ export async function POST() {
     const validation = validateRevisionData(sanitizeSnapshot(revision.snapshot_data));
     if (!validation.valid) {
       return NextResponse.json(
-        { error: 'The profile is not ready to submit.', details: validation.errors },
+        { error: 'The profile is not ready to submit.', errors: validation.errors },
         { status: 400 }
       );
     }

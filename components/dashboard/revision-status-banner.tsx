@@ -9,6 +9,8 @@ interface RevisionStatusBannerProps {
   adminNotes?: string | null;
   /** True once the scholar's profile is live (shows a subtle "Published" note when there is no open revision). */
   isPublished?: boolean;
+  /** True when moderators have hidden the profile from public discovery. */
+  isHidden?: boolean;
   isBusy?: boolean;
   onWithdraw?: () => void;
   onStartNewDraft?: () => void;
@@ -21,6 +23,7 @@ export function RevisionStatusBanner({
   status,
   adminNotes = null,
   isPublished = false,
+  isHidden = false,
   isBusy = false,
   onWithdraw,
   onStartNewDraft
@@ -77,6 +80,14 @@ export function RevisionStatusBanner({
           Start a new draft
         </button>
       ) : null;
+      break;
+    case 'approved':
+      tone = 'bg-emerald-50 border-emerald-200 text-emerald-900 dark:bg-emerald-950/30 dark:border-emerald-900 dark:text-emerald-300';
+      Icon = CheckCircle2;
+      title = 'Approved — your latest revision is published';
+      detail = isHidden
+        ? 'Your latest revision is approved, but your profile is currently hidden by moderators.'
+        : 'Your profile is live. Edits are staged as a new draft until approved.';
       break;
     default:
       if (isPublished) {

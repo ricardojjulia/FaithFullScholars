@@ -76,6 +76,13 @@ describe('Scholar revision lifecycle — real database roles', () => {
     await client.query('ROLLBACK TO SAVEPOINT attempt');
   }
 
+  /** The statement must be refused by the guard trigger itself (message starts with 'Unauthorized:'), not merely RLS. */
+  async function guardDenied(sql: string, params: unknown[] = []) {
+    await client.query('SAVEPOINT attempt');
+    await expect(client.query(sql, params)).rejects.toThrow(/^Unauthorized:/);
+    await client.query('ROLLBACK TO SAVEPOINT attempt');
+  }
+
   /** The statement must either raise a refusal or touch no rows (RLS row filtering). */
   async function refused(sql: string, params: unknown[] = []) {
     await client.query('SAVEPOINT attempt');
@@ -514,11 +521,17 @@ describe('Scholar revision lifecycle — real database roles', () => {
 
   it('review function: approve copies scalars, supersedes the prior revision, clears the pointer, writes the audit row', async () => {
     let id = '';
-    let tierBefore = '';
+    const before: { tier?: string; verification?: string } = {};
     await as(
       { role: 'service_role' },
       async () => {
-        tierBefore = (await client.query(`SELECT profile_tier FROM public.scholars WHERE id = $1`, [scholarA])).rows[0].profile_tier;
+        // Start from states that differ from what approval produces, so the assertions can fail.
+        await client.query(
+          `UPDATE public.scholars SET profile_status = 'submitted', verification_status = 'pending', profile_tier = 'standard' WHERE id = $1`,
+          [scholarA]
+        );
+        before.tier = 'standard';
+        before.verification = 'pending';
         id = await revisionFor(scholarA, 'submitted', {
           reviewed: false,
           snapshot: {
@@ -526,6 +539,7 @@ describe('Scholar revision lifecycle — real database roles', () => {
             title: 'Approved Title',
             biography: 'Approved biography',
             profile_tier: 'distinguished_fellow',
+            verification_status: 'verified',
             unknown_key: 'ignored',
           },
         });
@@ -542,7 +556,9 @@ describe('Scholar revision lifecycle — real database roles', () => {
         expect(scholar.published_revision_id).toBe(id);
         expect(scholar.profile_status).toBe('approved');
         expect(scholar.draft_revision_id).toBeNull();
-        expect(scholar.profile_tier).toBe(tierBefore);
+        // Trust columns are never copied from a snapshot.
+        expect(scholar.profile_tier).toBe(before.tier);
+        expect(scholar.verification_status).toBe(before.verification);
 
         const rev = (await client.query(`SELECT status, reviewed_at, admin_notes FROM public.scholar_profile_revisions WHERE id = $1`, [id])).rows[0];
         expect(rev.status).toBe('approved');
@@ -559,6 +575,45 @@ describe('Scholar revision lifecycle — real database roles', () => {
         );
         expect(audit.rowCount).toBe(1);
         expect(audit.rows[0]).toMatchObject({ action: 'approve', feedback_notes: 'Looks good', reviewer_account_id: ADMIN_ACCOUNT });
+      }
+    );
+  });
+
+  it('review function: first-time approval publishes a draft scholar without superseding anything', async () => {
+    let id = '';
+    let supersededBefore = 0;
+    const countSuperseded = async () =>
+      Number(
+        (await client.query(
+          `SELECT count(*)::int AS n FROM public.scholar_profile_revisions WHERE scholar_id = $1 AND status = 'superseded'`,
+          [scholarA]
+        )).rows[0].n
+      );
+    await as(
+      { role: 'service_role' },
+      async () => {
+        await client.query(
+          `UPDATE public.scholars SET profile_status = 'draft', published_revision_id = NULL WHERE id = $1`,
+          [scholarA]
+        );
+        id = await revisionFor(scholarA, 'submitted', { reviewed: false, snapshot: { full_name: 'First Publication' } });
+        await client.query(`UPDATE public.scholars SET draft_revision_id = $2 WHERE id = $1`, [scholarA, id]);
+        supersededBefore = await countSuperseded();
+      },
+      async () => {
+        await review(id, 'approve', 'Welcome');
+        const scholar = (await client.query(
+          `SELECT profile_status, published_revision_id, draft_revision_id, full_name FROM public.scholars WHERE id = $1`,
+          [scholarA]
+        )).rows[0];
+        expect(scholar.profile_status).toBe('approved');
+        expect(scholar.published_revision_id).toBe(id);
+        expect(scholar.draft_revision_id).toBeNull();
+        expect(scholar.full_name).toBe('First Publication');
+        expect(await countSuperseded()).toBe(supersededBefore);
+        const audit = await client.query(`SELECT action FROM public.profile_reviews WHERE revision_id = $1`, [id]);
+        expect(audit.rowCount).toBe(1);
+        expect(audit.rows[0].action).toBe('approve');
       }
     );
   });
@@ -582,10 +637,12 @@ describe('Scholar revision lifecycle — real database roles', () => {
 
   it('review function: request_changes keeps the revision editable and records the note', async () => {
     let id = '';
+    let before: { published_revision_id: string | null; profile_status: string; full_name: string; title: string | null } | undefined;
     await as(
       { role: 'service_role' },
       async () => {
-        id = await revisionFor(scholarA, 'submitted');
+        before = (await client.query(`SELECT published_revision_id, profile_status, full_name, title FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+        id = await revisionFor(scholarA, 'submitted', { reviewed: false, snapshot: { full_name: 'Should Not Publish', title: 'Nope' } });
       },
       async () => {
         const res = await review(id, 'request_changes', 'Please add your institution.');
@@ -594,6 +651,11 @@ describe('Scholar revision lifecycle — real database roles', () => {
         expect(rev.status).toBe('changes_requested');
         expect(rev.admin_notes).toBe('Please add your institution.');
         expect(rev.reviewed_at).not.toBeNull();
+        const scholar = (await client.query(`SELECT published_revision_id, profile_status, full_name, title FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+        expect(scholar).toEqual(before);
+        const audit = await client.query(`SELECT action, feedback_notes FROM public.profile_reviews WHERE revision_id = $1`, [id]);
+        expect(audit.rowCount).toBe(1);
+        expect(audit.rows[0]).toMatchObject({ action: 'request_changes', feedback_notes: 'Please add your institution.' });
       }
     );
   });
@@ -619,6 +681,9 @@ describe('Scholar revision lifecycle — real database roles', () => {
         expect(scholar.profile_status).toBe(before!.profile_status);
         expect(scholar.title).toBe(before!.title);
         expect(scholar.draft_revision_id).toBeNull();
+        const audit = await client.query(`SELECT action FROM public.profile_reviews WHERE revision_id = $1`, [id]);
+        expect(audit.rowCount).toBe(1);
+        expect(audit.rows[0].action).toBe('reject');
 
         // Terminal: cannot be reviewed again.
         await client.query('SAVEPOINT attempt');
@@ -647,6 +712,155 @@ describe('Scholar revision lifecycle — real database roles', () => {
         await client.query('SAVEPOINT attempt');
         await expect(review(draft, 'hide')).rejects.toMatchObject({ code: '22023' });
         await client.query('ROLLBACK TO SAVEPOINT attempt');
+      }
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Submit never changes publication state
+  // ---------------------------------------------------------------------------
+  it('submit leaves scholars.profile_status and published_revision_id unchanged (approved scholar)', async () => {
+    let id = '';
+    let before: { profile_status: string; published_revision_id: string | null } | undefined;
+    await asScholar(
+      async () => {
+        await client.query(`UPDATE public.scholars SET profile_status = 'approved' WHERE id = $1`, [scholarA]);
+        id = await ownDraft();
+        before = (await client.query(`SELECT profile_status, published_revision_id FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+      },
+      async () => {
+        await client.query(`UPDATE public.scholar_profile_revisions SET status = 'submitted' WHERE id = $1`, [id]);
+        const after = (await client.query(`SELECT profile_status, published_revision_id FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+        expect(after.profile_status).toBe('approved');
+        expect(after).toEqual(before);
+      }
+    );
+  });
+
+  it('submit leaves a draft scholar in draft', async () => {
+    let id = '';
+    await asScholar(
+      async () => {
+        await client.query(`UPDATE public.scholars SET profile_status = 'draft', published_revision_id = NULL WHERE id = $1`, [scholarA]);
+        id = await ownDraft();
+      },
+      async () => {
+        await client.query(`UPDATE public.scholar_profile_revisions SET status = 'submitted' WHERE id = $1`, [id]);
+        const after = (await client.query(`SELECT profile_status, published_revision_id FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+        expect(after.profile_status).toBe('draft');
+        expect(after.published_revision_id).toBeNull();
+      }
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Transition and field-lock gaps (guard refusals, not RLS)
+  // ---------------------------------------------------------------------------
+  it('forbidden: changes_requested cannot move to approved, superseded, or rejected', async () => {
+    let id = '';
+    await asScholar(
+      async () => {
+        id = await revisionFor(scholarA, 'changes_requested', { reviewed: true });
+      },
+      async () => {
+        for (const status of ['approved', 'superseded', 'rejected']) {
+          await guardDenied(`UPDATE public.scholar_profile_revisions SET status = $2 WHERE id = $1`, [id, status]);
+        }
+      }
+    );
+  });
+
+  it('forbidden: reviewer and timing fields cannot be set on submitted or changes_requested rows', async () => {
+    for (const status of ['submitted', 'changes_requested']) {
+      let id = '';
+      await asScholar(
+        async () => {
+          id = await revisionFor(scholarA, status, { reviewed: status === 'changes_requested' });
+        },
+        async () => {
+          await guardDenied(`UPDATE public.scholar_profile_revisions SET admin_notes = 'forged' WHERE id = $1`, [id]);
+          await guardDenied(`UPDATE public.scholar_profile_revisions SET reviewed_at = now() WHERE id = $1`, [id]);
+          await guardDenied(`UPDATE public.scholar_profile_revisions SET submitted_at = now() WHERE id = $1`, [id]);
+        }
+      );
+    }
+  });
+
+  it('forbidden: a withdraw that also edits snapshot_data in the same UPDATE', async () => {
+    let id = '';
+    await asScholar(
+      async () => {
+        id = await revisionFor(scholarA, 'submitted');
+      },
+      async () => {
+        await guardDenied(
+          `UPDATE public.scholar_profile_revisions SET status = 'draft', snapshot_data = '{"full_name":"Sneaky"}'::jsonb WHERE id = $1`,
+          [id]
+        );
+      }
+    );
+  });
+
+  it('documented: a submit may carry a final snapshot edit from draft in the same statement', async () => {
+    let id = '';
+    await asScholar(
+      async () => {
+        id = await ownDraft();
+      },
+      async () => {
+        const res = await client.query(
+          `UPDATE public.scholar_profile_revisions SET status = 'submitted', snapshot_data = '{"full_name":"Final edit"}'::jsonb
+           WHERE id = $1 RETURNING status, snapshot_data`,
+          [id]
+        );
+        expect(res.rows[0].status).toBe('submitted');
+        expect(res.rows[0].snapshot_data).toEqual({ full_name: 'Final edit' });
+      }
+    );
+  });
+
+  it('reopen: a second open revision cannot be created through UPDATE', async () => {
+    // Reopen paths (submitted/changes_requested -> draft) stay on the same row, and the
+    // unique index already prevents a second open row from existing. Every transition that
+    // would turn a closed row (rejected/superseded/approved) back into an open one is
+    // refused by the guard first, so the unique index on UPDATE is unreachable for a scholar.
+    let closed = '';
+    await asScholar(
+      async () => {
+        await revisionFor(scholarA, 'rejected', { reviewed: true });
+        closed = (
+          await client.query(
+            `SELECT id FROM public.scholar_profile_revisions WHERE scholar_id = $1 AND status = 'rejected' ORDER BY revision_number DESC LIMIT 1`,
+            [scholarA]
+          )
+        ).rows[0].id;
+        // an open revision now exists alongside the closed one
+        const number = (
+          await client.query(`SELECT max(revision_number) + 1 AS n FROM public.scholar_profile_revisions WHERE scholar_id = $1`, [scholarA])
+        ).rows[0].n;
+        await client.query(
+          `INSERT INTO public.scholar_profile_revisions (scholar_id, revision_number, status, snapshot_data) VALUES ($1, $2, 'changes_requested', '{}'::jsonb)`,
+          [scholarA, number]
+        );
+      },
+      async () => {
+        // Either the guard ('Unauthorized: finalized revisions...') or RLS row filtering stops it; never the index.
+        await refused(`UPDATE public.scholar_profile_revisions SET status = 'draft' WHERE id = $1`, [closed]);
+        await refused(`UPDATE public.scholar_profile_revisions SET status = 'changes_requested' WHERE id = $1`, [closed]);
+      }
+    );
+  });
+
+  it('admin: an authenticated admin can read other scholars\' revisions', async () => {
+    let id = '';
+    await as(
+      { role: 'authenticated', sub: ADMIN_ACCOUNT },
+      async () => {
+        id = await revisionFor(otherScholar, 'submitted');
+      },
+      async () => {
+        const read = await client.query(`SELECT id FROM public.scholar_profile_revisions WHERE id = $1`, [id]);
+        expect(read.rowCount).toBe(1);
       }
     );
   });

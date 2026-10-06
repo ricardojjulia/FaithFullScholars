@@ -109,7 +109,7 @@ export async function processRevisionReview(
     .eq('id', scholarId);
 
   if (hideErr) {
-    console.error('Admin hide scholar error:', hideErr);
+    console.error('Admin hide scholar failed:', { code: (hideErr as { code?: string }).code });
     return {
       success: false,
       action: input.action,
@@ -129,7 +129,7 @@ export async function processRevisionReview(
   });
 
   if (auditErr) {
-    console.error('Failed to write profile_reviews audit log:', auditErr);
+    console.error('Failed to write profile_reviews audit log:', { code: (auditErr as { code?: string }).code });
   }
 
   return {

@@ -297,6 +297,10 @@ describe('POST /api/scholars/revisions/submit', () => {
     revisionHandler = () => ({ data: revisionRow({ snapshot_data: { full_name: '' } }), error: null });
     const res = await submit();
     expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(Array.isArray(body.errors)).toBe(true);
+    expect(body.errors.length).toBeGreaterThan(0);
+    expect(body).not.toHaveProperty('details');
     expect(revisionCalls('update')).toHaveLength(0);
   });
 

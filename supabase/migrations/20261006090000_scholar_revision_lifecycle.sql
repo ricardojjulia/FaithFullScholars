@@ -202,7 +202,8 @@ CREATE POLICY "Scholars can update own open revisions"
 
 -- ------------------------------------------------------------------------------
 -- 5. scholars — draft_revision_id may only point at the scholar's own open revision
---    (every pre-existing check is kept verbatim from 20261005090000)
+--    (every pre-existing check is kept from 20261005090000; the only addition is the
+--    draft_revision_id rule on INSERT and UPDATE)
 -- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION private.guard_scholars()
 RETURNS TRIGGER

@@ -153,6 +153,7 @@ export default function ProfileEditorPage() {
         status={status}
         adminNotes={revision?.admin_notes ?? null}
         isPublished={isPublished}
+        isHidden={state?.scholar.profile_status === 'hidden'}
         isBusy={busy}
         onWithdraw={handleWithdraw}
         onStartNewDraft={() => {
