@@ -47,3 +47,16 @@ next-env.d.ts
 # supabase local
 supabase/.temp/
 .env*
+!.env.example
+
+# google drive & cloud sync temporary files
+.tmp.drive*
+.tmp.driveupload/
+.tmp.drivedownload/
+*.driveupload
+*.drivedownload
+.drivefs*
+.drive*
+.gdrive*
+Icon?
+
