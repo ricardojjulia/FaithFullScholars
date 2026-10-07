@@ -201,7 +201,7 @@ describe('RLS enforced for real anon / authenticated callers', () => {
     });
   });
 
-  it('a scholar cannot approve, verify, or publish their own profile — but can edit their biography', async () => {
+  it('a scholar cannot approve, verify, or publish their own profile, and cannot edit their biography directly (ADR 0025)', async () => {
     const resetToDraft = async () => {
       // Seed scholar A is approved & published; start from an unverified draft so each attempt is a real change.
       await client.query(
@@ -221,8 +221,19 @@ describe('RLS enforced for real anon / authenticated callers', () => {
         ).rejects.toThrow(/Unauthorized/);
         await client.query('ROLLBACK TO SAVEPOINT attempt');
       }
+      // Profile content is review-gated: it changes only through an approved revision.
+      await client.query('SAVEPOINT attempt');
+      await expect(
+        client.query(`UPDATE public.scholars SET biography = 'Updated by the scholar' WHERE id = $1`, [scholarA])
+      ).rejects.toThrow(/^Unauthorized:/);
+      await client.query('ROLLBACK TO SAVEPOINT attempt');
+    });
+  });
+
+  it('a scholar can still change their contact preference directly (self-service, ADR 0025)', async () => {
+    await inTransaction(async () => {}, { role: 'authenticated', sub: SCHOLAR_A_ACCOUNT }, async () => {
       const ok = await client.query(
-        `UPDATE public.scholars SET biography = 'Updated by the scholar' WHERE id = $1`,
+        `UPDATE public.scholars SET contact_preference = 'Email only' WHERE id = $1`,
         [scholarA]
       );
       expect(ok.rowCount).toBe(1);

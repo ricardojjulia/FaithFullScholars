@@ -108,8 +108,8 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
         location: 'Grand Rapids, MI',
         timezone: 'America/Detroit',
         doctrinal_statement_text: 'I heartily subscribe to the Westminster Confession of Faith.',
-        disciplines: ['Historical Theology', 'Systematic Theology'],
-        traditions: ['Reformed & Presbyterian'],
+        disciplines: ['church-history', 'systematic-theology'],
+        traditions: ['reformed-presbyterian'],
         credentials: [
           {
             degree: 'Ph.D.',
@@ -270,6 +270,26 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
     expect(approvalLog).toBeDefined();
     expect(approvalLog?.feedback_notes).toBe(approvalNotes);
 
+    // The relational lists were promoted in the same transaction (ADR 0025).
+    const creds = await client.query('SELECT degree, display_order FROM public.credentials WHERE scholar_id = $1', [testScholarId]);
+    expect(creds.rows).toEqual([{ degree: 'Ph.D.', display_order: 0 }]);
+    const pubs = await client.query('SELECT title FROM public.publications WHERE scholar_id = $1', [testScholarId]);
+    expect(pubs.rows).toEqual([{ title: 'Federal Theology in the Seventeenth Century' }]);
+    const discs = await client.query(
+      `SELECT d.slug, sd.is_primary FROM public.scholar_disciplines sd JOIN public.disciplines d ON d.id = sd.discipline_id
+       WHERE sd.scholar_id = $1 ORDER BY d.slug`,
+      [testScholarId]
+    );
+    expect(discs.rows).toEqual([
+      { slug: 'church-history', is_primary: true },
+      { slug: 'systematic-theology', is_primary: false },
+    ]);
+    const trads = await client.query(
+      `SELECT t.slug, st.is_primary FROM public.scholar_traditions st JOIN public.traditions t ON t.id = st.tradition_id WHERE st.scholar_id = $1`,
+      [testScholarId]
+    );
+    expect(trads.rows).toEqual([{ slug: 'reformed-presbyterian', is_primary: true }]);
+
     // The previously published revision is superseded and the draft pointer is cleared.
     const baseline = await client.query(
       'SELECT status FROM public.scholar_profile_revisions WHERE id = $1',
@@ -328,6 +348,45 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
     });
     expect(missing.success).toBe(false);
     expect(missing.code).toBe('not_found');
+  });
+
+  it('4c. blocks approval of unmatched taxonomy entries with a clear 422-style result and changes nothing', async () => {
+    const rev = await client.query(
+      `INSERT INTO public.scholar_profile_revisions (scholar_id, revision_number, status, snapshot_data, submitted_at)
+       VALUES ($1, 4, 'submitted', $2::jsonb, now()) RETURNING id`,
+      [
+        testScholarId,
+        JSON.stringify({
+          full_name: 'Dr. Review Test Scholar',
+          title: 'Must Not Be Published',
+          credentials: [{ degree: 'Th.D.', field_of_study: 'X', institution_name: 'Y' }],
+          traditions: ['Confessional Baptist'],
+        }),
+      ]
+    );
+    const unmatchedId = rev.rows[0].id;
+    const reviewsBefore = (await client.query('SELECT count(*)::int AS n FROM public.profile_reviews WHERE scholar_id = $1', [testScholarId])).rows[0].n;
+
+    const result = await processRevisionReview({
+      revisionId: unmatchedId,
+      action: 'approve',
+      reviewerAccountId: testAdminAccountId,
+    });
+    expect(result).toMatchObject({ success: false, code: 'taxonomy_unmatched' });
+    expect(result.unmatched).toEqual([{ kind: 'tradition', value: 'Confessional Baptist' }]);
+    expect(result.error).toContain('Confessional Baptist');
+
+    const revCheck = await client.query('SELECT status FROM public.scholar_profile_revisions WHERE id = $1', [unmatchedId]);
+    expect(revCheck.rows[0].status).toBe('submitted');
+    const scholar = await client.query('SELECT title FROM public.scholars WHERE id = $1', [testScholarId]);
+    expect(scholar.rows[0].title).toBe('Distinguished Professor of Historical Theology');
+    const creds = await client.query('SELECT degree FROM public.credentials WHERE scholar_id = $1', [testScholarId]);
+    expect(creds.rows).toEqual([{ degree: 'Ph.D.' }]);
+    const reviewsAfter = (await client.query('SELECT count(*)::int AS n FROM public.profile_reviews WHERE scholar_id = $1', [testScholarId])).rows[0].n;
+    expect(reviewsAfter).toBe(reviewsBefore);
+
+    // Clean up the open revision so later tests are unaffected.
+    await client.query(`UPDATE public.scholar_profile_revisions SET status = 'superseded' WHERE id = $1`, [unmatchedId]);
   });
 
   it('5. processes institution verification decision', async () => {

@@ -1,5 +1,5 @@
 {
-  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A, $REVISION.",
+  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Scenarios with requireVisible=true also assert the probed row is visible to the persona, so a denial cannot be an invisible-row artifact. Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A, $REVISION, $CHILD_CRED, $CHILD_PUB, $CHILD_DISC, $CHILD_TRAD, $CHILD_CONF. ADR 0025: scholars content columns, slug and file paths are review-gated (not writable); the five published child tables are not writable at all.",
   "scenarios": [
     {
       "table": "accounts",
@@ -46,39 +46,39 @@
           "value": "'$ADMIN_ACCOUNT'"
         },
         "slug": {
-          "writable": true,
+          "writable": false,
           "value": "'probe-matrix-slug'"
         },
         "full_name": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe Name'"
         },
         "title": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe Title'"
         },
         "profile_photo_path": {
-          "writable": true,
+          "writable": false,
           "value": "'probe/photo.png'"
         },
         "current_institution": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe Institution'"
         },
         "institutional_role": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe Role'"
         },
         "biography": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe biography'"
         },
         "location": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe City'"
         },
         "timezone": {
-          "writable": true,
+          "writable": false,
           "value": "'Europe/London'"
         },
         "contact_preference": {
@@ -86,19 +86,19 @@
           "value": "'probe'"
         },
         "doctrinal_statement_text": {
-          "writable": true,
+          "writable": false,
           "value": "'Probe statement'"
         },
         "doctrinal_statement_path": {
-          "writable": true,
+          "writable": false,
           "value": "'probe/statement.pdf'"
         },
         "orcid_id": {
-          "writable": true,
+          "writable": false,
           "value": "'0000-0002-1825-0097'"
         },
         "google_scholar_url": {
-          "writable": true,
+          "writable": false,
           "value": "'https://scholar.google.com/citations?user=probe'"
         },
         "draft_revision_id": {
@@ -122,7 +122,8 @@
           "value": "'distinguished_fellow'"
         },
         "created_at": {
-          "skip": "audit timestamp"
+          "writable": false,
+          "value": "now() - interval '1 day'"
         },
         "updated_at": {
           "skip": "maintained by an updated_at trigger (overwritten on every update)"
@@ -869,6 +870,209 @@
         },
         "updated_at": {
           "skip": "maintained by the revision guard trigger (overwritten on every update)"
+        }
+      }
+    },
+    {
+      "table": "credentials",
+      "persona": "scholar",
+      "fixture": "published_children",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$CHILD_CRED"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "degree": {
+          "writable": false,
+          "value": "'Probe Degree'"
+        },
+        "field_of_study": {
+          "writable": false,
+          "value": "'Probe Field'"
+        },
+        "institution_name": {
+          "writable": false,
+          "value": "'Probe Institution'"
+        },
+        "year_awarded": {
+          "writable": false,
+          "value": "1999"
+        },
+        "is_terminal": {
+          "writable": false,
+          "value": "true"
+        },
+        "display_order": {
+          "writable": false,
+          "value": "77"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        },
+        "updated_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        }
+      }
+    },
+    {
+      "table": "publications",
+      "persona": "scholar",
+      "fixture": "published_children",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$CHILD_PUB"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "title": {
+          "writable": false,
+          "value": "'Probe Title'"
+        },
+        "publication_type": {
+          "writable": false,
+          "value": "'journal_article'"
+        },
+        "publisher_or_journal": {
+          "writable": false,
+          "value": "'Probe Press'"
+        },
+        "year": {
+          "writable": false,
+          "value": "1999"
+        },
+        "doi_or_url": {
+          "writable": false,
+          "value": "'https://example.org/probe'"
+        },
+        "citation_text": {
+          "writable": false,
+          "value": "'Probe citation'"
+        },
+        "display_order": {
+          "writable": false,
+          "value": "77"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        },
+        "updated_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        }
+      }
+    },
+    {
+      "table": "scholar_disciplines",
+      "persona": "scholar",
+      "fixture": "published_children",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$CHILD_DISC"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "discipline_id": {
+          "writable": false,
+          "value": "'d1000000-0000-0000-0000-000000000009'"
+        },
+        "is_primary": {
+          "writable": false,
+          "value": "true"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        }
+      }
+    },
+    {
+      "table": "scholar_traditions",
+      "persona": "scholar",
+      "fixture": "published_children",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$CHILD_TRAD"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "tradition_id": {
+          "writable": false,
+          "value": "'b1000000-0000-0000-0000-000000000005'"
+        },
+        "is_primary": {
+          "writable": false,
+          "value": "true"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
+        }
+      }
+    },
+    {
+      "table": "scholar_confessions",
+      "persona": "scholar",
+      "fixture": "published_children",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$CHILD_CONF"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "confessional_standard_id": {
+          "writable": false,
+          "value": "'c1000000-0000-0000-0000-000000000003'"
+        },
+        "adherence_level": {
+          "writable": false,
+          "value": "'with_exceptions'"
+        },
+        "exception_notes": {
+          "writable": false,
+          "value": "'Probe note'"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '1 day'"
         }
       }
     }
