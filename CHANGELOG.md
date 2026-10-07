@@ -26,6 +26,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
 
 ### Added
+- **Repository presentation aligned with ChurchCore-Orthos.**
+  - **README:** rewritten as an overview with a hero banner (`public/assets/brand/hero-banner.svg`), stack badges and live CI/E2E status badges. It adds sections on why the project exists, project status (including the not-launch-ready caveats), personas, quality gates and the software factory, plus Mermaid diagrams of the product surface, architecture, revision lifecycle and factory flow.
+  - **Feature log moved, not deleted:** the per-phase feature log moved verbatim to [`docs/feature-catalog.md`](docs/feature-catalog.md).
+  - **Community and policy files:** new `LICENSE` (**AGPL-3.0**, chosen by the owner), `HOWTO.md`, `SECURITY.md` (private vulnerability reporting, data-isolation invariants), `SUPPORT.md`, `VERSIONING.md`, `CODE_OF_CONDUCT.md` and `.github/pull_request_template.md` (security, migration and review-gate checklists).
+  - **Docs:** new hub [`docs/README.md`](docs/README.md), and [`docs/architecture.md`](docs/architecture.md) with topology, request-lifecycle, admin-review, data-model (ER) and CI diagrams.
+  - All diagrams were validated with `@mermaid-js/mermaid-cli`.
+
 - **Scholar revision lifecycle, backend (ADR 0024, migration `20261006090000_scholar_revision_lifecycle.sql`).**
   - **Database-enforced lifecycle:** a guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edits or resubmits. The database assigns `revision_number`, `submitted_at`, and `updated_at`. One open revision per scholar (partial unique index). `rejected` is now a valid status, and `snapshot_data` must be a JSON object of at most 256 KB.
   - **API:** `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, and `POST /api/scholars/revisions/withdraw`. The snapshot is allow-listed (`profile_tier` and unknown keys are dropped) and the client can never set `scholar_id`, `status`, `revision_number`, or `admin_notes`.
