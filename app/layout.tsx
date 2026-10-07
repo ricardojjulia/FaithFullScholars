@@ -1,20 +1,24 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { DevToolbar } from "@/components/dev/dev-toolbar";
 import { FeedbackShell } from "@/components/feedback/feedback-shell";
 import { I18nProvider } from "@/lib/i18n/i18n-context";
 
-const sansFallback = Plus_Jakarta_Sans({
+// Fonts are self-hosted (latin subset, variable weight; SIL OFL 1.1, licenses in
+// app/fonts/) so builds never depend on downloading from Google Fonts.
+const sansFallback = localFont({
+  src: "./fonts/plus-jakarta-sans-latin-var.woff2",
   variable: "--font-sans-fallback",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: "400 800",
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "./fonts/geist-mono-latin-var.woff2",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
 export const metadata: Metadata = {

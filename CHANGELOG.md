@@ -431,6 +431,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Assisted CV onboarding with automated PDF extraction in Phase 3.
 
 ### Fixed
+- **Builds no longer depend on Google Fonts.** Plus Jakarta Sans and Geist Mono are now self-hosted through `next/font/local` (Latin subset, variable weights; SIL OFL 1.1, with the license texts in `app/fonts/`). A CI build had failed when it could not download a font from `fonts.gstatic.com`.
 - **Revision UX follow-ups (Council Review 13 minors).** The admin review queue gains a **Rejected** tab, and its `?status=` filter now accepts only known tab values. The draft preview gains a **Withdraw** button while a submission awaits review. The onboarding profile fields have labels linked to their inputs (`htmlFor`/`id`). The E2E journey now also submits and withdraws from the preview.
 - **Production deploys had silently stopped.** The Vercel `ignoreCommand` added in #51 (`[ "$VERCEL_ENV" != "production" ]`) skipped builds, including production builds of `main`. The likely cause is that `VERCEL_ENV` is not available in the ignore step.
   - Production stayed on #50 (`f971bd4`), so #51, #54 (the Next.js 16.3.6 security bump) and #56 never deployed.
