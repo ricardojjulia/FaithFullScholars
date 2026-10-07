@@ -57,4 +57,14 @@ describe('revision-client', () => {
     const b = await fetchRevisionState();
     expect(!b.ok && b.error).toMatch(/try again/i);
   });
+
+  it('keeps only well-formed unresolved entries from a 422 submit response', async () => {
+    mockFetch(422, {
+      error: 'Not recognised',
+      unresolved: [{ kind: 'tradition', value: 'Odd' }, { kind: 'x', value: 'y' }, 'nope', { kind: 'discipline', value: 3 }]
+    });
+    const res = await submitRevision('r1');
+    expect(!res.ok && res.status).toBe(422);
+    if (!res.ok) expect(res.unresolved).toEqual([{ kind: 'tradition', value: 'Odd' }]);
+  });
 });

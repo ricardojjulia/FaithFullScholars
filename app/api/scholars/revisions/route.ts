@@ -6,6 +6,7 @@ import {
   REVISION_SELECT_COLUMNS,
   findOpenRevision,
   loadRevisionState,
+  loadTaxonomy,
   sanitizeSnapshot,
 } from '@/lib/profiles/revision-service';
 
@@ -79,7 +80,9 @@ export async function PUT(req: NextRequest) {
 
     // Only the allow-listed snapshot is ever written; scholar_id, status,
     // revision_number and admin_notes are never taken from the client.
-    const snapshot = sanitizeSnapshot(rawSnapshot);
+    // Taxonomy entries are mapped to canonical slugs (ADR 0025); unresolved values
+    // are kept (capped) so the scholar can fix them. Submit refuses them.
+    const snapshot = sanitizeSnapshot(rawSnapshot, await loadTaxonomy(supabase));
 
     for (let attempt = 0; attempt < 2; attempt++) {
       const { revision, failed } = await findOpenRevision(supabase, scholarId);

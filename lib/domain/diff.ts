@@ -22,6 +22,58 @@ export interface ProfileRevisionDiff {
   changes: FieldChange[];
 }
 
+
+// ---- canonical forms (avoid phantom diffs against a live baseline) ----------
+
+const text = (v: unknown): string | null => {
+  if (typeof v !== 'string') return null;
+  const t = v.trim();
+  return t === '' ? null : t;
+};
+const num = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+
+function canonicalSlugs(list: string[]): string {
+  return JSON.stringify([...new Set(list.map((v) => v.trim().toLowerCase()))].sort());
+}
+
+function primaryChanged(oldList: string[], newList: string[]): boolean {
+  if (oldList.length === 0 || newList.length === 0) return false;
+  return oldList[0].trim().toLowerCase() !== newList[0].trim().toLowerCase();
+}
+
+function canonicalConfessions(list: NonNullable<RevisionSnapshotData['confessions']>): string {
+  return JSON.stringify(
+    list
+      .map((c) => [text(c.confessional_standard_id)?.toLowerCase() ?? null, c.adherence_level ?? null, text(c.exception_notes)])
+      .sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+  );
+}
+
+function canonicalCredentials(list: NonNullable<RevisionSnapshotData['credentials']>): string {
+  return JSON.stringify(
+    list.map((c) => [
+      text(c.degree),
+      text(c.field_of_study),
+      text(c.institution_name),
+      num(c.year_awarded),
+      c.is_terminal === true,
+    ])
+  );
+}
+
+function canonicalPublications(list: NonNullable<RevisionSnapshotData['publications']>): string {
+  return JSON.stringify(
+    list.map((p) => [
+      text(p.title),
+      p.publication_type ?? null,
+      text(p.publisher_or_journal),
+      num(p.year),
+      text(p.doi_or_url),
+      text(p.citation_text),
+    ])
+  );
+}
+
 export function computeRevisionDiff(
   published: RevisionSnapshotData | null | undefined,
   draft: RevisionSnapshotData
@@ -42,8 +94,8 @@ export function computeRevisionDiff(
   ];
 
   for (const { key, label } of scalarFields) {
-    const oldVal = published ? (published[key] as string | undefined | null) ?? null : null;
-    const newVal = (draft[key] as string | undefined | null) ?? null;
+    const oldVal = published ? text(published[key]) : null;
+    const newVal = text(draft[key]);
 
     if (oldVal !== newVal) {
       if (oldVal === null && newVal !== null) {
@@ -56,36 +108,29 @@ export function computeRevisionDiff(
     }
   }
 
-  // Compare array of disciplines
-  const oldDisc = published?.disciplines ?? [];
-  const newDisc = draft.disciplines ?? [];
-  if (JSON.stringify(oldDisc.slice().sort()) !== JSON.stringify(newDisc.slice().sort())) {
-    changes.push({
-      field: 'disciplines',
-      label: 'Theological Disciplines',
-      oldValue: oldDisc,
-      newValue: newDisc,
-      kind: oldDisc.length === 0 ? 'added' : newDisc.length === 0 ? 'removed' : 'modified',
-    });
+  // Taxonomy lists hold slugs. Membership is order-insensitive; the FIRST entry is
+  // the primary one, so a changed first entry is a real change on its own.
+  for (const [key, label] of [
+    ['disciplines', 'Theological Disciplines'],
+    ['traditions', 'Theological Traditions'],
+  ] as const) {
+    const oldList = published?.[key] ?? [];
+    const newList = draft[key] ?? [];
+    if (canonicalSlugs(oldList) !== canonicalSlugs(newList) || primaryChanged(oldList, newList)) {
+      changes.push({
+        field: key,
+        label,
+        oldValue: oldList,
+        newValue: newList,
+        kind: oldList.length === 0 ? 'added' : newList.length === 0 ? 'removed' : 'modified',
+      });
+    }
   }
 
-  // Compare array of traditions
-  const oldTrad = published?.traditions ?? [];
-  const newTrad = draft.traditions ?? [];
-  if (JSON.stringify(oldTrad.slice().sort()) !== JSON.stringify(newTrad.slice().sort())) {
-    changes.push({
-      field: 'traditions',
-      label: 'Theological Traditions',
-      oldValue: oldTrad,
-      newValue: newTrad,
-      kind: oldTrad.length === 0 ? 'added' : newTrad.length === 0 ? 'removed' : 'modified',
-    });
-  }
-
-  // Compare confessions
+  // Confessions: order-insensitive, keyed by slug; the display name is not content.
   const oldConf = published?.confessions ?? [];
   const newConf = draft.confessions ?? [];
-  if (JSON.stringify(oldConf) !== JSON.stringify(newConf)) {
+  if (canonicalConfessions(oldConf) !== canonicalConfessions(newConf)) {
     changes.push({
       field: 'confessions',
       label: 'Confessional Standards Affirmed',
@@ -95,10 +140,11 @@ export function computeRevisionDiff(
     });
   }
 
-  // Compare credentials
+  // Credentials and publications: order is display order, so it is part of the comparison,
+  // but key order, null versus missing, and blank versus null are not.
   const oldCred = published?.credentials ?? [];
   const newCred = draft.credentials ?? [];
-  if (JSON.stringify(oldCred) !== JSON.stringify(newCred)) {
+  if (canonicalCredentials(oldCred) !== canonicalCredentials(newCred)) {
     changes.push({
       field: 'credentials',
       label: 'Academic Credentials',
@@ -108,10 +154,9 @@ export function computeRevisionDiff(
     });
   }
 
-  // Compare publications
   const oldPub = published?.publications ?? [];
   const newPub = draft.publications ?? [];
-  if (JSON.stringify(oldPub) !== JSON.stringify(newPub)) {
+  if (canonicalPublications(oldPub) !== canonicalPublications(newPub)) {
     changes.push({
       field: 'publications',
       label: 'Scholarly Publications',

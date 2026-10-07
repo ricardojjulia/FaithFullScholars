@@ -10,6 +10,7 @@ import {
   ReportStatus,
 } from '@/lib/domain/types';
 import { computeRevisionDiff, ProfileRevisionDiff } from '@/lib/domain/diff';
+import { loadLiveProfileSnapshot } from '@/lib/profiles/revision-service';
 
 export interface PendingRevisionSummary {
   id: string;
@@ -124,7 +125,7 @@ export async function fetchPendingRevisions(
 }
 
 /**
- * Loads a submitted revision alongside its published baseline to construct a live side-by-side diff.
+ * Loads a submitted revision alongside the scholar's live published profile to construct a side-by-side diff.
  */
 export async function fetchRevisionWithBaseline(
   revisionId: string
@@ -167,20 +168,10 @@ export async function fetchRevisionWithBaseline(
   }
   const submittedSnapshot = (revData.snapshot_data || {}) as RevisionSnapshotData;
 
-  let baselineSnapshot: RevisionSnapshotData | null = null;
-
-  // 2. Fetch baseline revision snapshot if a published revision exists
-  if (scholar.published_revision_id && scholar.published_revision_id !== revData.id) {
-    const { data: baseData } = await supabase
-      .from('scholar_profile_revisions')
-      .select('snapshot_data')
-      .eq('id', scholar.published_revision_id)
-      .single();
-
-    if (baseData?.snapshot_data) {
-      baselineSnapshot = baseData.snapshot_data as RevisionSnapshotData;
-    }
-  }
+  // 2. The baseline is the scholar's LIVE published rows (scalars plus the five
+  //    relational lists), not a stored snapshot: approval replaces those rows, so a
+  //    stale snapshot would hide what the approval is about to remove (ADR 0025).
+  const baselineSnapshot: RevisionSnapshotData | null = await loadLiveProfileSnapshot(supabase, scholar.id);
 
   // 3. Compute structured field diff
   const diff = computeRevisionDiff(baselineSnapshot, submittedSnapshot);

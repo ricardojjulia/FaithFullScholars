@@ -81,14 +81,23 @@ export interface RevisionSnapshotData {
     citation_text?: string | null;
   }>;
   confessions?: Array<{
+    /**
+     * Holds the confessional_standards SLUG (ADR 0025). The name is historical:
+     * renaming it would invalidate stored drafts and published snapshots.
+     */
     confessional_standard_id: string;
+    /** @deprecated No longer emitted (ADR 0025); may still appear in old stored snapshots. */
     confessional_standard_name?: string;
     adherence_level: AdherenceLevel;
     exception_notes?: string | null;
   }>;
+  /** Discipline slugs. The first entry is the primary discipline. Unresolved values are kept raw until fixed. */
   disciplines?: string[];
+  /** Tradition slugs. The first entry is the primary tradition. Unresolved values are kept raw until fixed. */
   traditions?: string[];
 }
+
+export type { Taxonomy, TaxonomyOption, TaxonomyKind, UnresolvedEntry } from '@/lib/taxonomy/resolve';
 
 export interface ScholarProfileRevision {
   id: string;

@@ -50,6 +50,12 @@ export function validateRevisionData(data: Partial<RevisionSnapshotData>): { val
     errors.push('Invalid Google Scholar URL. Must be an official author citations profile.');
   }
 
+  (data.credentials ?? []).forEach((c, i) => {
+    if (!c.degree?.trim() || !c.field_of_study?.trim() || !c.institution_name?.trim()) {
+      errors.push(`Credential ${i + 1} needs a degree, a field of study and an institution.`);
+    }
+  });
+
   return {
     valid: errors.length === 0,
     errors

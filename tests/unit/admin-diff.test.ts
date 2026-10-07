@@ -115,3 +115,73 @@ describe('Admin Revision Diff Calculation (ADR 0003 & ADR 0005)', () => {
     expect((pubChange?.newValue as unknown[]).length).toBe(2);
   });
 });
+
+describe('Canonical list comparison against a live baseline (ADR 0025)', () => {
+  const live: RevisionSnapshotData = {
+    full_name: 'Dr. A',
+    biography: null,
+    credentials: [
+      { degree: 'Ph.D.', field_of_study: 'NT', institution_name: 'Edinburgh', year_awarded: 2005, is_terminal: true },
+    ],
+    publications: [
+      { title: 'Book', publication_type: 'book', publisher_or_journal: null, year: 2018, doi_or_url: null, citation_text: null },
+    ],
+    confessions: [{ confessional_standard_id: 'westminster-confession', adherence_level: 'full_subscription', exception_notes: null }],
+    disciplines: ['systematic-theology', 'church-history'],
+    traditions: ['baptist'],
+  };
+
+  it('shows no phantom changes for key order, null versus missing, blank versus null, or the legacy display name', () => {
+    const draft: RevisionSnapshotData = {
+      full_name: 'Dr. A',
+      biography: '',
+      credentials: [
+        { is_terminal: true, institution_name: 'Edinburgh', field_of_study: 'NT', degree: 'Ph.D.', year_awarded: 2005 },
+      ],
+      publications: [{ title: 'Book', publication_type: 'book', year: 2018 }],
+      confessions: [
+        {
+          confessional_standard_id: 'westminster-confession',
+          confessional_standard_name: 'Westminster',
+          adherence_level: 'full_subscription',
+        },
+      ],
+      disciplines: ['systematic-theology', 'church-history'],
+      traditions: ['baptist'],
+    };
+    expect(computeRevisionDiff(live, draft)).toMatchObject({ hasChanges: false, totalChanges: 0 });
+  });
+
+  it('treats a reordered confession list as unchanged but a reordered credential list as a change', () => {
+    const twoConf = [
+      { confessional_standard_id: 'a', adherence_level: 'full_subscription' as const },
+      { confessional_standard_id: 'b', adherence_level: 'general_agreement' as const },
+    ];
+    expect(
+      computeRevisionDiff({ full_name: 'x', confessions: twoConf }, { full_name: 'x', confessions: [...twoConf].reverse() }).hasChanges
+    ).toBe(false);
+    const creds = [
+      { degree: 'M.Div.', field_of_study: 'Div', institution_name: 'A', is_terminal: false },
+      { degree: 'Ph.D.', field_of_study: 'NT', institution_name: 'B', is_terminal: true },
+    ];
+    const diff = computeRevisionDiff({ full_name: 'x', credentials: creds }, { full_name: 'x', credentials: [...creds].reverse() });
+    expect(diff.changes.map((c) => c.field)).toEqual(['credentials']);
+  });
+
+  it('reports a changed primary discipline or tradition even when the set is unchanged', () => {
+    const diff = computeRevisionDiff(live, { ...live, disciplines: ['church-history', 'systematic-theology'] });
+    expect(diff.changes.map((c) => c.field)).toEqual(['disciplines']);
+    expect(diff.changes[0].kind).toBe('modified');
+    const same = computeRevisionDiff(live, { ...live, traditions: ['Baptist'.toLowerCase()] });
+    expect(same.hasChanges).toBe(false);
+  });
+
+  it('reports added, removed and modified list entries', () => {
+    expect(computeRevisionDiff(live, { ...live, traditions: [] }).changes[0]).toMatchObject({ field: 'traditions', kind: 'removed' });
+    expect(computeRevisionDiff(live, { ...live, traditions: ['baptist', 'lutheran'] }).changes[0]).toMatchObject({
+      field: 'traditions',
+      kind: 'modified',
+    });
+    expect(computeRevisionDiff({ ...live, publications: [] }, live).changes[0]).toMatchObject({ field: 'publications', kind: 'added' });
+  });
+});

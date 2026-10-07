@@ -1,5 +1,49 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { ReviewAction } from '@/lib/domain/types';
+import type { UnresolvedEntry } from '@/lib/taxonomy/resolve';
+
+const MAX_UNMATCHED_ENTRIES = 25;
+const MAX_UNMATCHED_VALUE_LENGTH = 200;
+const UNMATCHED_KINDS = ['discipline', 'tradition', 'confession'] as const;
+
+/**
+ * Parses and validates the FS001 DETAIL (a JSON array of {kind, value}).
+ * Nothing from the database is trusted blindly: the kind is allow-listed and the
+ * list and each value are capped. Returns [] when the detail is not usable.
+ */
+export function parseUnmatchedDetail(detail: unknown): UnresolvedEntry[] {
+  if (typeof detail !== 'string') return [];
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(detail);
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  const out: UnresolvedEntry[] = [];
+  for (const item of parsed) {
+    if (out.length >= MAX_UNMATCHED_ENTRIES) break;
+    if (!item || typeof item !== 'object') continue;
+    const { kind, value } = item as { kind?: unknown; value?: unknown };
+    if (typeof value !== 'string' || !UNMATCHED_KINDS.includes(kind as (typeof UNMATCHED_KINDS)[number])) continue;
+    out.push({
+      kind: kind as UnresolvedEntry['kind'],
+      value: value.slice(0, MAX_UNMATCHED_VALUE_LENGTH),
+    });
+  }
+  return out;
+}
+
+/** Only the exact message shape raised by the promotion function is surfaced; anything else is generic. */
+function describeSnapshotInvalid(message: unknown): string {
+  const match =
+    typeof message === 'string'
+      ? /^snapshot_invalid: ([a-z_]{1,30})(?:\[(\d{1,3})\])? ([A-Za-z0-9_ ().,-]{1,120})$/.exec(message)
+      : null;
+  if (!match) return 'The submitted profile contains invalid entries and cannot be approved.';
+  const item = match[2] !== undefined ? `, item ${Number(match[2]) + 1}` : '';
+  return `The submitted profile is invalid (${match[1]}${item}: ${match[3]}). Ask the scholar to correct it.`;
+}
 
 export interface ReviewDecisionInput {
   revisionId: string;
@@ -15,7 +59,15 @@ export interface ReviewDecisionResult {
   scholarId: string;
   error?: string;
   /** Machine-readable failure reason for the review function. */
-  code?: 'not_found' | 'not_reviewable' | 'invalid_action' | 'audit_failed';
+  code?:
+    | 'not_found'
+    | 'not_reviewable'
+    | 'invalid_action'
+    | 'audit_failed'
+    | 'taxonomy_unmatched'
+    | 'snapshot_invalid';
+  /** Entries that did not resolve to a taxonomy row (taxonomy_unmatched only), capped and validated. */
+  unmatched?: UnresolvedEntry[];
 }
 
 /**
@@ -78,6 +130,31 @@ export async function processRevisionReview(
           scholarId,
           error: 'Only submitted revisions can be reviewed.',
           code: 'not_reviewable',
+        };
+      }
+      if (sqlState === 'FS001') {
+        const unmatched = parseUnmatchedDetail((rpcErr as { details?: unknown }).details);
+        const named = unmatched.map((u) => `${u.kind} "${u.value}"`).join(', ');
+        return {
+          success: false,
+          action: input.action,
+          revisionId: input.revisionId,
+          scholarId,
+          error: named
+            ? `Approval blocked: these entries do not match the taxonomy: ${named}. Ask the scholar to replace them.`
+            : 'Approval blocked: some disciplines, traditions or confessions do not match the taxonomy. Ask the scholar to replace them.',
+          code: 'taxonomy_unmatched',
+          unmatched,
+        };
+      }
+      if (sqlState === 'FS002') {
+        return {
+          success: false,
+          action: input.action,
+          revisionId: input.revisionId,
+          scholarId,
+          error: describeSnapshotInvalid((rpcErr as { message?: unknown }).message),
+          code: 'snapshot_invalid',
         };
       }
       console.error('Admin review function failed:', { code: sqlState });

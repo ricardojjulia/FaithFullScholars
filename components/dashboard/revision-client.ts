@@ -1,13 +1,24 @@
 import type { RevisionState } from '@/lib/profiles/revision-service';
-import type { RevisionSnapshotData, ScholarProfileRevision } from '@/lib/domain/types';
+import type { RevisionSnapshotData, ScholarProfileRevision, UnresolvedEntry } from '@/lib/domain/types';
 
 export type { RevisionState };
 
 export type RevisionApiResult<T> =
   | { ok: true; status: number; data: T }
-  | { ok: false; status: number; error: string; errors: string[] };
+  | { ok: false; status: number; error: string; errors: string[]; unresolved: UnresolvedEntry[] };
 
 const NETWORK_ERROR = 'Network error. Check your connection and try again.';
+
+/** The submit gate returns the unresolved taxonomy entries (HTTP 422); keep only well-formed ones. */
+function parseUnresolved(value: unknown): UnresolvedEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const { kind, value: v } = (item && typeof item === 'object' ? item : {}) as { kind?: unknown; value?: unknown };
+    return typeof v === 'string' && (kind === 'discipline' || kind === 'tradition' || kind === 'confession')
+      ? [{ kind, value: v }]
+      : [];
+  });
+}
 
 async function call<T>(url: string, init?: RequestInit): Promise<RevisionApiResult<T>> {
   try {
@@ -18,19 +29,24 @@ async function call<T>(url: string, init?: RequestInit): Promise<RevisionApiResu
     } catch {
       body = null;
     }
-    const obj = (body && typeof body === 'object' ? body : {}) as { error?: unknown; errors?: unknown };
+    const obj = (body && typeof body === 'object' ? body : {}) as {
+      error?: unknown;
+      errors?: unknown;
+      unresolved?: unknown;
+    };
     if (!res.ok) {
       const errors = Array.isArray(obj.errors) ? obj.errors.filter((e): e is string => typeof e === 'string') : [];
       return {
         ok: false,
         status: res.status,
         error: typeof obj.error === 'string' ? obj.error : 'Unable to process the request. Please try again.',
-        errors
+        errors,
+        unresolved: parseUnresolved(obj.unresolved)
       };
     }
     return { ok: true, status: res.status, data: body as T };
   } catch {
-    return { ok: false, status: 0, error: NETWORK_ERROR, errors: [] };
+    return { ok: false, status: 0, error: NETWORK_ERROR, errors: [], unresolved: [] };
   }
 }
 

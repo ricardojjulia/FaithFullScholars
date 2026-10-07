@@ -93,4 +93,35 @@ describe('POST /api/admin/reviews/[id]', () => {
     processRevisionReview.mockResolvedValueOnce(fail('audit_failed'));
     expect((await post({ action: 'hide' })).status).toBe(500);
   });
+
+  it('maps FS001 and FS002 outcomes to 422 with the unmatched list, without echoing anything else', async () => {
+    processRevisionReview.mockResolvedValueOnce({
+      success: false,
+      action: 'approve',
+      revisionId: 'rev-1',
+      scholarId: 's-1',
+      code: 'taxonomy_unmatched',
+      error: 'Approval blocked: x',
+      unmatched: [{ kind: 'discipline', value: 'Nope' }],
+    });
+    const a = await post({ action: 'approve' });
+    expect(a.status).toBe(422);
+    expect(await a.json()).toEqual({
+      error: 'Approval blocked: x',
+      code: 'taxonomy_unmatched',
+      unmatched: [{ kind: 'discipline', value: 'Nope' }],
+    });
+
+    processRevisionReview.mockResolvedValueOnce({
+      success: false,
+      action: 'approve',
+      revisionId: 'rev-1',
+      scholarId: 's-1',
+      code: 'snapshot_invalid',
+      error: 'The submitted profile is invalid.',
+    });
+    const b = await post({ action: 'approve' });
+    expect(b.status).toBe(422);
+    expect((await b.json()).code).toBe('snapshot_invalid');
+  });
 });

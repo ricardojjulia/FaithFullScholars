@@ -92,6 +92,15 @@ export async function POST(
       if (result.code === 'not_reviewable') {
         return NextResponse.json({ error: 'Only submitted revisions can be reviewed' }, { status: 409 });
       }
+      if (result.code === 'taxonomy_unmatched') {
+        return NextResponse.json(
+          { error: result.error, code: result.code, unmatched: result.unmatched ?? [] },
+          { status: 422 }
+        );
+      }
+      if (result.code === 'snapshot_invalid') {
+        return NextResponse.json({ error: result.error, code: result.code }, { status: 422 });
+      }
       if (result.code === 'invalid_action') {
         return NextResponse.json({ error: 'Invalid review action' }, { status: 400 });
       }
