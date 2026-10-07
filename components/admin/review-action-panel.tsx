@@ -19,6 +19,18 @@ const ACTION_LABELS: Record<ReviewAction, string> = {
   hide: 'Hide',
 };
 
+/** Entries may arrive as strings or as {kind, value}; render each as readable text. */
+function formatUnmatched(items: unknown[]): string[] {
+  return items.flatMap((item) => {
+    if (typeof item === 'string') return [item];
+    if (item && typeof item === 'object') {
+      const { kind, value } = item as { kind?: unknown; value?: unknown };
+      if (typeof value === 'string') return [typeof kind === 'string' ? `${kind}: ${value}` : value];
+    }
+    return [];
+  });
+}
+
 export function ReviewActionPanel({
   revisionId,
   currentStatus,
@@ -28,7 +40,7 @@ export function ReviewActionPanel({
   const isSubmitted = currentStatus === 'submitted';
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [loadingAction, setLoadingAction] = useState<ReviewAction | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string; unmatched?: string[] } | null>(null);
   // Once a decision is recorded the panel stays locked until the redirect.
   const [decided, setDecided] = useState(false);
   const busy = loadingAction !== null || decided;
@@ -55,6 +67,14 @@ export function ReviewActionPanel({
       }
       if (res.status === 409) {
         throw new Error('Only submitted revisions can be reviewed. This one may have been withdrawn or already decided; refresh to see its current status.');
+      }
+      if (res.status === 422 && Array.isArray(data.unmatched)) {
+        setFeedbackMessage({
+          type: 'error',
+          text: typeof data.error === 'string' ? data.error : 'The submission contains entries that are not in the taxonomy.',
+          unmatched: formatUnmatched(data.unmatched),
+        });
+        return;
       }
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to process action');
@@ -101,7 +121,14 @@ export function ReviewActionPanel({
               : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300'
           }`}
         >
-          {feedbackMessage.text}
+          <p>{feedbackMessage.text}</p>
+          {feedbackMessage.unmatched && feedbackMessage.unmatched.length > 0 && (
+            <ul className="list-disc pl-5 mt-1.5 space-y-0.5" data-testid="unmatched-entries">
+              {feedbackMessage.unmatched.map((entry) => (
+                <li key={entry} className="font-mono">{entry}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

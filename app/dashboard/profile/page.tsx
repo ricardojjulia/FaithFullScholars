@@ -127,7 +127,7 @@ export default function ProfileEditorPage() {
     const res = await submitRevision(saved.id);
     if (!res.ok) {
       if (res.status === 409) await handleConflict(describeFailure(res));
-      return { success: false, error: describeFailure(res) };
+      return { success: false, error: describeFailure(res), unresolved: res.unresolved };
     }
     await refresh();
     return { success: true };
@@ -178,6 +178,8 @@ export default function ProfileEditorPage() {
         key={formKey}
         initialDraft={initialDraft}
         publishedSnapshot={baseline.snapshot}
+        taxonomy={state.taxonomy}
+        unresolved={state.unresolved}
         readOnly={readOnly}
         onSaveDraft={handleSaveDraft}
         onSubmitForReview={handleSubmitReview}

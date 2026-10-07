@@ -8,6 +8,7 @@ import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { RevisionSnapshotData } from '@/lib/domain/types';
+import { nameForSlug } from '@/lib/profiles/profile-rows';
 import {
   RevisionState,
   describeFailure,
@@ -137,26 +138,26 @@ export default function DraftPreviewPage() {
     draft_revision_id: revision.id,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    disciplines: (draft.disciplines || []).map((name: string) => ({
+    disciplines: (draft.disciplines || []).map((slug: string, i: number) => ({
       discipline: {
-        id: name,
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        id: slug,
+        name: nameForSlug(state.taxonomy.disciplines, slug),
+        slug,
         category: 'theology',
         description: null,
         created_at: new Date().toISOString()
       },
-      is_primary: true
+      is_primary: i === 0
     })),
-    traditions: (draft.traditions || []).map((name: string) => ({
+    traditions: (draft.traditions || []).map((slug: string, i: number) => ({
       tradition: {
-        id: name,
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        id: slug,
+        name: nameForSlug(state.taxonomy.traditions, slug),
+        slug,
         description: null,
         created_at: new Date().toISOString()
       },
-      is_primary: true
+      is_primary: i === 0
     })),
     confessions: (draft.confessions || []).map((c, i: number) => ({
       id: `conf-${i}`,
@@ -167,8 +168,8 @@ export default function DraftPreviewPage() {
       created_at: new Date().toISOString(),
       confessional_standard: {
         id: c.confessional_standard_id,
-        name: c.confessional_standard_name || c.confessional_standard_id,
-        slug: (c.confessional_standard_name || c.confessional_standard_id).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: nameForSlug(state.taxonomy.confessions, c.confessional_standard_id),
+        slug: c.confessional_standard_id,
         year: null,
         tradition_affinity: null,
         description: null,
@@ -221,7 +222,7 @@ export default function DraftPreviewPage() {
               This preview reflects your staged changes. Public visitors continue to see your approved live profile.
             </span>
             <span className="text-[11px] font-medium block mt-1">
-              On approval, your name, titles, biography, location, links and doctrinal statement are published. Disciplines, traditions, confessional standards, credentials and publications are reviewed but not yet published automatically.
+              On approval, your whole profile is published: name, titles, biography, location, links, doctrinal statement, disciplines, traditions, confessional standards, credentials and publications.
             </span>
           </div>
         </div>

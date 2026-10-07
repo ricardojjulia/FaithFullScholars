@@ -6,7 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, Check, Loader2 } from 'lucide-react';
 import { CvUploadParser } from '@/components/forms/cv-upload-parser';
 import { ParsedCvDraft } from '@/lib/profiles/cv-parser';
-import { RevisionSnapshotData, PublicationType } from '@/lib/domain/types';
+import { RevisionSnapshotData, PublicationType, Taxonomy, UnresolvedEntry } from '@/lib/domain/types';
+import { TaxonomyMultiSelect } from '@/components/forms/taxonomy-multi-select';
+import { CredentialsEditor } from '@/components/forms/credentials-editor';
+import { PublicationsEditor } from '@/components/forms/publications-editor';
+import { hasRowErrors, mapSuggestions } from '@/lib/profiles/profile-rows';
 import { ConfessionalStandardsSelector } from '@/components/forms/confessional-standards-selector';
 import { DoctrinalStatementForm } from '@/components/forms/doctrinal-statement-form';
 import { buildDraftSnapshot } from '@/lib/profiles/revision-actions';
@@ -46,6 +50,9 @@ export default function OnboardingPage() {
   const [openRevisionId, setOpenRevisionId] = useState<string | undefined>(undefined);
   const [submitted, setSubmitted] = useState(false);
   const [saveErrors, setSaveErrors] = useState<string | null>(null);
+  const [taxonomy, setTaxonomy] = useState<Taxonomy>({ disciplines: [], traditions: [], confessions: [] });
+  // CV suggestions that match no taxonomy row: listed for the scholar instead of silently dropped.
+  const [unmatchedSuggestions, setUnmatchedSuggestions] = useState<UnresolvedEntry[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -66,6 +73,7 @@ export default function OnboardingPage() {
       const { revision, baseline } = res.data;
       const isOpen =
         !!revision && ['draft', 'submitted', 'changes_requested'].includes(revision.status);
+      setTaxonomy(res.data.taxonomy);
       setDraft(buildDraftSnapshot(baseline.snapshot, revision?.snapshot_data ?? {}));
       setOpenRevisionId(isOpen ? revision!.id : undefined);
       setSubmitted(revision?.status === 'submitted');
@@ -77,6 +85,9 @@ export default function OnboardingPage() {
   }, [router]);
 
   function handleCvParsed(parsed: ParsedCvDraft) {
+    const disciplines = mapSuggestions('discipline', parsed.suggested_disciplines, taxonomy);
+    const traditions = mapSuggestions('tradition', parsed.suggested_traditions, taxonomy);
+    setUnmatchedSuggestions([...disciplines.unmatched, ...traditions.unmatched]);
     const populated = buildDraftSnapshot(draft, {
       full_name: parsed.full_name || undefined,
       title: parsed.title || undefined,
@@ -96,8 +107,8 @@ export default function OnboardingPage() {
         year: p.year ?? null,
         citation_text: p.citation_string
       })),
-      disciplines: parsed.suggested_disciplines,
-      traditions: parsed.suggested_traditions,
+      disciplines: disciplines.slugs,
+      traditions: traditions.slugs,
       doctrinal_statement_text: parsed.personal_doctrinal_statement || undefined
     });
 
@@ -316,7 +327,77 @@ export default function OnboardingPage() {
               </h2>
               <ConfessionalStandardsSelector
                 value={draft.confessions || []}
+                standards={taxonomy.confessions}
                 onChange={(val) => setDraft({ ...draft, confessions: val })}
+              />
+            </div>
+
+            {/* Disciplines & Traditions */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+                Disciplines & Traditions
+              </h2>
+              {unmatchedSuggestions.length > 0 && (
+                <div
+                  role="status"
+                  data-testid="cv-unmatched-notice"
+                  className="p-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs space-y-1"
+                >
+                  <p className="font-semibold">
+                    Your CV suggested these entries, but they match no discipline or tradition on the platform. Choose the closest options below.
+                  </p>
+                  <ul className="list-disc pl-5">
+                    {unmatchedSuggestions.map((u) => (
+                      <li key={`${u.kind}:${u.value}`}>
+                        {u.kind === 'discipline' ? 'Discipline' : 'Tradition'}: {u.value}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Disciplines</h3>
+                <TaxonomyMultiSelect
+                  label="Disciplines"
+                  noun="discipline"
+                  testIdPrefix="discipline"
+                  options={taxonomy.disciplines}
+                  value={draft.disciplines || []}
+                  onChange={(val) => setDraft({ ...draft, disciplines: val })}
+                />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Traditions</h3>
+                <TaxonomyMultiSelect
+                  label="Traditions"
+                  noun="tradition"
+                  testIdPrefix="tradition"
+                  options={taxonomy.traditions}
+                  value={draft.traditions || []}
+                  onChange={(val) => setDraft({ ...draft, traditions: val })}
+                />
+              </div>
+            </div>
+
+            {/* Credentials */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-3">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+                Academic Credentials
+              </h2>
+              <CredentialsEditor
+                value={draft.credentials || []}
+                onChange={(val) => setDraft({ ...draft, credentials: val })}
+              />
+            </div>
+
+            {/* Publications */}
+            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-3">
+              <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
+                Publications
+              </h2>
+              <PublicationsEditor
+                value={draft.publications || []}
+                onChange={(val) => setDraft({ ...draft, publications: val })}
               />
             </div>
 
@@ -352,10 +433,15 @@ export default function OnboardingPage() {
                 ← Back to Upload
               </button>
 
+              {hasRowErrors(draft) && (
+                <span role="status" className="text-xs text-amber-800">
+                  Complete the highlighted credential and publication fields to save.
+                </span>
+              )}
               <button
                 type="button"
                 onClick={handleSaveOnboarding}
-                disabled={isSaving || submitted || !draft.full_name}
+                disabled={isSaving || submitted || !draft.full_name || hasRowErrors(draft)}
                 className="px-6 py-2.5 bg-indigo-900 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
               >
                 <span>{isSaving ? 'Creating Draft Revision...' : 'Confirm & Save Initial Revision →'}</span>

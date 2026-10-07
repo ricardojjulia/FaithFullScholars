@@ -77,12 +77,38 @@ test.describe('Scholar End-to-End User Journey', () => {
     await expect(title).toBeEnabled();
 
     await title.fill(uniqueTitle);
+
+    // Add a credential through the editor (rows from earlier runs are cleaned up at the end).
+    const institution = `E2E University ${Date.now()}`;
+    const credentialRows = page.locator('[data-testid^="credential-row-"]');
+    const existingCredentials = await credentialRows.count();
+    await page.getByTestId('credential-add').click();
+    const credential = page.getByTestId(`credential-row-${existingCredentials}`);
+    await credential.getByLabel('Degree *', { exact: true }).fill('Ph.D.');
+    await credential.getByLabel('Field of study *', { exact: true }).fill('Old Testament');
+    await credential.getByLabel('Institution *', { exact: true }).fill(institution);
+    await credential.getByLabel('Terminal degree').check();
+
+    // An incomplete row blocks saving with a visible reason instead of silently dropping it.
+    await credential.getByLabel('Institution *', { exact: true }).fill('');
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toBeDisabled();
+    await expect(page.getByTestId('submit-blocked-reason')).toContainText('credential and publication');
+    await credential.getByLabel('Institution *', { exact: true }).fill(institution);
+
+    // Pick a tradition from the database-backed list (idempotent across reruns).
+    const lutheran = page.getByTestId('tradition-option-lutheran');
+    await expect(lutheran).toBeVisible();
+    if ((await lutheran.getAttribute('aria-pressed')) !== 'true') await lutheran.click();
+    await expect(lutheran).toHaveAttribute('aria-pressed', 'true');
+
     await page.getByRole('button', { name: 'Save Draft' }).click();
     await expect(page.getByText('Draft revision saved securely')).toBeVisible();
 
-    // Persisted server-side: a reload shows the same draft.
+    // Persisted server-side: a reload shows the same draft, credential and tradition included.
     await page.reload();
     await expect(title).toHaveValue(uniqueTitle);
+    await expect(page.locator('[data-testid^="credential-row-"]').getByLabel('Institution *', { exact: true }).last()).toHaveValue(institution);
+    await expect(page.getByTestId('tradition-option-lutheran')).toHaveAttribute('aria-pressed', 'true');
     await expect(banner.getByText(/Draft — not yet submitted|Changes requested/)).toBeVisible();
 
     // The preview reads the same persisted draft.
@@ -106,6 +132,15 @@ test.describe('Scholar End-to-End User Journey', () => {
     await expect(page.getByText('Submitted for Review')).toBeVisible();
     await page.getByRole('button', { name: 'Withdraw' }).click();
     await expect(page.getByRole('button', { name: 'Submit for Admin Review' })).toBeVisible();
+
+    // Cleanup: remove this run's credential so reruns start from the same list.
+    await page.goto('/dashboard/profile');
+    await expect(title).toBeEnabled();
+    const rows = page.locator('[data-testid^="credential-row-"]');
+    await expect(rows.getByLabel('Institution *', { exact: true }).last()).toHaveValue(institution);
+    await page.getByTestId(`credential-remove-${(await rows.count()) - 1}`).click();
+    await page.getByRole('button', { name: 'Save Draft' }).click();
+    await expect(page.getByText('Draft revision saved securely')).toBeVisible();
   });
 
   test('scholar onboarding page renders for a signed-in scholar', async ({ page }) => {
