@@ -1,6 +1,6 @@
 # Spec: Persistent, Enforced Rate Limits
 
-- **Status:** Story approved by the owner on 2026-10-08. Technical brief below, awaiting approval (gate 5).
+- **Status:** Story approved by the owner on 2026-10-08. Technical brief approved 2026-10-08 (gate 5).
 - **Order:** slice 1 of the remaining known-broken fixes. The owner chose the order rate limits → real portal data → applications → conference hub (later).
 - **Extends:** ADR 0008 (search abuse gating), ADR 0022 (follow-up: the inquiry cap is bypassable).
 - **Branch:** `fix/persistent-rate-limits`
