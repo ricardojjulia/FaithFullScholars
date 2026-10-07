@@ -41,7 +41,8 @@ INSERT INTO public.confessional_standards (id, name, slug, year, tradition_affin
   ('c1000000-0000-0000-0000-000000000009', 'Canons of Dort', 'canons-of-dort', 1619, 'Continental Reformed', 'Doctrinal decisions of the Synod of Dort defining the Five Points of Calvinism.'),
   ('c1000000-0000-0000-0000-000000000010', 'Thirty-Nine Articles of Religion', 'thirty-nine-articles', 1571, 'Anglican', 'Historic doctrinal definition of the Church of England established in the Elizabethan settlement.'),
   ('c1000000-0000-0000-0000-000000000011', 'Augsburg Confession', 'augsburg-confession', 1530, 'Lutheran', 'Primary confession of faith of the Lutheran Church presented to Emperor Charles V by Philip Melanchthon.'),
-  ('c1000000-0000-0000-0000-000000000012', 'Chicago Statement on Biblical Inerrancy', 'chicago-statement-inerrancy', 1978, 'Evangelical', 'Contemporary affirmation of verbal-plenary inspiration, authority, and inerrancy of Scripture.')
+  ('c1000000-0000-0000-0000-000000000012', 'Chicago Statement on Biblical Inerrancy', 'chicago-statement-inerrancy', 1978, 'Evangelical', 'Contemporary affirmation of verbal-plenary inspiration, authority, and inerrancy of Scripture.'),
+  ('c1000000-0000-0000-0000-000000000013', 'Lausanne Covenant', 'lausanne-covenant', 1974, 'Evangelical', 'Global evangelical affirmation on evangelism, Scripture, and the church''s mission, issued by the 1974 Lausanne Congress.')
 ON CONFLICT (slug) DO NOTHING;
 
 -- 4. Sample Institutions

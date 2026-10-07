@@ -6,6 +6,8 @@ import { fetchRevisionWithBaseline, fetchReviewAuditHistory } from '@/lib/admin/
 import { RevisionDiffViewer } from '@/components/admin/revision-diff-viewer';
 import { ReviewActionPanel } from '@/components/admin/review-action-panel';
 import { ArrowLeft, ExternalLink } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { loadTaxonomy } from '@/lib/profiles/revision-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,13 @@ export default async function AdminReviewDetailPage(props: {
   }
 
   const auditHistory = await fetchReviewAuditHistory(detail.scholar.id);
+  // Names instead of slugs in the diff (taxonomy is public reference data, so the caller's own client suffices). If the lookup fails the viewer falls back to slugs.
+  let taxonomy: Awaited<ReturnType<typeof loadTaxonomy>> | null = null;
+  try {
+    taxonomy = await loadTaxonomy(await createClient());
+  } catch {
+    taxonomy = null;
+  }
 
   return (
     <div className="space-y-6">
@@ -56,6 +65,7 @@ export default async function AdminReviewDetailPage(props: {
             publishedSnapshot={detail.baselineSnapshot}
             submittedSnapshot={detail.submittedSnapshot}
             diff={detail.diff}
+            taxonomy={taxonomy}
           />
         </div>
 

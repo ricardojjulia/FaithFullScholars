@@ -94,7 +94,7 @@ Deliverables:
 Exit criteria:
 
 - [x] Scholars can onboard via CV upload or manual entry.
-- [ ] Scholars can submit complete profiles or revision diffs for review. Persisted lifecycle built in PR #56 (pending owner approval and production migration); scholars can still edit live profile content directly, bypassing review (ADR 0024 residual risk 1).
+- [ ] Scholars can submit complete profiles or revision diffs for review. Persisted lifecycle shipped (PR #56, ADR 0024). Review-gated content and relational promotion on approval built in PR #62 (ADR 0025); the direct-edit bypass closes only once migration `20261007090000` is applied to production.
 - [x] Ownership checks prevent cross-profile edits.
 - [x] All 6 quality gates pass (`npm run verify`).
 

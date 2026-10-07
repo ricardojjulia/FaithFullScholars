@@ -8,6 +8,7 @@ import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { RevisionSnapshotData } from '@/lib/domain/types';
+import { nameForSlug } from '@/lib/profiles/profile-rows';
 import {
   RevisionState,
   describeFailure,
@@ -131,32 +132,32 @@ export default function DraftPreviewPage() {
     profile_status: state.scholar.profile_status as FullPublicScholarProfile['profile_status'],
     verification_status: state.scholar.verification_status as FullPublicScholarProfile['verification_status'],
     profile_tier: 'standard',
-    orcid_id: null,
-    google_scholar_url: null,
+    orcid_id: draft.orcid_id ?? null,
+    google_scholar_url: draft.google_scholar_url ?? null,
     published_revision_id: state.baseline.revision_id,
     draft_revision_id: revision.id,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    disciplines: (draft.disciplines || []).map((name: string) => ({
+    disciplines: (draft.disciplines || []).map((slug: string, i: number) => ({
       discipline: {
-        id: name,
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        id: slug,
+        name: nameForSlug(state.taxonomy.disciplines, slug),
+        slug,
         category: 'theology',
         description: null,
         created_at: new Date().toISOString()
       },
-      is_primary: true
+      is_primary: i === 0
     })),
-    traditions: (draft.traditions || []).map((name: string) => ({
+    traditions: (draft.traditions || []).map((slug: string, i: number) => ({
       tradition: {
-        id: name,
-        name,
-        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        id: slug,
+        name: nameForSlug(state.taxonomy.traditions, slug),
+        slug,
         description: null,
         created_at: new Date().toISOString()
       },
-      is_primary: true
+      is_primary: i === 0
     })),
     confessions: (draft.confessions || []).map((c, i: number) => ({
       id: `conf-${i}`,
@@ -167,8 +168,8 @@ export default function DraftPreviewPage() {
       created_at: new Date().toISOString(),
       confessional_standard: {
         id: c.confessional_standard_id,
-        name: c.confessional_standard_name || c.confessional_standard_id,
-        slug: (c.confessional_standard_name || c.confessional_standard_id).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        name: nameForSlug(state.taxonomy.confessions, c.confessional_standard_id),
+        slug: c.confessional_standard_id,
         year: null,
         tradition_affinity: null,
         description: null,
@@ -221,7 +222,7 @@ export default function DraftPreviewPage() {
               This preview reflects your staged changes. Public visitors continue to see your approved live profile.
             </span>
             <span className="text-[11px] font-medium block mt-1">
-              On approval, your name, titles, biography, location, links and doctrinal statement are published. Disciplines, traditions, confessional standards, credentials and publications are reviewed but not yet published automatically.
+              On approval, your whole profile is published: name, titles, biography, location, links, doctrinal statement, disciplines, traditions, confessional standards, credentials and publications.
             </span>
           </div>
         </div>
@@ -284,6 +285,11 @@ export default function DraftPreviewPage() {
                 Education & Credentials
               </h3>
               <div className="space-y-3">
+                {previewScholar.credentials.length === 0 && (
+                  <p data-testid="preview-credentials-empty" className="text-xs text-slate-500 dark:text-slate-400 italic">
+                    No credentials in this draft. Visitors will see none on your public profile.
+                  </p>
+                )}
                 {previewScholar.credentials.map((cred) => (
                   <div key={cred.id} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
@@ -308,6 +314,11 @@ export default function DraftPreviewPage() {
                 Selected Scholarly Publications
               </h3>
               <div className="space-y-3">
+                {previewScholar.publications.length === 0 && (
+                  <p data-testid="preview-publications-empty" className="text-xs text-slate-500 dark:text-slate-400 italic">
+                    No publications in this draft. Visitors will see none on your public profile.
+                  </p>
+                )}
                 {previewScholar.publications.map((pub) => (
                   <div key={pub.id} className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs">
                     <span className="font-semibold text-slate-900 dark:text-white block">

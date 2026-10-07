@@ -32,7 +32,7 @@ vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: () => ({ from: (table: string) => fakeQuery(table), rpc }),
 }));
 
-import { processRevisionReview } from '@/lib/admin/actions';
+import { parseUnmatchedDetail, processRevisionReview } from '@/lib/admin/actions';
 import type { ReviewAction } from '@/lib/domain/types';
 
 const run = (action: string) =>
@@ -75,5 +75,61 @@ describe('processRevisionReview', () => {
     expect(result.success).toBe(true);
     expect(rpc).toHaveBeenCalledWith('review_profile_revision', expect.objectContaining({ p_action: 'approve', p_reviewer: 'staff-1' }));
     expect(writes).toEqual([]);
+  });
+
+  it('maps FS001 to taxonomy_unmatched with a validated, capped list and never logs values', async () => {
+    const many = Array.from({ length: 40 }, (_, i) => ({ kind: 'discipline', value: `Unknown ${i}` }));
+    const detail = JSON.stringify([
+      { kind: 'tradition', value: 'x'.repeat(500) },
+      { kind: 'bogus', value: 'dropped' },
+      { kind: 'confession', value: 42 },
+      ...many,
+    ]);
+    rpc.mockResolvedValue({ error: { code: 'FS001', message: 'taxonomy_unmatched: 3 entries', details: detail } });
+    const result = await run('approve');
+    expect(result).toMatchObject({ success: false, code: 'taxonomy_unmatched' });
+    expect(result.unmatched).toHaveLength(25);
+    expect(result.unmatched![0]).toEqual({ kind: 'tradition', value: 'x'.repeat(200) });
+    expect(result.error).toContain('do not match the taxonomy');
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it('still blocks approval with a generic message when the FS001 detail is unusable', async () => {
+    rpc.mockResolvedValue({ error: { code: 'FS001', message: 'm', details: 'not json' } });
+    const result = await run('approve');
+    expect(result).toMatchObject({ success: false, code: 'taxonomy_unmatched', unmatched: [] });
+  });
+
+  it('maps FS002 to snapshot_invalid, naming the list and item but never anything else from the database', async () => {
+    rpc.mockResolvedValue({ error: { code: 'FS002', message: 'snapshot_invalid: credentials[2] degree is required' } });
+    const result = await run('approve');
+    expect(result).toMatchObject({ success: false, code: 'snapshot_invalid' });
+    expect(result.error).toContain('credentials, item 3: degree is required');
+
+    for (const [message, expected] of [
+      ['snapshot_invalid: orcid_id is not a valid ORCID iD', 'orcid_id: is not a valid ORCID iD'],
+      ['snapshot_invalid: google_scholar_url must be a Google Scholar citations https link', 'google_scholar_url: must be a Google Scholar citations https link'],
+      ['snapshot_invalid: doctrinal_statement_text is too long', 'doctrinal_statement_text: is too long'],
+      ['snapshot_invalid: lists violate a database constraint', 'lists: violate a database constraint'],
+    ] as const) {
+      rpc.mockResolvedValue({ error: { code: 'FS002', message } });
+      const scalar = await run('approve');
+      expect(scalar.code).toBe('snapshot_invalid');
+      expect(scalar.error).toContain(expected);
+    }
+
+    rpc.mockResolvedValue({ error: { code: 'FS002', message: 'snapshot_invalid: x\nsecret <script>' } });
+    const odd = await run('approve');
+    expect(odd.code).toBe('snapshot_invalid');
+    expect(odd.error).not.toContain('secret');
+    expect(console.error).not.toHaveBeenCalled();
+  });
+});
+
+describe('parseUnmatchedDetail', () => {
+  it('returns [] for anything that is not a JSON array string', () => {
+    expect(parseUnmatchedDetail(undefined)).toEqual([]);
+    expect(parseUnmatchedDetail('{"kind":"discipline"}')).toEqual([]);
+    expect(parseUnmatchedDetail(42)).toEqual([]);
   });
 });

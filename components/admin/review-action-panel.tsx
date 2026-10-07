@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ReviewAction, ProfileReview } from '@/lib/domain/types';
 import { CheckCircle2, MessageSquare, XCircle, EyeOff, Loader2 } from 'lucide-react';
@@ -19,6 +19,25 @@ const ACTION_LABELS: Record<ReviewAction, string> = {
   hide: 'Hide',
 };
 
+/** Entries may arrive as strings or as {kind, value}; render each as readable text. */
+function formatUnmatched(items: unknown[]): string[] {
+  return items.flatMap((item) => {
+    if (typeof item === 'string') return [item];
+    if (item && typeof item === 'object') {
+      const { kind, value } = item as { kind?: unknown; value?: unknown };
+      if (typeof value === 'string') return [typeof kind === 'string' ? `${kind}: ${value}` : value];
+    }
+    return [];
+  });
+}
+
+const NOTES_MAX = 2000;
+
+/** Draft feedback for the scholar listing entries that block approval. */
+export function buildUnmatchedNotes(items: string[]): string {
+  return `Please replace these entries with options from the platform list, then resubmit:\n${items.map((i) => `- ${i}`).join('\n')}`.slice(0, NOTES_MAX);
+}
+
 export function ReviewActionPanel({
   revisionId,
   currentStatus,
@@ -28,7 +47,8 @@ export function ReviewActionPanel({
   const isSubmitted = currentStatus === 'submitted';
   const [feedbackNotes, setFeedbackNotes] = useState('');
   const [loadingAction, setLoadingAction] = useState<ReviewAction | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string; unmatched?: string[]; hint?: string; prefill?: string } | null>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
   // Once a decision is recorded the panel stays locked until the redirect.
   const [decided, setDecided] = useState(false);
   const busy = loadingAction !== null || decided;
@@ -56,6 +76,27 @@ export function ReviewActionPanel({
       if (res.status === 409) {
         throw new Error('Only submitted revisions can be reviewed. This one may have been withdrawn or already decided; refresh to see its current status.');
       }
+      if (res.status === 422 && data.code === 'snapshot_invalid') {
+        const text = typeof data.error === 'string' ? data.error : 'The submission contains a value that cannot be published.';
+        setFeedbackMessage({
+          type: 'error',
+          text,
+          hint: 'Request Changes to send this back to the scholar so they can correct it.',
+          prefill: text,
+        });
+        return;
+      }
+      if (res.status === 422 && Array.isArray(data.unmatched)) {
+        const unmatched = formatUnmatched(data.unmatched);
+        setFeedbackMessage({
+          type: 'error',
+          text: typeof data.error === 'string' ? data.error : 'The submission contains entries that are not in the taxonomy.',
+          unmatched,
+          hint: 'Request Changes to send these back to the scholar.',
+          prefill: unmatched.length > 0 ? buildUnmatchedNotes(unmatched) : undefined,
+        });
+        return;
+      }
       if (!res.ok || !data.success) {
         throw new Error(data.error || 'Failed to process action');
       }
@@ -76,6 +117,11 @@ export function ReviewActionPanel({
     } finally {
       setLoadingAction(null);
     }
+  }
+
+  function prefillNotes(text: string) {
+    setFeedbackNotes((current) => (current.trim() ? `${current.trim()}\n\n${text}` : text).slice(0, NOTES_MAX));
+    notesRef.current?.focus();
   }
 
   return (
@@ -101,7 +147,27 @@ export function ReviewActionPanel({
               : 'bg-rose-50 text-rose-800 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-300'
           }`}
         >
-          {feedbackMessage.text}
+          <p>{feedbackMessage.text}</p>
+          {feedbackMessage.unmatched && feedbackMessage.unmatched.length > 0 && (
+            <ul className="list-disc pl-5 mt-1.5 space-y-0.5" data-testid="unmatched-entries">
+              {feedbackMessage.unmatched.map((entry) => (
+                <li key={entry} className="font-mono">{entry}</li>
+              ))}
+            </ul>
+          )}
+          {feedbackMessage.hint && (
+            <p className="mt-2 font-semibold" data-testid="review-error-hint">{feedbackMessage.hint}</p>
+          )}
+          {feedbackMessage.prefill && isSubmitted && (
+            <button
+              type="button"
+              data-testid="prefill-notes"
+              onClick={() => prefillNotes(feedbackMessage.prefill!)}
+              className="mt-2 px-3 py-1.5 rounded-lg bg-white border border-rose-300 text-rose-900 font-semibold hover:bg-rose-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+            >
+              Add this to the feedback notes
+            </button>
+          )}
         </div>
       )}
 
@@ -114,6 +180,7 @@ export function ReviewActionPanel({
         </label>
         <textarea
           id="review-feedback-notes"
+          ref={notesRef}
           rows={3}
           maxLength={2000}
           value={feedbackNotes}

@@ -14,6 +14,13 @@ import type {
   RevisionSnapshotData,
   ScholarProfileRevision,
 } from '@/lib/domain/types';
+import {
+  findUnresolved,
+  resolveTaxonomySlug,
+  type Taxonomy,
+  type TaxonomyKind,
+  type UnresolvedEntry,
+} from '@/lib/taxonomy/resolve';
 
 export const MAX_SNAPSHOT_BYTES = 262144;
 export const OPEN_REVISION_STATUSES = ['draft', 'submitted', 'changes_requested'] as const;
@@ -55,12 +62,43 @@ function records(value: unknown): Record<string, unknown>[] {
     .filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item));
 }
 
+/** A publication link is stored only as an http(s) URL or a DOI (10.xxxx/...). */
+function safeLink(value: string | null): string | null {
+  if (!value) return null;
+  return /^https?:\/\//i.test(value) || /^10\./.test(value) ? value : null;
+}
+
+/** Year bounds; mirrored by private.snapshot_int in the promotion migration (the columns have no CHECK). */
+export const MIN_YEAR = 1000;
+export const MAX_YEAR = 2100;
+
+function safeYear(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= MIN_YEAR && value <= MAX_YEAR
+    ? value
+    : null;
+}
+
+/** A scalar link is kept only as an http(s) URL. */
+function safeUrl(value: string): string | null {
+  return /^https?:\/\//i.test(value) ? value : null;
+}
+
+/** Maps a value to its slug when it resolves, otherwise keeps the raw value (already capped). */
+function toSlug(kind: TaxonomyKind, raw: string, taxonomy?: Taxonomy): string {
+  return resolveTaxonomySlug(kind, raw, taxonomy) ?? raw;
+}
+
 /**
  * Reduces untrusted client input to the known RevisionSnapshotData shape.
  * Unknown keys (and profile_tier, which is staff-controlled) are dropped,
  * strings are trimmed and capped, arrays are capped and item-typed.
+ * Disciplines, traditions and confessions are mapped to canonical slugs (slug,
+ * then legacy alias, then name); values that do not resolve are kept raw but
+ * capped so the scholar can fix them, and are reported by findUnresolved.
+ * Duplicates are removed (first wins). Publication and Google Scholar links with
+ * another scheme are cleared; years outside 1000 to 2100 are cleared.
  */
-export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
+export function sanitizeSnapshot(input: unknown, taxonomy?: Taxonomy): RevisionSnapshotData {
   const src = input && typeof input === 'object' && !Array.isArray(input)
     ? (input as Record<string, unknown>)
     : {};
@@ -81,7 +119,10 @@ export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
     if (!(key in src)) continue;
     const value = nullableStr(src[key], max);
     if (value !== undefined) {
-      (out as unknown as Record<string, unknown>)[key] = value;
+      // A Google Scholar link with another scheme is cleared, as with publication links;
+      // validateRevisionData tells the scholar at submit (see the submit route).
+      (out as unknown as Record<string, unknown>)[key] =
+        key === 'google_scholar_url' && typeof value === 'string' ? safeUrl(value) : value;
     }
   }
 
@@ -91,8 +132,7 @@ export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
       const field = str(c.field_of_study, 200);
       const institution = str(c.institution_name, 200);
       if (degree === undefined || field === undefined || institution === undefined) return [];
-      const year =
-        typeof c.year_awarded === 'number' && Number.isInteger(c.year_awarded) ? c.year_awarded : null;
+      const year = safeYear(c.year_awarded);
       return [
         {
           degree,
@@ -114,8 +154,8 @@ export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
           title,
           publication_type: p.publication_type as PublicationType,
           publisher_or_journal: nullableStr(p.publisher_or_journal, 300) ?? null,
-          year: typeof p.year === 'number' && Number.isInteger(p.year) ? p.year : null,
-          doi_or_url: nullableStr(p.doi_or_url, 500) ?? null,
+          year: safeYear(p.year),
+          doi_or_url: safeLink(nullableStr(p.doi_or_url, 500) ?? null),
           citation_text: nullableStr(p.citation_text, 2000) ?? null,
         },
       ];
@@ -123,14 +163,21 @@ export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
   }
 
   if ('confessions' in src) {
+    const seen = new Set<string>();
     out.confessions = records(src.confessions).flatMap((c) => {
       const id = str(c.confessional_standard_id, 100);
       if (!id || !ADHERENCE_LEVELS.includes(c.adherence_level as AdherenceLevel)) return [];
-      const name = str(c.confessional_standard_name, 200);
+      // A legacy draft may carry only a display name that resolves; try it before keeping the raw id.
+      const slug =
+        resolveTaxonomySlug('confession', id, taxonomy) ??
+        resolveTaxonomySlug('confession', c.confessional_standard_name, taxonomy) ??
+        id;
+      const key = slug.toLowerCase();
+      if (seen.has(key)) return [];
+      seen.add(key);
       return [
         {
-          confessional_standard_id: id,
-          ...(name !== undefined ? { confessional_standard_name: name } : {}),
+          confessional_standard_id: slug,
           adherence_level: c.adherence_level as AdherenceLevel,
           exception_notes: nullableStr(c.exception_notes, 2000) ?? null,
         },
@@ -138,19 +185,56 @@ export function sanitizeSnapshot(input: unknown): RevisionSnapshotData {
     });
   }
 
-  for (const key of ['disciplines', 'traditions'] as const) {
+  for (const [key, kind] of [
+    ['disciplines', 'discipline'],
+    ['traditions', 'tradition'],
+  ] as const) {
     if (!(key in src)) continue;
     const value = src[key];
-    out[key] = Array.isArray(value)
-      ? value
-          .slice(0, MAX_ITEMS)
-          .filter((item): item is string => typeof item === 'string')
-          .map((item) => item.trim().slice(0, 200))
-          .filter((item) => item.length > 0)
-      : [];
+    if (!Array.isArray(value)) {
+      out[key] = [];
+      continue;
+    }
+    const seen = new Set<string>();
+    out[key] = value
+      .slice(0, MAX_ITEMS)
+      .filter((item): item is string => typeof item === 'string')
+      .map((item) => item.trim().slice(0, 200))
+      .filter((item) => item.length > 0)
+      .map((item) => toSlug(kind, item, taxonomy))
+      .filter((slug) => {
+        const k = slug.toLowerCase();
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
   }
 
   return out;
+}
+
+const TAXONOMY_TABLES = [
+  ['disciplines', 'disciplines'],
+  ['traditions', 'traditions'],
+  ['confessions', 'confessional_standards'],
+] as const;
+
+/**
+ * Loads the database taxonomy (slug and display name) for the editor and the
+ * sanitiser. Throws on failure: an empty taxonomy would mark every entry
+ * unresolved, which is worse than an honest error.
+ */
+export async function loadTaxonomy(supabase: SupabaseClient): Promise<Taxonomy> {
+  const taxonomy: Taxonomy = { disciplines: [], traditions: [], confessions: [] };
+  for (const [key, table] of TAXONOMY_TABLES) {
+    const { data, error } = await supabase.from(table).select('slug, name').order('name', { ascending: true });
+    if (error || !data) throw new Error('taxonomy_unavailable');
+    taxonomy[key] = (data as Array<{ slug: string; name: string }>).map((row) => ({
+      slug: row.slug,
+      name: row.name,
+    }));
+  }
+  return taxonomy;
 }
 
 export interface RevisionScholarSummary {
@@ -171,8 +255,14 @@ export interface RevisionBaseline {
 
 export interface RevisionState {
   scholar: RevisionScholarSummary;
+  /** The open (or latest rejected) revision, with legacy taxonomy values mapped to slugs. */
   revision: ScholarProfileRevision | null;
+  /** Always built from the scholar's real published rows (ADR 0025), never from a stored snapshot. */
   baseline: RevisionBaseline;
+  /** Database taxonomy options for the pickers; selections store the slug. */
+  taxonomy: Taxonomy;
+  /** Entries in the open revision that do not resolve to a taxonomy row; blocks submit until fixed. */
+  unresolved: UnresolvedEntry[];
 }
 
 const SCHOLAR_COLUMNS =
@@ -195,7 +285,100 @@ type ScholarRow = RevisionScholarSummary & {
   google_scholar_url: string | null;
 };
 
-function baselineFromScholar(s: ScholarRow): RevisionSnapshotData {
+type LiveLists = Required<Pick<RevisionSnapshotData, 'credentials' | 'publications' | 'confessions' | 'disciplines' | 'traditions'>>;
+
+/** A joined taxonomy row comes back as an object or a one-element array depending on the client. */
+function joinedSlug(value: unknown): string | null {
+  const row = Array.isArray(value) ? value[0] : value;
+  const slug = row && typeof row === 'object' ? (row as { slug?: unknown }).slug : null;
+  return typeof slug === 'string' ? slug : null;
+}
+
+function joinedName(value: unknown): string {
+  const row = Array.isArray(value) ? value[0] : value;
+  const name = row && typeof row === 'object' ? (row as { name?: unknown }).name : null;
+  return typeof name === 'string' ? name : '';
+}
+
+/**
+ * Reads the scholar's real published relational rows. Any read error throws:
+ * a partial baseline would reintroduce the first-approval data-loss trap.
+ */
+async function loadLiveLists(supabase: SupabaseClient, scholarId: string): Promise<LiveLists> {
+  const fail = () => new Error('live_profile_unavailable');
+
+  const creds = await supabase
+    .from('credentials')
+    .select('degree, field_of_study, institution_name, year_awarded, is_terminal')
+    .eq('scholar_id', scholarId)
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: true });
+  const pubs = await supabase
+    .from('publications')
+    .select('title, publication_type, publisher_or_journal, year, doi_or_url, citation_text')
+    .eq('scholar_id', scholarId)
+    .order('display_order', { ascending: true })
+    .order('created_at', { ascending: true });
+  const confs = await supabase
+    .from('scholar_confessions')
+    .select('adherence_level, exception_notes, confessional_standards(slug, name)')
+    .eq('scholar_id', scholarId)
+    .order('created_at', { ascending: true });
+  const discs = await supabase
+    .from('scholar_disciplines')
+    .select('is_primary, disciplines(slug, name)')
+    .eq('scholar_id', scholarId)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true });
+  const trads = await supabase
+    .from('scholar_traditions')
+    .select('is_primary, traditions(slug, name)')
+    .eq('scholar_id', scholarId)
+    .order('is_primary', { ascending: false })
+    .order('created_at', { ascending: true });
+  if (creds.error || pubs.error || confs.error || discs.error || trads.error) throw fail();
+
+  // Rows promoted in one statement share created_at, so order in code: the primary
+  // first, then by taxonomy name and slug. Deterministic whatever the database returns.
+  const byName = (a: { name: string; slug: string }, b: { name: string; slug: string }) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
+  const slugs = (rows: unknown, key: string) =>
+    ((rows ?? []) as Array<Record<string, unknown>>)
+      .flatMap((r) => {
+        const slug = joinedSlug(r[key]);
+        return slug ? [{ slug, name: joinedName(r[key]), primary: r.is_primary === true }] : [];
+      })
+      .sort((a, b) => Number(b.primary) - Number(a.primary) || byName(a, b))
+      .map((r) => r.slug);
+
+  return {
+    credentials: (creds.data ?? []) as unknown as LiveLists['credentials'],
+    publications: (pubs.data ?? []) as unknown as LiveLists['publications'],
+    confessions: ((confs.data ?? []) as unknown as Array<Record<string, unknown>>)
+      .flatMap((r) => {
+        const slug = joinedSlug(r.confessional_standards);
+        return slug
+          ? [
+              {
+                name: joinedName(r.confessional_standards),
+                slug,
+                entry: {
+                  confessional_standard_id: slug,
+                  adherence_level: r.adherence_level as AdherenceLevel,
+                  exception_notes: (r.exception_notes as string | null) ?? null,
+                },
+              },
+            ]
+          : [];
+      })
+      .sort(byName)
+      .map((r) => r.entry),
+    disciplines: slugs(discs.data, 'disciplines'),
+    traditions: slugs(trads.data, 'traditions'),
+  };
+}
+
+function baselineFromScholar(s: ScholarRow, lists: LiveLists): RevisionSnapshotData {
   return {
     full_name: s.full_name,
     title: s.title,
@@ -207,12 +390,28 @@ function baselineFromScholar(s: ScholarRow): RevisionSnapshotData {
     doctrinal_statement_text: s.doctrinal_statement_text,
     orcid_id: s.orcid_id,
     google_scholar_url: s.google_scholar_url,
-    credentials: [],
-    publications: [],
-    confessions: [],
-    disciplines: [],
-    traditions: [],
+    ...lists,
   };
+}
+
+/**
+ * Builds the scholar's CURRENT live profile as a snapshot: the scalar columns
+ * plus the five relational lists (ADR 0025). It is the editor start point and
+ * the admin diff baseline, so a first approval never silently removes rows that
+ * exist today. Returns null when the scholar row is not readable by this client;
+ * throws if a list cannot be read.
+ */
+export async function loadLiveProfileSnapshot(
+  supabase: SupabaseClient,
+  scholarId: string
+): Promise<RevisionSnapshotData | null> {
+  const { data, error } = await supabase
+    .from('scholars')
+    .select(SCHOLAR_COLUMNS)
+    .eq('id', scholarId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return baselineFromScholar(data as unknown as ScholarRow, await loadLiveLists(supabase, scholarId));
 }
 
 /**
@@ -269,9 +468,23 @@ export async function loadRevisionState(
     revision = (rejected as unknown as ScholarProfileRevision | null) ?? null;
   }
 
-  const baseline: RevisionBaseline = published
-    ? { source: 'published_revision', revision_id: published.id, snapshot: published.snapshot_data }
-    : { source: 'profile', revision_id: null, snapshot: baselineFromScholar(scholar) };
+  const taxonomy = await loadTaxonomy(supabase);
+  const liveLists = await loadLiveLists(supabase, scholarId);
+
+  // The baseline is always the live rows. `source` only says whether the scholar
+  // already has a published revision (for labelling); it never selects the data.
+  const baseline: RevisionBaseline = {
+    source: published ? 'published_revision' : 'profile',
+    revision_id: published ? published.id : null,
+    snapshot: baselineFromScholar(scholar, liveLists),
+  };
+
+  let unresolved: UnresolvedEntry[] = [];
+  if (revision) {
+    const mapped = sanitizeSnapshot(revision.snapshot_data, taxonomy);
+    unresolved = findUnresolved(mapped, taxonomy);
+    revision = { ...revision, snapshot_data: mapped };
+  }
 
   return {
     scholar: {
@@ -285,6 +498,8 @@ export async function loadRevisionState(
     },
     revision,
     baseline,
+    taxonomy,
+    unresolved,
   };
 }
 

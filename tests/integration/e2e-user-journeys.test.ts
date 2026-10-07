@@ -224,7 +224,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
         ],
         confessions: [
           {
-            confessional_standard_id: 'c1000000-0000-0000-0000-000000000001', // Westminster Confession
+            confessional_standard_id: 'westminster-confession', // database slug (ADR 0025)
             adherence_level: 'full_subscription',
             exception_notes: null,
           },

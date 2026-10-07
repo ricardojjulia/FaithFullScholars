@@ -28,7 +28,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: detail });
   } catch (err) {
-    console.error(`Failed to fetch revision detail ${id}:`, err);
+    console.error('Failed to fetch revision detail:', { name: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json({ error: 'Failed to retrieve revision detail' }, { status: 500 });
   }
 }
@@ -92,6 +92,15 @@ export async function POST(
       if (result.code === 'not_reviewable') {
         return NextResponse.json({ error: 'Only submitted revisions can be reviewed' }, { status: 409 });
       }
+      if (result.code === 'taxonomy_unmatched') {
+        return NextResponse.json(
+          { error: result.error, code: result.code, unmatched: result.unmatched ?? [] },
+          { status: 422 }
+        );
+      }
+      if (result.code === 'snapshot_invalid') {
+        return NextResponse.json({ error: result.error, code: result.code }, { status: 422 });
+      }
       if (result.code === 'invalid_action') {
         return NextResponse.json({ error: 'Invalid review action' }, { status: 400 });
       }
@@ -100,7 +109,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, result });
   } catch (err) {
-    console.error('Failed to process review action:', { message: err instanceof Error ? err.name : 'unknown' });
+    console.error('Failed to process review action:', { name: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json({ error: 'Failed to process review action' }, { status: 500 });
   }
 }

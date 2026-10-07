@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getSessionContext } from '@/lib/auth/session';
 import { validateRevisionData } from '@/lib/profiles/revision-actions';
+import { findUnresolved } from '@/lib/taxonomy/resolve';
 import {
   REVISION_SELECT_COLUMNS,
   findOpenRevision,
+  loadTaxonomy,
   readRevisionPin,
   sanitizeSnapshot,
 } from '@/lib/profiles/revision-service';
@@ -40,18 +42,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'There is no draft to submit.' }, { status: 409 });
     }
 
-    // Validate the stored snapshot, not anything the client sends now.
-    const validation = validateRevisionData(sanitizeSnapshot(revision.snapshot_data));
+    // Validate the stored snapshot (mapped to slugs), not anything the client sends now.
+    const taxonomy = await loadTaxonomy(supabase);
+    const snapshot = sanitizeSnapshot(revision.snapshot_data, taxonomy);
+    // sanitizeSnapshot clears a Google Scholar link with a bad scheme; validate the
+    // stored value too so the scholar is told instead of the link silently vanishing.
+    const storedUrl = (revision.snapshot_data as { google_scholar_url?: unknown } | null)?.google_scholar_url;
+    const validation = validateRevisionData({
+      ...snapshot,
+      google_scholar_url:
+        snapshot.google_scholar_url ?? (typeof storedUrl === 'string' && storedUrl.trim() ? storedUrl.trim() : null),
+    });
     if (!validation.valid) {
       return NextResponse.json(
         { error: 'The profile is not ready to submit.', errors: validation.errors },
         { status: 400 }
       );
     }
+    // Approval refuses entries that are not in the taxonomy, so catch them now.
+    const unresolved = findUnresolved(snapshot, taxonomy);
+    if (unresolved.length > 0) {
+      return NextResponse.json(
+        {
+          error: 'Some disciplines, traditions or confessional standards are not recognised. Replace or remove them before submitting.',
+          unresolved,
+        },
+        { status: 422 }
+      );
+    }
 
     const { data: updated, error: updateError } = await supabase
       .from('scholar_profile_revisions')
-      .update({ status: 'submitted' })
+      .update({ status: 'submitted', snapshot_data: snapshot })
       .eq('id', revision.id)
       .eq('scholar_id', session.scholarId)
       .in('status', ['draft', 'changes_requested'])

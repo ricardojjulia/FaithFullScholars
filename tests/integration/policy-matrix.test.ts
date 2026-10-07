@@ -39,6 +39,11 @@ const IDS = {
   $CONSORTIUM_MEMBER: 'c0000000-0000-0000-0000-0000000001d2',
   $MILESTONE: 'c0000000-0000-0000-0000-0000000001a2',
   $REVISION: 'c0000000-0000-0000-0000-0000000001f1',
+  $CHILD_CRED: 'c0000000-0000-0000-0000-0000000001f2',
+  $CHILD_PUB: 'c0000000-0000-0000-0000-0000000001f3',
+  $CHILD_DISC: 'c0000000-0000-0000-0000-0000000001f4',
+  $CHILD_TRAD: 'c0000000-0000-0000-0000-0000000001f5',
+  $CHILD_CONF: 'c0000000-0000-0000-0000-0000000001f6',
 } as const;
 
 type ColumnDecl = { skip: string } | { writable: boolean; value: string };
@@ -46,6 +51,8 @@ type Scenario = {
   table: string;
   persona: 'scholar' | 'institution_owner' | 'institution_recruiter';
   fixture: string;
+  /** Also assert the probed row is visible to the persona, so a denial cannot be an invisible-row artifact. */
+  requireVisible?: boolean;
   row: { column: string; value: string };
   columns: Record<string, ColumnDecl>;
 };
@@ -106,6 +113,48 @@ describe('Policy matrix — declared column-write contract', () => {
       );
     },
     member_of_a: async () => {},
+    published_children: async () => {
+      // One row per published child table for scholar A (ADR 0025), with fixed ids.
+      // Inserted as the migration role, which the child guard does not restrict.
+      const A = dynamicIds.$SCHOLAR_A;
+      await client.query(
+        `INSERT INTO public.credentials (id, scholar_id, degree, field_of_study, institution_name, year_awarded, is_terminal, display_order)
+         VALUES ($1, $2, 'Matrix Degree', 'Matrix Field', 'Matrix University', 2001, false, 50)`,
+        [IDS.$CHILD_CRED, A]
+      );
+      await client.query(
+        `INSERT INTO public.publications (id, scholar_id, title, publication_type, display_order)
+         VALUES ($1, $2, 'Matrix Publication', 'book', 50)`,
+        [IDS.$CHILD_PUB, A]
+      );
+      await client.query(
+        `DELETE FROM public.scholar_disciplines WHERE scholar_id = $1 AND discipline_id = 'd1000000-0000-0000-0000-000000000003'`,
+        [A]
+      );
+      await client.query(
+        `INSERT INTO public.scholar_disciplines (id, scholar_id, discipline_id, is_primary)
+         VALUES ($1, $2, 'd1000000-0000-0000-0000-000000000003', false)`,
+        [IDS.$CHILD_DISC, A]
+      );
+      await client.query(
+        `DELETE FROM public.scholar_traditions WHERE scholar_id = $1 AND tradition_id = 'b1000000-0000-0000-0000-000000000001'`,
+        [A]
+      );
+      await client.query(
+        `INSERT INTO public.scholar_traditions (id, scholar_id, tradition_id, is_primary)
+         VALUES ($1, $2, 'b1000000-0000-0000-0000-000000000001', false)`,
+        [IDS.$CHILD_TRAD, A]
+      );
+      await client.query(
+        `DELETE FROM public.scholar_confessions WHERE scholar_id = $1 AND confessional_standard_id = 'c1000000-0000-0000-0000-000000000004'`,
+        [A]
+      );
+      await client.query(
+        `INSERT INTO public.scholar_confessions (id, scholar_id, confessional_standard_id, adherence_level)
+         VALUES ($1, $2, 'c1000000-0000-0000-0000-000000000004', 'full_subscription')`,
+        [IDS.$CHILD_CONF, A]
+      );
+    },
     inquiry: async () => {
       await client.query(
         `INSERT INTO public.inquiries (id, institution_id, scholar_id, sender_account_id, opportunity_type, message, contact_email)
@@ -209,6 +258,13 @@ describe('Policy matrix — declared column-write contract', () => {
           const where = fill(`WHERE ${scenario.row.column} = '${scenario.row.value}'`);
           const read = async () =>
             (await client.query(`SELECT ${column}::text AS v FROM public.${scenario.table} ${where}`)).rows[0]?.v ?? null;
+          if (scenario.requireVisible) {
+            const visible = (await client.query(`SELECT count(*)::int AS n FROM public.${scenario.table} ${where}`)).rows[0].n;
+            if (visible === 0) {
+              mismatches.push(`${column}: the probed row is not visible to the persona (a denial here would prove nothing)`);
+              continue;
+            }
+          }
           const before = await read();
           const sql = fill(`UPDATE public.${scenario.table} SET ${column} = ${decl.value} ${where}`);
           let outcome: 'allowed' | 'denied';
