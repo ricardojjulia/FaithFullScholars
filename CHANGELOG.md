@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Scholar revision lifecycle, backend (ADR 0024, migration `20261006090000_scholar_revision_lifecycle.sql`).**
+  - **Database-enforced lifecycle:** a guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edits or resubmits. The database assigns `revision_number`, `submitted_at`, and `updated_at`. One open revision per scholar (partial unique index). `rejected` is now a valid status, and `snapshot_data` must be a JSON object of at most 256 KB.
+  - **API:** `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, and `POST /api/scholars/revisions/withdraw`. The snapshot is allow-listed (`profile_tier` and unknown keys are dropped) and the client can never set `scholar_id`, `status`, `revision_number`, or `admin_notes`.
+  - **Atomic admin review:** `review_profile_revision()` (service role only) approves, requests changes, or rejects submitted revisions together with the `profile_reviews` audit row. Approve supersedes the prior published revision, clears `draft_revision_id`, and keeps hidden scholars hidden. The admin route returns 404 or 409 for missing or non-submitted revisions.
+  - **Tests:** real-role lifecycle suite, policy-matrix scenario for `scholar_profile_revisions` (and `scholars.draft_revision_id` now declared), route unit tests.
+
+- **Scholar revision lifecycle, frontend (ADR 0024).** The profile editor, onboarding, and draft preview now load and save the scholar's real revision through the API; `sessionStorage` and the hard-coded demo scholar are gone, so a reload or another browser shows the same draft. New `RevisionStatusBanner` shows draft, awaiting review (with Withdraw), changes requested (with reviewer feedback), rejected (with Start a new draft), and published states. `ScholarProfileForm` gains `readOnly` (used while a submission awaits review) and its fields now have associated labels. The preview uses the real slug and verification status and no fake availability. The admin review panel shows approve, request changes, and reject only for submitted revisions and explains 404/409 responses. E2E save, reload, submit, withdraw flow added.
+
+- **Scholar revision lifecycle, review fixes (PR #56, commit `c5ce497`).**
+  - **Migration:** preflight aborts with a clear message on duplicate open revisions or invalid or oversized snapshots. The review function now locks the scholar row before the revision to avoid a deadlock with scholar updates.
+  - **Admin actions:** an unknown action returns `invalid_action` (it used to fall through to hide). A failed audit insert on hide returns `audit_failed` (route 500). Malformed JSON returns 400. Feedback notes are now required for request changes and reject, capped at 2000 characters (new rule; reversible default, owner decision).
+  - **Submit and withdraw** honour the client `revisionId` pin (409 on a stale tab); the DB size CHECK maps to 413.
+  - **UX:** a 409 conflict keeps unsaved edits and shows a notice; hidden scholars see moderation state; onboarding re-reads state on 409 and offers retry on load error; the admin panel stays locked after a decision, with readable labels; the preview states which sections publish on approval.
+  - **Tests:** `tests/unit/admin-review-route.test.ts`, `tests/unit/admin-review-actions.test.ts`, pin and 23514 cases in `scholar-revisions-api`; the `api:POST /api/admin/reviews/[id]` test-surface exemption is removed.
+  - **Known gaps (ADR 0024):** scholars can still edit live `scholars` content and child tables directly under RLS (HIGH, next slice); approval publishes scalar fields only; rejected and superseded snapshots are retained indefinitely.
+  - **Deploy runbook (migration NOT yet applied to production; merge awaits owner approval):**
+    1. Run the preflight: `SELECT scholar_id, count(*) FROM scholar_profile_revisions WHERE status IN ('draft','submitted','changes_requested') GROUP BY 1 HAVING count(*) > 1;` and resolve any rows.
+    2. Apply migration `20261006090000` in the hosted SQL Editor (it also self-checks).
+    3. Verify `review_profile_revision` EXECUTE is granted only to `service_role`.
+    4. Deploy the app.
+
+### Security
+- **Revisions are readable only by the owning scholar and admins.** Anonymous visitors could previously read the published revision, including `admin_notes`. A scholar could also insert a revision already marked `approved`; the database now refuses it. `scholars.draft_revision_id` can only point at the scholar's own open revision.
+
 ### Changed
 - **Hygiene (Council Review 12, Prompt C).**
   - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.

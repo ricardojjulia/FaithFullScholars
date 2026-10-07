@@ -1,14 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Sparkles, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Sparkles, Check, Loader2 } from 'lucide-react';
 import { CvUploadParser } from '@/components/forms/cv-upload-parser';
 import { ParsedCvDraft } from '@/lib/profiles/cv-parser';
 import { RevisionSnapshotData, PublicationType } from '@/lib/domain/types';
 import { ConfessionalStandardsSelector } from '@/components/forms/confessional-standards-selector';
 import { DoctrinalStatementForm } from '@/components/forms/doctrinal-statement-form';
 import { buildDraftSnapshot } from '@/lib/profiles/revision-actions';
+import {
+  describeFailure,
+  fetchRevisionState,
+  saveRevision
+} from '@/components/dashboard/revision-client';
+
+const SUBMITTED_MESSAGE =
+  'You have a submission awaiting review — withdraw it from your profile page to make changes.';
 
 function mapPubType(type: string): PublicationType {
   switch (type) {
@@ -28,17 +37,52 @@ function mapPubType(type: string): PublicationType {
 }
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const [step, setStep] = useState<'upload' | 'review' | 'success'>('upload');
   const [draft, setDraft] = useState<RevisionSnapshotData>(buildDraftSnapshot(null, {}));
   const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [openRevisionId, setOpenRevisionId] = useState<string | undefined>(undefined);
+  const [submitted, setSubmitted] = useState(false);
+  const [saveErrors, setSaveErrors] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const res = await fetchRevisionState();
+      if (!active) return;
+      if (!res.ok) {
+        if (res.status === 401) {
+          router.push('/login');
+          return;
+        }
+        setLoadError(
+          res.status === 404 ? 'No scholar profile was found for this account.' : describeFailure(res)
+        );
+        setLoading(false);
+        return;
+      }
+      const { revision, baseline } = res.data;
+      const isOpen =
+        !!revision && ['draft', 'submitted', 'changes_requested'].includes(revision.status);
+      setDraft(buildDraftSnapshot(baseline.snapshot, revision?.snapshot_data ?? {}));
+      setOpenRevisionId(isOpen ? revision!.id : undefined);
+      setSubmitted(revision?.status === 'submitted');
+      setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [router]);
 
   function handleCvParsed(parsed: ParsedCvDraft) {
-    const populated = buildDraftSnapshot(null, {
-      full_name: parsed.full_name || '',
-      title: parsed.title || '',
-      current_institution: parsed.current_institution || '',
-      institutional_role: parsed.institutional_role || '',
-      biography: parsed.biography || '',
+    const populated = buildDraftSnapshot(draft, {
+      full_name: parsed.full_name || undefined,
+      title: parsed.title || undefined,
+      current_institution: parsed.current_institution || undefined,
+      institutional_role: parsed.institutional_role || undefined,
+      biography: parsed.biography || undefined,
       credentials: parsed.credentials.map((c) => ({
         degree: c.degree,
         field_of_study: c.field || 'Theological Studies',
@@ -54,28 +98,69 @@ export default function OnboardingPage() {
       })),
       disciplines: parsed.suggested_disciplines,
       traditions: parsed.suggested_traditions,
-      doctrinal_statement_text: parsed.personal_doctrinal_statement || ''
+      doctrinal_statement_text: parsed.personal_doctrinal_statement || undefined
     });
 
     setDraft(populated);
     setStep('review');
   }
 
-  function handleSaveOnboarding() {
+  async function handleSaveOnboarding() {
     setIsSaving(true);
-    // Persist draft in sessionStorage for immediate dashboard preview
-    try {
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem('fs_draft_revision', JSON.stringify(draft));
-      }
-    } catch {
-      // non-blocking
-    }
-
-    setTimeout(() => {
-      setIsSaving(false);
+    setSaveErrors(null);
+    const res = await saveRevision(draft, openRevisionId);
+    setIsSaving(false);
+    if (res.ok) {
+      setOpenRevisionId(res.data.revision.id);
       setStep('success');
-    }, 400);
+      return;
+    }
+    if (res.status === 409) {
+      // Re-read the real state: only an actual submission locks the wizard. Any
+      // other conflict (e.g. a draft changed in another tab) can be retried, and
+      // the scholar's edits here are kept.
+      const current = await fetchRevisionState();
+      if (current.ok) {
+        const rev = current.data.revision;
+        const isOpen = !!rev && ['draft', 'submitted', 'changes_requested'].includes(rev.status);
+        setOpenRevisionId(isOpen ? rev!.id : undefined);
+        if (rev?.status === 'submitted') {
+          setSubmitted(true);
+          return;
+        }
+      }
+      setSaveErrors(`${describeFailure(res)} Your edits are kept; save again to retry.`);
+      return;
+    }
+    setSaveErrors(describeFailure(res));
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2" role="status">
+          <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+          <span>Loading your profile...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div role="alert" className="max-w-md p-4 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs space-y-2">
+          <p>{loadError}</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="px-3 py-1.5 bg-rose-700 text-white rounded-xl font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -241,6 +326,17 @@ export default function OnboardingPage() {
               />
             </div>
 
+            {(submitted || saveErrors) && (
+              <div role="alert" className="p-3.5 rounded-xl text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200 space-y-1">
+                <p>{submitted ? SUBMITTED_MESSAGE : saveErrors}</p>
+                {submitted && (
+                  <Link href="/dashboard/profile" className="font-semibold underline">
+                    Go to your profile page
+                  </Link>
+                )}
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center justify-between">
               <button
@@ -254,7 +350,7 @@ export default function OnboardingPage() {
               <button
                 type="button"
                 onClick={handleSaveOnboarding}
-                disabled={isSaving || !draft.full_name}
+                disabled={isSaving || submitted || !draft.full_name}
                 className="px-6 py-2.5 bg-indigo-900 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
               >
                 <span>{isSaving ? 'Creating Draft Revision...' : 'Confirm & Save Initial Revision →'}</span>

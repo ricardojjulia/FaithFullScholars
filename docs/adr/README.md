@@ -36,6 +36,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0021-theological-guild-annual-conference-interview-hub.md`: ETS/SBL/EPS annual conference mobile interview and presentation hub. Council 12: runs on in-memory demo data.
 - `0022-session-derived-identity-and-rls-helper-isolation.md`: Session-derived identity, page-level guards, RLS helper isolation in a non-exposed `private` schema, and trust-column guard triggers.
 - `0023-trust-guards-phase2-and-policy-matrix.md`: Trust guards for subscriptions, contracts, milestones, licensing, endorsements and consortiums; the policy matrix as the declared column-write contract.
+- `0024-scholar-revision-lifecycle-and-atomic-review.md`: Scholar draft/submit/withdraw lifecycle enforced by database guards, owner-and-admin-only revision reads, and the atomic service-role-only `review_profile_revision` function.
 
 
 Each ADR must define:

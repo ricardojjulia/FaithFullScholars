@@ -12,6 +12,8 @@ interface ScholarProfileFormProps {
   publishedSnapshot?: RevisionSnapshotData | null;
   onSaveDraft: (draft: RevisionSnapshotData) => Promise<{ success: boolean; error?: string }>;
   onSubmitForReview?: (draft: RevisionSnapshotData) => Promise<{ success: boolean; error?: string }>;
+  /** Disables every input and the save/submit buttons (e.g. while a submission awaits review). */
+  readOnly?: boolean;
 }
 
 const AVAILABLE_DISCIPLINES = [
@@ -30,7 +32,8 @@ export function ScholarProfileForm({
   initialDraft,
   publishedSnapshot = null,
   onSaveDraft,
-  onSubmitForReview
+  onSubmitForReview,
+  readOnly = false
 }: ScholarProfileFormProps) {
   const [formData, setFormData] = useState<RevisionSnapshotData>(initialDraft);
   const [isSaving, setIsSaving] = useState(false);
@@ -60,6 +63,7 @@ export function ScholarProfileForm({
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+    if (readOnly) return;
     setIsSaving(true);
     setSaveMessage(null);
     try {
@@ -77,7 +81,7 @@ export function ScholarProfileForm({
   }
 
   async function handleSubmitReview() {
-    if (!onSubmitForReview) return;
+    if (!onSubmitForReview || readOnly) return;
     setIsSaving(true);
     setSaveMessage(null);
     try {
@@ -122,7 +126,7 @@ export function ScholarProfileForm({
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="submit"
-            disabled={isSaving}
+            disabled={isSaving || readOnly}
             className="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 text-xs font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50"
           >
             {isSaving ? 'Saving...' : 'Save Draft'}
@@ -132,7 +136,7 @@ export function ScholarProfileForm({
             <button
               type="button"
               onClick={handleSubmitReview}
-              disabled={isSaving || !diff.hasChanges}
+              disabled={isSaving || readOnly || !diff.hasChanges}
               className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
             >
               Submit for Review
@@ -143,6 +147,7 @@ export function ScholarProfileForm({
 
       {saveMessage && (
         <div
+          role={saveMessage.type === 'error' ? 'alert' : 'status'}
           className={`p-3.5 rounded-xl text-xs font-medium ${
             saveMessage.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900'
@@ -153,6 +158,7 @@ export function ScholarProfileForm({
         </div>
       )}
 
+      <fieldset disabled={readOnly} className="space-y-8 min-w-0 border-0 p-0 m-0">
       {/* Section 1: Academic Identity */}
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
         <h3 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
@@ -161,10 +167,10 @@ export function ScholarProfileForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-full-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Full Legal & Professional Name *
             </label>
-            <input
+            <input id="profile-full-name"
               type="text"
               required
               value={formData.full_name || ''}
@@ -175,10 +181,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-title" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Professional Headline / Academic Title
             </label>
-            <input
+            <input id="profile-title"
               type="text"
               value={formData.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
@@ -188,10 +194,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-institution" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Current Institution
             </label>
-            <input
+            <input id="profile-institution"
               type="text"
               value={formData.current_institution || ''}
               onChange={(e) => updateField('current_institution', e.target.value)}
@@ -201,10 +207,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-role" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Institutional Role
             </label>
-            <input
+            <input id="profile-role"
               type="text"
               value={formData.institutional_role || ''}
               onChange={(e) => updateField('institutional_role', e.target.value)}
@@ -214,10 +220,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-location" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Location
             </label>
-            <input
+            <input id="profile-location"
               type="text"
               value={formData.location || ''}
               onChange={(e) => updateField('location', e.target.value)}
@@ -227,10 +233,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-timezone" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Timezone
             </label>
-            <input
+            <input id="profile-timezone"
               type="text"
               value={formData.timezone || 'America/New_York'}
               onChange={(e) => updateField('timezone', e.target.value)}
@@ -240,10 +246,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-orcid" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               ORCID Researcher ID
             </label>
-            <input
+            <input id="profile-orcid"
               type="text"
               value={formData.orcid_id || ''}
               onChange={(e) => updateField('orcid_id', e.target.value)}
@@ -255,10 +261,10 @@ export function ScholarProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            <label htmlFor="profile-scholar-url" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Google Scholar Citations URL
             </label>
-            <input
+            <input id="profile-scholar-url"
               type="url"
               value={formData.google_scholar_url || ''}
               onChange={(e) => updateField('google_scholar_url', e.target.value)}
@@ -269,10 +275,10 @@ export function ScholarProfileForm({
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+          <label htmlFor="profile-biography" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
             Academic Biography & Research Summary
           </label>
-          <textarea
+          <textarea id="profile-biography"
             rows={4}
             value={formData.biography || ''}
             onChange={(e) => updateField('biography', e.target.value)}
@@ -328,6 +334,7 @@ export function ScholarProfileForm({
           onChange={(val) => updateField('doctrinal_statement_text', val)}
         />
       </div>
+      </fieldset>
     </form>
   );
 }

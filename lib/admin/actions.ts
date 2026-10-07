@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server';
-import { ReviewAction, RevisionSnapshotData } from '@/lib/domain/types';
+import { ReviewAction } from '@/lib/domain/types';
 
 export interface ReviewDecisionInput {
   revisionId: string;
@@ -14,21 +14,26 @@ export interface ReviewDecisionResult {
   revisionId: string;
   scholarId: string;
   error?: string;
+  /** Machine-readable failure reason for the review function. */
+  code?: 'not_found' | 'not_reviewable' | 'invalid_action' | 'audit_failed';
 }
 
 /**
- * Processes an administrative review decision (Approve, Request Changes, Reject, Hide)
- * enforcing data integrity and writing to the profile_reviews audit trail.
+ * Processes an administrative review decision (Approve, Request Changes, Reject, Hide).
+ * Approve / request-changes / reject run through the atomic, service-role-only
+ * `review_profile_revision` database function (ADR 0024), which acts on
+ * submitted revisions only and writes the profile_reviews audit row in the same
+ * transaction. Hide is a direct profile_status change with its own audit row.
  */
 export async function processRevisionReview(
   input: ReviewDecisionInput
 ): Promise<ReviewDecisionResult> {
   const supabase = createAdminClient();
 
-  // 1. Fetch the revision to identify scholar and snapshot
+  // 1. Fetch the revision to identify the scholar
   const { data: rev, error: revErr } = await supabase
     .from('scholar_profile_revisions')
-    .select('id, scholar_id, snapshot_data')
+    .select('id, scholar_id')
     .eq('id', input.revisionId)
     .single();
 
@@ -39,129 +44,95 @@ export async function processRevisionReview(
       revisionId: input.revisionId,
       scholarId: '',
       error: `Revision ${input.revisionId} not found.`,
+      code: 'not_found',
     };
   }
 
-  const scholarId = rev.scholar_id;
-  const snapshot = (rev.snapshot_data || {}) as RevisionSnapshotData;
+  const scholarId = rev.scholar_id as string;
+
+  if (input.action === 'approve' || input.action === 'request_changes' || input.action === 'reject') {
+    const { error: rpcErr } = await supabase.rpc('review_profile_revision', {
+      p_revision_id: input.revisionId,
+      p_action: input.action,
+      p_notes: input.feedbackNotes || null,
+      p_reviewer: input.reviewerAccountId,
+    });
+
+    if (rpcErr) {
+      const sqlState = (rpcErr as { code?: string }).code;
+      if (sqlState === 'P0002') {
+        return {
+          success: false,
+          action: input.action,
+          revisionId: input.revisionId,
+          scholarId,
+          error: 'Revision not found.',
+          code: 'not_found',
+        };
+      }
+      if (sqlState === '55000') {
+        return {
+          success: false,
+          action: input.action,
+          revisionId: input.revisionId,
+          scholarId,
+          error: 'Only submitted revisions can be reviewed.',
+          code: 'not_reviewable',
+        };
+      }
+      console.error('Admin review function failed:', { code: sqlState });
+      return {
+        success: false,
+        action: input.action,
+        revisionId: input.revisionId,
+        scholarId,
+        error: 'Unable to record the review decision. Please try again.',
+      };
+    }
+
+    return {
+      success: true,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+    };
+  }
+
+  // Hide is the only other action; anything else is refused rather than
+  // falling through to a destructive default.
+  if (input.action !== 'hide') {
+    return {
+      success: false,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+      error: 'Invalid review action.',
+      code: 'invalid_action',
+    };
+  }
+
+  // Hide: remove the scholar profile from public discovery
   const now = new Date().toISOString();
-
-  // 2. Perform action-specific state transitions
-  if (input.action === 'approve') {
-    // A. Mark revision approved
-    const { error: updateRevErr } = await supabase
-      .from('scholar_profile_revisions')
-      .update({
-        status: 'approved',
-        reviewed_at: now,
-        admin_notes: input.feedbackNotes || null,
-        updated_at: now,
-      })
-      .eq('id', input.revisionId);
-
-    if (updateRevErr) {
-      return {
-        success: false,
-        action: input.action,
-        revisionId: input.revisionId,
-        scholarId,
-        error: updateRevErr.message,
-      };
-    }
-
-    // B. Promote revision to published snapshot on scholar record
-    const scholarUpdates: Record<string, unknown> = {
-      published_revision_id: input.revisionId,
-      profile_status: 'approved',
+  const { error: hideErr } = await supabase
+    .from('scholars')
+    .update({
+      profile_status: 'hidden',
       updated_at: now,
+    })
+    .eq('id', scholarId);
+
+  if (hideErr) {
+    console.error('Admin hide scholar failed:', { code: (hideErr as { code?: string }).code });
+    return {
+      success: false,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+      error: 'Unable to update scholar profile status. Please try again.',
     };
-
-    if (snapshot.full_name) scholarUpdates.full_name = snapshot.full_name;
-    if (snapshot.title !== undefined) scholarUpdates.title = snapshot.title;
-    if (snapshot.current_institution !== undefined) scholarUpdates.current_institution = snapshot.current_institution;
-    if (snapshot.institutional_role !== undefined) scholarUpdates.institutional_role = snapshot.institutional_role;
-    if (snapshot.biography !== undefined) scholarUpdates.biography = snapshot.biography;
-    if (snapshot.location !== undefined) scholarUpdates.location = snapshot.location;
-    if (snapshot.timezone !== undefined) scholarUpdates.timezone = snapshot.timezone;
-    if (snapshot.doctrinal_statement_text !== undefined) {
-      scholarUpdates.doctrinal_statement_text = snapshot.doctrinal_statement_text;
-    }
-    if (snapshot.orcid_id !== undefined) scholarUpdates.orcid_id = snapshot.orcid_id;
-    if (snapshot.google_scholar_url !== undefined) scholarUpdates.google_scholar_url = snapshot.google_scholar_url;
-
-    const { error: updateScholarErr } = await supabase
-      .from('scholars')
-      .update(scholarUpdates)
-      .eq('id', scholarId);
-
-    if (updateScholarErr) {
-      console.error('Failed to promote scholar published snapshot:', updateScholarErr);
-    }
-  } else if (input.action === 'request_changes') {
-    const { error: reqErr } = await supabase
-      .from('scholar_profile_revisions')
-      .update({
-        status: 'changes_requested',
-        reviewed_at: now,
-        admin_notes: input.feedbackNotes || 'Changes requested by editorial review.',
-        updated_at: now,
-      })
-      .eq('id', input.revisionId);
-
-    if (reqErr) {
-      console.error('Admin request changes error:', reqErr);
-      return {
-        success: false,
-        action: input.action,
-        revisionId: input.revisionId,
-        scholarId,
-        error: 'Unable to record feedback request. Please try again.',
-      };
-    }
-  } else if (input.action === 'reject') {
-    const { error: rejErr } = await supabase
-      .from('scholar_profile_revisions')
-      .update({
-        status: 'rejected',
-        reviewed_at: now,
-        admin_notes: input.feedbackNotes || 'Submission rejected by editorial review.',
-        updated_at: now,
-      })
-      .eq('id', input.revisionId);
-
-    if (rejErr) {
-      console.error('Admin rejection error:', rejErr);
-      return {
-        success: false,
-        action: input.action,
-        revisionId: input.revisionId,
-        scholarId,
-        error: 'Unable to reject revision. Please try again.',
-      };
-    }
-  } else if (input.action === 'hide') {
-    // Hide the scholar profile from public discovery
-    const { error: hideErr } = await supabase
-      .from('scholars')
-      .update({
-        profile_status: 'hidden',
-        updated_at: now,
-      })
-      .eq('id', scholarId);
-
-    if (hideErr) {
-      console.error('Admin hide scholar error:', hideErr);
-      return {
-        success: false,
-        action: input.action,
-        revisionId: input.revisionId,
-        scholarId,
-        error: 'Unable to update scholar profile status. Please try again.',
-      };
-    }
   }
 
-  // 3. Write immutable record to profile_reviews audit trail
+  // Write immutable record to profile_reviews audit trail
   const { error: auditErr } = await supabase.from('profile_reviews').insert({
     scholar_id: scholarId,
     revision_id: input.revisionId,
@@ -171,7 +142,17 @@ export async function processRevisionReview(
   });
 
   if (auditErr) {
-    console.error('Failed to write profile_reviews audit log:', auditErr);
+    // The profile is hidden, but the decision is not recorded; report it rather
+    // than claiming a clean success.
+    console.error('Failed to write profile_reviews audit log:', { code: (auditErr as { code?: string }).code });
+    return {
+      success: false,
+      action: input.action,
+      revisionId: input.revisionId,
+      scholarId,
+      error: 'The profile was hidden, but the audit record could not be written. Please record the decision again.',
+      code: 'audit_failed',
+    };
   }
 
   return {

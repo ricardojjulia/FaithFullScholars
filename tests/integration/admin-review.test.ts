@@ -231,6 +231,11 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
   });
 
   it('4. approves revision, promotes it to published snapshot on scholar record', async () => {
+    // The scholar resubmits after the requested changes (reviews act on submitted revisions only).
+    await client.query(
+      `UPDATE public.scholar_profile_revisions SET status = 'submitted', submitted_at = now(), reviewed_at = NULL WHERE id = $1`,
+      [testRevisionId]
+    );
     const approvalNotes = 'Verified faculty appointment and credentials with seminary registrar.';
     const result = await processRevisionReview({
       revisionId: testRevisionId,
@@ -264,6 +269,65 @@ describe('Admin Review & Trust Governance Integration (Phase 4, ADR 0003 & ADR 0
     const approvalLog = auditLogs.find((l) => l.action === 'approve' && l.revision_id === testRevisionId);
     expect(approvalLog).toBeDefined();
     expect(approvalLog?.feedback_notes).toBe(approvalNotes);
+
+    // The previously published revision is superseded and the draft pointer is cleared.
+    const baseline = await client.query(
+      'SELECT status FROM public.scholar_profile_revisions WHERE id = $1',
+      [testBaselineRevId]
+    );
+    expect(baseline.rows[0].status).toBe('superseded');
+    const pointer = await client.query('SELECT draft_revision_id FROM public.scholars WHERE id = $1', [testScholarId]);
+    expect(pointer.rows[0].draft_revision_id).toBeNull();
+  });
+
+  it('4b. rejects a submitted revision (terminal) without touching the published profile', async () => {
+    const rev = await client.query(
+      `INSERT INTO public.scholar_profile_revisions (scholar_id, revision_number, status, snapshot_data, submitted_at)
+       VALUES ($1, 3, 'submitted', '{"full_name":"Dr. Review Test Scholar","title":"Rejected Title"}'::jsonb, now())
+       RETURNING id`,
+      [testScholarId]
+    );
+    const rejectedId = rev.rows[0].id;
+
+    const result = await processRevisionReview({
+      revisionId: rejectedId,
+      action: 'reject',
+      feedbackNotes: 'Credentials could not be verified.',
+      reviewerAccountId: testAdminAccountId,
+    });
+    expect(result.success).toBe(true);
+
+    const revCheck = await client.query(
+      'SELECT status, admin_notes FROM public.scholar_profile_revisions WHERE id = $1',
+      [rejectedId]
+    );
+    expect(revCheck.rows[0].status).toBe('rejected');
+    expect(revCheck.rows[0].admin_notes).toBe('Credentials could not be verified.');
+
+    const scholar = await client.query(
+      'SELECT published_revision_id, profile_status, title FROM public.scholars WHERE id = $1',
+      [testScholarId]
+    );
+    expect(scholar.rows[0].published_revision_id).toBe(testRevisionId);
+    expect(scholar.rows[0].profile_status).toBe('approved');
+    expect(scholar.rows[0].title).toBe('Distinguished Professor of Historical Theology');
+
+    // A decided revision cannot be reviewed again, and unknown ids are reported as missing.
+    const again = await processRevisionReview({
+      revisionId: rejectedId,
+      action: 'approve',
+      reviewerAccountId: testAdminAccountId,
+    });
+    expect(again.success).toBe(false);
+    expect(again.code).toBe('not_reviewable');
+
+    const missing = await processRevisionReview({
+      revisionId: '01999999-0000-0000-0000-0000000000ff',
+      action: 'approve',
+      reviewerAccountId: testAdminAccountId,
+    });
+    expect(missing.success).toBe(false);
+    expect(missing.code).toBe('not_found');
   });
 
   it('5. processes institution verification decision', async () => {

@@ -1,89 +1,111 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShieldAlert, ArrowLeft, Check, GraduationCap } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShieldAlert, ArrowLeft, Check, GraduationCap, Loader2 } from 'lucide-react';
 import { ScholarProfileHero } from '@/components/scholars/scholar-profile-hero';
 import { ScholarDoctrinalCard } from '@/components/scholars/scholar-doctrinal-card';
 import { FullPublicScholarProfile } from '@/lib/domain/queries';
 import { RevisionSnapshotData } from '@/lib/domain/types';
-
-const FALLBACK_PREVIEW_DRAFT: RevisionSnapshotData = {
-  full_name: 'Dr. Benjamin H. Edwards, Ph.D.',
-  title: 'Professor of New Testament Studies',
-  current_institution: 'Westminster Theological Seminary',
-  institutional_role: 'Professor',
-  biography:
-    'Dr. Edwards specializes in Pauline epistles, the New Perspective on Paul, and biblical Greek syntax. He has taught for over fifteen years in theological higher education.',
-  location: 'Glenside, PA, USA',
-  timezone: 'America/New_York',
-  doctrinal_statement_text:
-    'I affirm the plenary inspiration and inerrancy of the Holy Scriptures. I heartily subscribe to the Westminster Confession of Faith and Catechisms.',
-  disciplines: ['New Testament & Early Christianity', 'Biblical Languages'],
-  traditions: ['Reformed & Presbyterian'],
-  confessions: [
-    {
-      confessional_standard_id: 'standard-westminster',
-      confessional_standard_name: 'Westminster Confession of Faith (1646)',
-      adherence_level: 'full_subscription'
-    },
-    {
-      confessional_standard_id: 'standard-nicene',
-      confessional_standard_name: 'Nicene-Constantinopolitan Creed (381)',
-      adherence_level: 'full_subscription'
-    }
-  ],
-  credentials: [
-    {
-      degree: 'Ph.D.',
-      field_of_study: 'New Testament',
-      institution_name: 'University of Cambridge',
-      year_awarded: 2018,
-      is_terminal: true
-    },
-    {
-      degree: 'Th.M.',
-      field_of_study: 'Biblical Studies',
-      institution_name: 'Westminster Theological Seminary',
-      year_awarded: 2014,
-      is_terminal: false
-    }
-  ],
-  publications: [
-    {
-      title: 'The Gospel According to Paul: Justification and Union with Christ',
-      publication_type: 'book',
-      year: 2021,
-      citation_text: 'Baker Academic, 2021'
-    }
-  ]
-};
+import {
+  RevisionState,
+  describeFailure,
+  fetchRevisionState,
+  submitRevision
+} from '@/components/dashboard/revision-client';
 
 export default function DraftPreviewPage() {
-  const [draft] = useState<RevisionSnapshotData>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = sessionStorage.getItem('fs_draft_revision');
-        if (stored) {
-          return JSON.parse(stored);
-        }
-      } catch {
-        // fallback
-      }
-    }
-    return FALLBACK_PREVIEW_DRAFT;
-  });
-  const [submitted, setSubmitted] = useState(false);
+  const router = useRouter();
+  const [state, setState] = useState<RevisionState | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmitReview() {
-    setSubmitted(true);
+  const load = useCallback(async () => {
+    const res = await fetchRevisionState();
+    if (!res.ok) {
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
+      setLoadError(res.status === 404 ? 'No scholar profile was found for this account.' : describeFailure(res));
+      return;
+    }
+    setLoadError(null);
+    setState(res.data);
+  }, [router]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      await load();
+      if (active) setLoading(false);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [load]);
+
+  async function handleSubmitReview() {
+    if (!state?.revision) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    const res = await submitRevision(state.revision.id);
+    if (!res.ok) {
+      setSubmitError(describeFailure(res));
+      if (res.status === 409) await load();
+    } else {
+      await load();
+    }
+    setSubmitting(false);
   }
 
-  // Construct typed mock scholar for canonical component reuse
-  const mockScholar: FullPublicScholarProfile = {
-    id: 'preview-draft',
-    account_id: 'acc-preview',
-    slug: 'benjamin-edwards',
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400" role="status">
+        <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+        <span>Loading your draft preview...</span>
+      </div>
+    );
+  }
+
+  if (!state) {
+    return (
+      <div role="alert" className="p-4 rounded-2xl bg-rose-50 text-rose-800 border border-rose-200 text-xs">
+        {loadError ?? 'Unable to load your draft preview.'}
+      </div>
+    );
+  }
+
+  if (!state.revision) {
+    return (
+      <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 text-center space-y-3 max-w-md mx-auto">
+        <h1 className="text-lg font-display font-bold text-slate-900 dark:text-white">No draft to preview</h1>
+        <p className="text-xs text-slate-600 dark:text-slate-400">
+          You have no unpublished draft. Start one in the profile editor to see how your changes will look.
+        </p>
+        <Link
+          href="/dashboard/profile"
+          className="inline-block px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl transition-colors"
+        >
+          Go to the profile editor
+        </Link>
+      </div>
+    );
+  }
+
+  const revision = state.revision;
+  const draft: RevisionSnapshotData = revision.snapshot_data;
+  const canSubmit = revision.status === 'draft' || revision.status === 'changes_requested';
+  const isSubmitted = revision.status === 'submitted';
+
+  // Construct typed preview scholar for canonical component reuse
+  const previewScholar: FullPublicScholarProfile = {
+    id: state.scholar.id,
+    account_id: '',
+    slug: state.scholar.slug,
     full_name: draft.full_name,
     title: draft.title ?? null,
     profile_photo_path: null,
@@ -95,13 +117,13 @@ export default function DraftPreviewPage() {
     contact_preference: 'platform_inquiry',
     doctrinal_statement_text: draft.doctrinal_statement_text ?? null,
     doctrinal_statement_path: null,
-    profile_status: 'draft',
-    verification_status: 'verified',
+    profile_status: state.scholar.profile_status as FullPublicScholarProfile['profile_status'],
+    verification_status: state.scholar.verification_status as FullPublicScholarProfile['verification_status'],
     profile_tier: 'standard',
     orcid_id: null,
     google_scholar_url: null,
-    published_revision_id: null,
-    draft_revision_id: 'preview-draft',
+    published_revision_id: state.baseline.revision_id,
+    draft_revision_id: revision.id,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     disciplines: (draft.disciplines || []).map((name: string) => ({
@@ -127,7 +149,7 @@ export default function DraftPreviewPage() {
     })),
     confessions: (draft.confessions || []).map((c, i: number) => ({
       id: `conf-${i}`,
-      scholar_id: 'preview-draft',
+      scholar_id: state.scholar.id,
       confessional_standard_id: c.confessional_standard_id,
       adherence_level: c.adherence_level,
       exception_notes: c.exception_notes || null,
@@ -144,7 +166,7 @@ export default function DraftPreviewPage() {
     })),
     credentials: (draft.credentials || []).map((c, i: number) => ({
       id: `cred-${i}`,
-      scholar_id: 'preview-draft',
+      scholar_id: state.scholar.id,
       degree: c.degree,
       field_of_study: c.field_of_study,
       institution_name: c.institution_name,
@@ -156,7 +178,7 @@ export default function DraftPreviewPage() {
     })),
     publications: (draft.publications || []).map((p, i: number) => ({
       id: `pub-${i}`,
-      scholar_id: 'preview-draft',
+      scholar_id: state.scholar.id,
       title: p.title,
       publication_type: p.publication_type,
       publisher_or_journal: p.publisher_or_journal ?? null,
@@ -169,16 +191,7 @@ export default function DraftPreviewPage() {
     })),
     courses: [],
     media_links: [],
-    availability: {
-      id: 'avail-preview',
-      scholar_id: 'preview-draft',
-      is_available_for_hire: true,
-      opportunity_types: ['adjunct_teaching', 'online_instruction', 'intensives_modular'],
-      preferred_delivery_modes: ['online_async', 'in_person_modular'],
-      available_terms: ['Fall 2026', 'Spring 2027'],
-      notes: null,
-      updated_at: new Date().toISOString()
-    }
+    availability: null
   };
 
   return (
@@ -196,6 +209,9 @@ export default function DraftPreviewPage() {
             <span className="text-xs font-medium">
               This preview reflects your staged changes. Public visitors continue to see your approved live profile.
             </span>
+            <span className="text-[11px] font-medium block mt-1">
+              On approval, your name, titles, biography, location, links and doctrinal statement are published. Disciplines, traditions, confessional standards, credentials and publications are reviewed but not yet published automatically.
+            </span>
           </div>
         </div>
 
@@ -208,27 +224,35 @@ export default function DraftPreviewPage() {
             <span>Return to Editor</span>
           </Link>
 
-          {!submitted ? (
+          {canSubmit && (
             <button
               type="button"
               onClick={handleSubmitReview}
-              className="px-3 py-1.5 bg-white text-slate-950 hover:bg-slate-100 text-xs font-bold rounded-xl transition-colors shadow-xs"
+              disabled={submitting}
+              className="px-3 py-1.5 bg-white text-slate-950 hover:bg-slate-100 disabled:opacity-50 text-xs font-bold rounded-xl transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
             >
-              Submit for Admin Review
+              {submitting ? 'Submitting...' : 'Submit for Admin Review'}
             </button>
-          ) : (
-            <span className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5" />
+          )}
+          {isSubmitted && (
+            <span role="status" className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5" aria-hidden="true" />
               <span>Submitted for Review</span>
             </span>
           )}
         </div>
       </div>
 
+      {submitError && (
+        <div role="alert" className="p-3.5 rounded-xl text-xs font-medium bg-rose-50 text-rose-800 border border-rose-200">
+          {submitError}
+        </div>
+      )}
+
       {/* Main Preview Container */}
       <div className="space-y-6">
         {/* LinkedIn-Style Profile Hero Card */}
-        <ScholarProfileHero scholar={mockScholar} />
+        <ScholarProfileHero scholar={previewScholar} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left / Center 2 Columns: Credentials & Publications */}
@@ -239,7 +263,7 @@ export default function DraftPreviewPage() {
                 Education & Credentials
               </h3>
               <div className="space-y-3">
-                {mockScholar.credentials.map((cred) => (
+                {previewScholar.credentials.map((cred) => (
                   <div key={cred.id} className="flex items-start gap-3">
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
                       <GraduationCap className="w-4 h-4" />
@@ -263,7 +287,7 @@ export default function DraftPreviewPage() {
                 Selected Scholarly Publications
               </h3>
               <div className="space-y-3">
-                {mockScholar.publications.map((pub) => (
+                {previewScholar.publications.map((pub) => (
                   <div key={pub.id} className="p-3 rounded-xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs">
                     <span className="font-semibold text-slate-900 dark:text-white block">
                       {pub.title}
@@ -279,7 +303,7 @@ export default function DraftPreviewPage() {
 
           {/* Right Rail: Doctrinal Statement & Confessions */}
           <div className="space-y-6">
-            <ScholarDoctrinalCard scholar={mockScholar} />
+            <ScholarDoctrinalCard scholar={previewScholar} />
           </div>
         </div>
       </div>

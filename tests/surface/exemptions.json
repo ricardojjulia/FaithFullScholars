@@ -161,13 +161,6 @@
     "expires": "2026-12-02"
   },
   {
-    "surface": "api:POST /api/admin/reviews/[id]",
-    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
-    "owner": "ricardojjulia",
-    "added": "2026-10-05",
-    "expires": "2026-12-02"
-  },
-  {
     "surface": "api:POST /api/ai/match-faculty",
     "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
     "owner": "ricardojjulia",
@@ -344,27 +337,6 @@
   },
   {
     "surface": "page:/dashboard/media",
-    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
-    "owner": "ricardojjulia",
-    "added": "2026-10-05",
-    "expires": "2026-12-02"
-  },
-  {
-    "surface": "page:/dashboard/onboarding",
-    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
-    "owner": "ricardojjulia",
-    "added": "2026-10-05",
-    "expires": "2026-12-02"
-  },
-  {
-    "surface": "page:/dashboard/preview",
-    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
-    "owner": "ricardojjulia",
-    "added": "2026-10-05",
-    "expires": "2026-12-02"
-  },
-  {
-    "surface": "page:/dashboard/profile",
     "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
     "owner": "ricardojjulia",
     "added": "2026-10-05",

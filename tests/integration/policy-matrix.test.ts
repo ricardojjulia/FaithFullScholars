@@ -38,6 +38,7 @@ const IDS = {
   $CONSORTIUM: 'c0000000-0000-0000-0000-0000000001d1',
   $CONSORTIUM_MEMBER: 'c0000000-0000-0000-0000-0000000001d2',
   $MILESTONE: 'c0000000-0000-0000-0000-0000000001a2',
+  $REVISION: 'c0000000-0000-0000-0000-0000000001f1',
 } as const;
 
 type ColumnDecl = { skip: string } | { writable: boolean; value: string };
@@ -95,6 +96,15 @@ describe('Policy matrix — declared column-write contract', () => {
 
   const fixtures: Record<string, () => Promise<void>> = {
     none: async () => {},
+    draft_revision: async () => {
+      // Inserted as the migration role (the revision guard does not restrict it), so
+      // revision_number is explicit. Scholar A's seeded revision 1 is already approved.
+      await client.query(
+        `INSERT INTO public.scholar_profile_revisions (id, scholar_id, revision_number, status, snapshot_data)
+         VALUES ($1, $2, 2, 'draft', '{"full_name":"Matrix draft"}'::jsonb)`,
+        [IDS.$REVISION, dynamicIds.$SCHOLAR_A]
+      );
+    },
     member_of_a: async () => {},
     inquiry: async () => {
       await client.query(
