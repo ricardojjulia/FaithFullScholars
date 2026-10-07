@@ -79,3 +79,7 @@ Confessional standards, tradition and the doctrinal statement reveal religious b
 2. **Accepted:** Replace-by-delete-and-insert changes the row ids of credentials, publications and the taxonomy join rows on every approval. Nothing references those ids today (preflight confirms it). A future foreign key to them needs an upsert strategy first.
 3. **Accepted:** A scholar whose draft contains an incomplete credential row is blocked at submit (validation) rather than at approval.
 4. **Follow-up:** GDPR erasure and retention (see Data protection), profile photo and doctrinal statement file upload, and notifications remain separate slices.
+5. **Accepted:** Non-primary disciplines and traditions are ordered by name after approval, not by draft order. Only the primary (first in the draft) is preserved.
+6. **Accepted:** No component-level accessibility tests (no DOM test library); row-editor focus and announcements are covered by review and E2E only. There is no admin E2E of approve-then-public-display (the integration anon read covers it) and no E2E of legacy confession replacement.
+7. **Follow-up:** Fonts depend on Google Fonts at build time; self-hosting is a separate change. Turnstile keys in Vercel production are unconfirmed.
+8. **Status:** Accepted and built. The migration is NOT applied to production until the owner runs the deploy runbook (see `docs/reviews/2026-10-07-council-review-14-synthesis.md`).

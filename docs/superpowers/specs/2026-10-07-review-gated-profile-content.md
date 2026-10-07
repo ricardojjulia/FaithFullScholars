@@ -1,6 +1,6 @@
 # Spec: Review-Gated Profile Content & Relational Promotion on Approval
 
-- **Status:** Story approved by the owner on 2026-10-07 (feature-factory gate 3). Technical brief pending.
+- **Status:** Approved (story and brief, owner, 2026-10-07) and implemented in PR #62 (ADR 0025). Council 14 and pr-review complete; CI green on `a5677ee`. Migration `20261007090000` is pending production deploy.
 - **Closes:** ADR 0024 residual risks 1 (direct live-profile edits bypass review) and 2 (approval publishes scalar fields only).
 - **Branch:** `feat/review-gated-profile-content`
 

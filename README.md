@@ -42,7 +42,7 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > **Pilot stage. Not launch-ready.** Phases 0–18 are built and the automated gates pass, but "built" is not "working end to end".
 >
 > The authorization review in [Council Review 12](./docs/reviews/2026-10-05-council-review-12-synthesis.md) found and fixed defects ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). These are still outstanding:
-> - deploying the review-gated profile content migration ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)), which closes direct edits to live profile content and publishes credentials, publications and confessions on approval; the code is built, the ADR 0025 preflight and migration are still to run;
+> - deploying the review-gated profile content migration ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)), which closes direct edits to live profile content and publishes credentials, publications and confessions on approval; the code is built and CI-green (PR #62), but migration `20261007090000` is not yet applied to production, so the bypass stays open there until it is;
 > - scholar express-interest;
 > - institution invitations;
 > - live data in several portal screens;
@@ -172,6 +172,7 @@ Guarantees:
 - **Atomic approval.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction.
 - **Private revisions.** Only the owning scholar and admins can read revisions.
 - **Moderation wins.** Approving a hidden scholar's revision keeps the profile hidden.
+- **Review-gated content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)).** Database guards stop scholars editing live profile content or its relational lists directly, and approval promotes disciplines, traditions, confessions, credentials and publications atomically. Pending the production migration.
 
 ---
 

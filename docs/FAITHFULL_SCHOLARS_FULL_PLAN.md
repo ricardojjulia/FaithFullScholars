@@ -277,11 +277,18 @@ Implemented lifecycle (ADR 0024, PR #56; migration `20261006090000` not yet appl
 - Statuses: `draft`, `submitted`, `changes_requested`, `approved`, `superseded`, `rejected`. One open revision (draft, submitted, changes_requested) per scholar, enforced by a partial unique index. A database guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edit or resubmit; the database assigns `revision_number`.
 - Endpoints: `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, `POST /api/scholars/revisions/withdraw` (session identity, RLS-scoped client, `revisionId` pin returns 409 on a stale tab, 256 KB cap returns 413). Admin decisions go through `POST /api/admin/reviews/[id]` and the service-role-only `review_profile_revision()` RPC (atomic decision plus `profile_reviews` audit row). Feedback notes are required for request-changes and reject and capped at 2000 characters (reversible default chosen during review; owner-visible decision).
 - Revisions are readable only by the owning scholar and admins.
-- Approval copies scalar fields only. Disciplines, traditions, confessions, credentials, and publications are not promoted to relational tables, so public pages and match-faculty do not yet reflect approved revisions.
 
-Known gaps (accepted residual risk, see ADR 0024):
+Review-gated profile content (ADR 0025, PR #62; migration `20261007090000` NOT yet applied to production):
 
-- HIGH, pre-existing: a scholar can still UPDATE live `scholars` content columns and child tables (`scholar_disciplines`, `scholar_confessions`, `scholar_traditions`, credentials, publications) directly under RLS, bypassing review. Next slice: lock content columns to the review path, paired with relational promotion on approval.
+- Approval atomically promotes the scalar fields and the five relational lists (disciplines, traditions, confessions, credentials, publications) in the same transaction as the audit row. Validate-then-replace: an absent list is unchanged and `[]` clears it; the first discipline and first tradition are primary. Unmatched taxonomy blocks approval (FS001); an invalid snapshot, including SQL scalar validation and the constraint backstop, is FS002.
+- Database guards close the direct-edit gap: an allow-list guard on `scholars` lets a scholar change only `contact_preference` and `draft_revision_id`, and a child-table guard blocks restricted INSERT, UPDATE and DELETE on the five relational tables. Slug and file paths are admin-only. Courses, media, speaker topics and availability stay self-service and unreviewed (accepted risk).
+- The editor and the admin diff load the live baseline from the scholar's real rows, so a first approval cannot wipe existing data. Taxonomy uses database-backed slug pickers; credentials, publications and tradition editors and onboarding CV-import merge (never wipes or invents data) are added. Confession adherence must be chosen explicitly and an Art. 9 public-data notice is shown.
+- Deploy: an enforced preflight in the migration refuses to run when an open revision would clear live rows. Verification and runbook: `docs/reviews/2026-10-07-council-review-14-synthesis.md`.
+
+Known gaps (accepted residual risk, see ADR 0024 and ADR 0025):
+
+- Until migration `20261007090000` is applied to production, the direct-edit gap (ADR 0024 residual risk 1) is still open there and approval still copies scalar fields only.
+- Delete-and-insert on approval changes child row ids and `created_at`; non-primary disciplines and traditions are name-sorted, not draft-ordered.
 - Rejected and superseded snapshots (possible religious-belief data, GDPR Art. 9) are retained indefinitely and admin-readable; belongs to the GDPR retention/erasure slice.
 
 Verification status:
@@ -752,7 +759,7 @@ Acceptance:
 
 ### Phase 4: Scholar Dashboard (Completed)
 
-> **Status:** Partially complete (PR #56, awaiting owner approval and production migration `20261006090000`: scholar drafts now persist as real revisions and can be submitted, withdrawn, and reviewed; `sessionStorage` is removed. Remaining: live-row content columns and child tables are still directly writable by the scholar under RLS (HIGH, next slice), and approval promotes scalar fields only). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
+> **Status:** Partially complete (the revision lifecycle, PR #56 and migration `20261006090000`, is live in production. PR #62 / ADR 0025 is built, CI green and Council-reviewed: it closes direct edits to live content and promotes the five lists on approval, but migration `20261007090000` is pending the production deploy. Remaining: GDPR retention/erasure/export, and unreviewed self-service courses, media, speaker topics and availability). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
 
 1. Build profile editor.
 2. Build CV and publication manager.
