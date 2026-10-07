@@ -69,6 +69,13 @@ async function verifyDeployment() {
     record('Environment', 'SUPABASE_SERVICE_ROLE_KEY', 'WARN', 'Optional for read-only preview; required for admin sync');
   }
 
+  // Bot protection: without a Turnstile secret, sign-up CAPTCHA is not enforced.
+  if (process.env.TURNSTILE_SECRET_KEY) {
+    record('Environment', 'TURNSTILE_SECRET_KEY', 'PASS', 'Configured (sign-up CAPTCHA enforced)');
+  } else {
+    record('Environment', 'TURNSTILE_SECRET_KEY', 'WARN', 'Not set: sign-up CAPTCHA is not enforced');
+  }
+
   // Security guardrail: ENABLE_DEV_ROUTES must never be active in true production environments
   const isProductionDeploy = process.env.VERCEL_ENV === 'production' || (process.env.NODE_ENV === 'production' && !process.env.CI);
   if (isProductionDeploy && process.env.ENABLE_DEV_ROUTES === 'true') {

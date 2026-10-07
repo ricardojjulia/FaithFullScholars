@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **CAPTCHA bypass closed.** `verifyCaptchaToken` accepted the literal client placeholder `mock-turnstile-token` even when a Turnstile secret was configured, so anyone could skip sign-up bot protection by sending that string.
+  - With a secret configured, every token is now verified by Cloudflare and a missing token is refused. Provider error codes are no longer echoed to the client.
+  - With no secret configured, CAPTCHA is still not enforced, and `npm run verify:deploy` now warns about it.
+  - The new test fails against the old code.
+
 ### Fixed
 - **Production deploys had silently stopped.** The Vercel `ignoreCommand` added in #51 (`[ "$VERCEL_ENV" != "production" ]`) skipped builds, including production builds of `main`. The likely cause is that `VERCEL_ENV` is not available in the ignore step.
   - Production stayed on #50 (`f971bd4`), so #51, #54 (the Next.js 16.3.6 security bump) and #56 never deployed.
   - The ignore command is removed, restoring the previously working behaviour.
-  - Merging deploys #56, so apply migration `20261006090000` to production first.
+  - Migration `20261006090000` was applied to production first, then this was merged. Production deployed `eb52c39` on 2026-10-07 and passed a smoke test.
   - Preview builds for branches will run again and fail without preview environment variables. Those failures are not required checks.
   - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
 

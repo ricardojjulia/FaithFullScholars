@@ -9,16 +9,17 @@ export async function verifyCaptchaToken(
 ): Promise<{ success: boolean; error?: string }> {
   const secretKey = process.env.TURNSTILE_SECRET_KEY;
 
-  // In test/development mode or when secret key is not set, allow mock tokens for CI/local dev
-  if (!secretKey || process.env.NODE_ENV === 'test' || token === 'mock-turnstile-token') {
-    if (!token && process.env.NODE_ENV === 'production' && secretKey) {
-      return { success: false, error: 'CAPTCHA challenge is required.' };
-    }
+  // Without a configured secret, CAPTCHA is not enforced (local dev, CI, or a
+  // deployment that has not enabled Turnstile; `verify:deploy` warns about it).
+  // The unit-test runner never calls Cloudflare.
+  if (!secretKey || process.env.NODE_ENV === 'test') {
     return { success: true };
   }
 
+  // With a secret configured, every token is verified by Cloudflare, including
+  // the client's 'mock-turnstile-token' placeholder, which must never bypass it.
   if (!token) {
-    return { success: false, error: 'CAPTCHA token is required.' };
+    return { success: false, error: 'CAPTCHA challenge is required.' };
   }
 
   try {
@@ -48,13 +49,13 @@ export async function verifyCaptchaToken(
     if (!data.success) {
       return {
         success: false,
-        error: `CAPTCHA verification failed: ${data['error-codes']?.join(', ') || 'Invalid challenge response'}`,
+        error: 'CAPTCHA verification failed. Please try again.',
       };
     }
 
     return { success: true };
   } catch (err: unknown) {
-    console.error('Error verifying Turnstile CAPTCHA:', err);
+    console.error('Error verifying Turnstile CAPTCHA:', { name: err instanceof Error ? err.name : 'unknown' });
     return {
       success: false,
       error: 'Unable to verify CAPTCHA challenge at this time.',
