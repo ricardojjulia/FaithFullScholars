@@ -1,6 +1,6 @@
 # ADR 0026: Persistent, Enforced Rate Limits
 
-- **Status:** Accepted
+- **Status:** Accepted. Built in PR #65; migration `20261008090000` not yet applied to production (pending deploy).
 - **Date:** 2026-10-08
 - **Deciders:** Core Engineering (owner-approved story and brief, 2026-10-08)
 - **Builds on:** ADR 0008, ADR 0022, ADR 0023, ADR 0025

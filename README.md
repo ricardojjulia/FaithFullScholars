@@ -42,11 +42,11 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > **Pilot stage. Not launch-ready.** Phases 0–18 are built and the automated gates pass, but "built" is not "working end to end".
 >
 > The authorization review in [Council Review 12](./docs/reviews/2026-10-05-council-review-12-synthesis.md) found and fixed defects ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). These are still outstanding:
-> - deploying the review-gated profile content migration ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)), which closes direct edits to live profile content and publishes credentials, publications and confessions on approval; the code is built and CI-green (PR #62), but migration `20261007090000` is not yet applied to production, so the bypass stays open there until it is;
+> - review-gated profile content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)) is live in production (PR #62; migration `20261007090000` applied 2026-10-07): direct edits to live profile content are closed and credentials, publications and confessions publish on approval;
 > - scholar express-interest;
 > - institution invitations;
 > - live data in several portal screens;
-> - deploying the persistent rate limits ([ADR 0026](./docs/adr/0026-persistent-enforced-rate-limits.md)): the code is built, but migration `20261008090000` must be applied to production first. Until then search is not rate-limited (the limiter fails open) and the inquiry cap is not enforced in the database;
+> - deploying the persistent rate limits ([ADR 0026](./docs/adr/0026-persistent-enforced-rate-limits.md)): the code is built and reviewed (PR #65), but it is not deployed: the owner must set `RATE_LIMIT_SALT` and apply migration `20261008090000` to production before merging. Until then search is not rate-limited (the limiter fails open) and the inquiry cap is not enforced in the database;
 > - GDPR and field-level encryption.
 >
 > The full per-feature history, including the known-broken and demo-only list, is in the **[Feature Catalog](./docs/feature-catalog.md)**.
