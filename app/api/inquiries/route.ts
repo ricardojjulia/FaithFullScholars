@@ -25,13 +25,16 @@ export async function POST(req: NextRequest) {
     if (!result.success) {
       return NextResponse.json(
         { error: result.error },
-        { status: result.status ?? 400 }
+        {
+          status: result.status ?? 400,
+          headers: result.retryAfterSeconds ? { 'Retry-After': String(result.retryAfterSeconds) } : undefined,
+        }
       );
     }
 
     return NextResponse.json({ success: true, inquiryId: result.data?.inquiryId });
   } catch (err: unknown) {
-    console.error('POST /api/inquiries failed:', err);
+    console.error('POST /api/inquiries failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
@@ -66,7 +69,7 @@ export async function GET(req: NextRequest) {
     const inquiries = await fetchScholarInquiries(supabase, session.scholarId, status);
     return NextResponse.json({ inquiries });
   } catch (err: unknown) {
-    console.error('GET /api/inquiries failed:', err);
+    console.error('GET /api/inquiries failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

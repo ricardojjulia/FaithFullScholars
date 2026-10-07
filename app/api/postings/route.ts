@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ postings }, { headers: getRateLimitHeaders(limit) });
   } catch (err: unknown) {
-    console.error('/api/postings failed:', err);
+    console.error('/api/postings failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

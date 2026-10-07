@@ -6,12 +6,16 @@ covers('page:/scholars');
 const checkSearchRequest = vi.fn();
 const getPublicScholars = vi.fn();
 let userId: string | null = null;
+let authThrows = false;
 
 vi.mock('next/headers', () => ({ headers: async () => new Headers({ 'x-forwarded-for': '203.0.113.9' }) }));
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({
+  createClient: async () => {
+    if (authThrows) throw new Error('auth backend down');
+    return {
     auth: { getUser: async () => ({ data: { user: userId ? { id: userId } : null }, error: null }) },
-  }),
+    };
+  },
 }));
 vi.mock('@/lib/search/rate-limiter', async (orig) => ({
   ...(await orig<typeof import('@/lib/search/rate-limiter')>()),
@@ -29,7 +33,7 @@ vi.mock('@/components/scholars/scholar-directory-header', () => ({ ScholarDirect
 vi.mock('@/components/shell/public-nav', () => ({ PublicNav: () => null }));
 vi.mock('@/components/shell/public-footer', () => ({ PublicFooter: () => null }));
 
-import ScholarsPage from '@/app/scholars/page';
+import ScholarsPage, { generateMetadata } from '@/app/scholars/page';
 
 /** Collects every string in a React element tree without rendering function components. */
 function texts(node: unknown, out: string[] = []): string[] {
@@ -47,6 +51,7 @@ const page = async (params: Record<string, string>) =>
 describe('/scholars rate limit (ADR 0008 / 0026)', () => {
   beforeEach(() => {
     userId = null;
+    authThrows = false;
     checkSearchRequest.mockReset();
     getPublicScholars.mockReset().mockResolvedValue([]);
   });
@@ -54,14 +59,16 @@ describe('/scholars rate limit (ADR 0008 / 0026)', () => {
   it('shows a friendly limited state with the wait, and does not run the search', async () => {
     checkSearchRequest.mockResolvedValue({ allowed: false, currentCount: 16, remaining: 0, resetEpoch: Math.floor(Date.now() / 1000) + 20, limit: 15 });
     const html = await page({ search: 'calvin' });
-    expect(html).toMatch(/Too many searches\. Try again in \d+ seconds\./);
+    expect(html).toMatch(/Search paused/);
+    expect(html).toMatch(/You're searching quickly\. Please wait \d+ seconds and try again\./);
+    expect(html).not.toMatch(/Too many searches/);
     expect(getPublicScholars).not.toHaveBeenCalled();
   });
 
   it('runs the search when under the limit', async () => {
     checkSearchRequest.mockResolvedValue({ allowed: true, currentCount: 1, remaining: 14, resetEpoch: 0, limit: 15 });
     const html = await page({ search: 'calvin' });
-    expect(html).not.toMatch(/Too many searches/);
+    expect(html).not.toMatch(/Search paused/);
     expect(getPublicScholars).toHaveBeenCalled();
   });
 
@@ -83,5 +90,37 @@ describe('/scholars rate limit (ADR 0008 / 0026)', () => {
     checkSearchRequest.mockResolvedValue({ allowed: true, currentCount: 0, remaining: 15, resetEpoch: 0, limit: 15 });
     await page({ tradition: 'reformed' });
     expect(getPublicScholars).toHaveBeenCalled();
+  });
+
+  it('shows the sign-in wall for page=4 and never calls the limiter or the search', async () => {
+    const html = await page({ page: '4' });
+    expect(html).toMatch(/Create a Free Account to View More Faculty/);
+    expect(checkSearchRequest).not.toHaveBeenCalled();
+    expect(getPublicScholars).not.toHaveBeenCalled();
+  });
+
+  it('fails open when the session lookup throws, using the anonymous key', async () => {
+    authThrows = true;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    checkSearchRequest.mockResolvedValue({ allowed: true, currentCount: 1, remaining: 14, resetEpoch: 0, limit: 15 });
+    await page({ search: 'calvin' });
+    expect(checkSearchRequest.mock.calls[0][1]).toBeNull();
+    expect(getPublicScholars).toHaveBeenCalled();
+  });
+
+  it('marks the limited state as an alert with a decorative icon and an h2', async () => {
+    checkSearchRequest.mockResolvedValue({ allowed: false, currentCount: 16, remaining: 0, resetEpoch: Math.floor(Date.now() / 1000) + 20, limit: 15 });
+    const tree = JSON.stringify(await ScholarsPage({ searchParams: Promise.resolve({ search: 'x' }) }));
+    expect(tree).toContain('"role":"alert"');
+    expect(tree).toContain('"aria-hidden":"true"');
+    expect(tree).toContain('"type":"h2"');
+  });
+
+  it('is noindex whenever search parameters are present, and indexable otherwise', async () => {
+    const searched = await generateMetadata({ searchParams: Promise.resolve({ search: 'x' }) });
+    expect(searched.robots).toEqual({ index: false, follow: false });
+    expect(searched.title).toMatch(/Theological Faculty Directory/);
+    expect((await generateMetadata({ searchParams: Promise.resolve({}) })).robots).toBeUndefined();
+    expect(checkSearchRequest).not.toHaveBeenCalled();
   });
 });

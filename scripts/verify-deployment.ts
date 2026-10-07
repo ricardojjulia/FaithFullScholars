@@ -88,6 +88,16 @@ async function verifyDeployment() {
     record('Environment', 'ENABLE_DEV_ROUTES Guard', 'PASS', isProductionDeploy ? 'Disabled for production deployment' : 'Safe for local/test execution');
   }
 
+  // Rate limiting (ADR 0026): without the secret the IP hash is keyed by a
+  // per-process random value, so limits only hold per instance. Production must set it.
+  if (isProductionDeploy && !process.env.RATE_LIMIT_SALT) {
+    record('Environment', 'RATE_LIMIT_SALT', 'FAIL', 'Required in production: the rate-limit IP hash would be unsalted across instances (ADR 0026)');
+  } else if (process.env.RATE_LIMIT_SALT) {
+    record('Environment', 'RATE_LIMIT_SALT', 'PASS', 'Configured (rate-limit IP hash is keyed)');
+  } else {
+    record('Environment', 'RATE_LIMIT_SALT', 'WARN', 'Not set: fine locally, required for production');
+  }
+
   // --------------------------------------------------------------------------
   // 2. Database Connectivity, RLS Coverage & Security Policies
   // --------------------------------------------------------------------------

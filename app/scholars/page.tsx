@@ -12,11 +12,30 @@ import { checkSearchRequest, retryAfterSeconds } from '@/lib/search/rate-limiter
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
-export const metadata: Metadata = {
+// Rate limiting reads request headers, so this page must never be statically cached.
+export const dynamic = 'force-dynamic';
+
+const BASE_METADATA: Metadata = {
   title: 'Theological Faculty Directory | FaithFull Scholars',
   description:
     'Discover accredited theological professors, doctoral supervisors, and adjunct faculty filtered by discipline, tradition, and confessional standards.',
 };
+
+/**
+ * Every request that carries search or filter parameters is noindex, which
+ * includes any rate-limited response (its state is never a page worth indexing).
+ * Metadata deliberately does not call the limiter, so it never double-counts.
+ */
+export async function generateMetadata({ searchParams }: ScholarsPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  return hasSearchParams(params) ? { ...BASE_METADATA, robots: { index: false, follow: false } } : BASE_METADATA;
+}
+
+function hasSearchParams(params: Awaited<ScholarsPageProps['searchParams']>): boolean {
+  return Boolean(
+    params.search || params.discipline || params.tradition || params.confession || params.available || params.page
+  );
+}
 
 interface ScholarsPageProps {
   searchParams: Promise<{
@@ -46,16 +65,20 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
   // Rate limit (ADR 0008 / 0026): only requests that carry search or filter
   // parameters count. A page cannot set a status code, so the rendered state is
   // the response. Reads fail open: a limiter error never takes search down.
-  const hasSearchParams = Boolean(
-    params.search || params.discipline || params.tradition || params.confession || params.available || params.page
-  );
   let retryAfter: number | null = null;
-  if (hasSearchParams && !isPageGated) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const limit = await checkSearchRequest(await headers(), user?.id);
+  if (hasSearchParams(params) && !isPageGated) {
+    // An auth error must not take search down: fall back to the anonymous key.
+    let userId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      console.error('Search rate limit: session lookup failed; using the anonymous key');
+    }
+    const limit = await checkSearchRequest(await headers(), userId);
     if (!limit.allowed) retryAfter = retryAfterSeconds(limit);
   }
   const isRateLimited = retryAfter !== null;
@@ -90,17 +113,17 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
           <section className="lg:col-span-8 xl:col-span-6 space-y-6">
             {isRateLimited ? (
               <div
-                role="status"
+                role="alert"
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 text-center shadow-xs space-y-3"
               >
                 <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
-                  <Clock className="w-6 h-6" />
+                  <Clock className="w-6 h-6" aria-hidden="true" />
                 </div>
-                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
-                  Too many searches
-                </h3>
+                <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+                  Search paused
+                </h2>
                 <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
-                  Too many searches. Try again in {retryAfter} {retryAfter === 1 ? 'second' : 'seconds'}.
+                  You&apos;re searching quickly. Please wait {retryAfter} {retryAfter === 1 ? 'second' : 'seconds'} and try again.
                 </p>
               </div>
             ) : isPageGated ? (

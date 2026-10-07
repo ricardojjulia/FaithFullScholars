@@ -145,3 +145,11 @@ As **the platform**, I enforce rate limits that survive restarts, are shared acr
 
 ### Deploy
 Apply the migration first. The new app needs the RPC. Until it exists, search fails open and the inquiry action keeps working, since the trigger simply isn't there yet. Then merge. Verify that the grants are service_role only and the trigger exists, then smoke-test search.
+
+## Amendments from PR review (2026-10-07)
+Superseding the brief above where they differ (details in ADR 0026):
+- `RATE_LIMIT_SALT` is an HMAC-SHA256 key and is **required in production** (`verify:deploy` fails without it); unset, a per-process random secret is used.
+- The client IP is `x-vercel-forwarded-for`, then the first `x-forwarded-for` hop; `x-real-ip` is not trusted. The `unknown` bucket has its own 60 per minute limit.
+- Bucket cleanup retires each row one hour after its own window ended (`window_seconds` column), with `FOR UPDATE SKIP LOCKED`.
+- `guard_inquiry_rate` is BEFORE INSERT OR UPDATE and makes `created_at` server-controlled for restricted callers.
+- The limiter has a 1.5 s timeout and always fails open; the unused `failOpen` option was removed.

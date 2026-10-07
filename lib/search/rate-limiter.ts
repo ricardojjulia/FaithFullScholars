@@ -4,7 +4,7 @@
  */
 
 import { checkLimit } from '@/lib/rate-limit/limiter';
-import { searchKey } from '@/lib/rate-limit/client-key';
+import { clientIp, searchKey, UNKNOWN_IP } from '@/lib/rate-limit/client-key';
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -19,19 +19,23 @@ export const SEARCH_LIMITS = {
   AUTHENTICATED: 120,
 } as const;
 
+/** Requests with no usable client IP share one bucket, so it is more generous. */
+export const UNKNOWN_CLIENT_LIMIT = 60;
+
 export const SEARCH_WINDOW_SECONDS = 60;
 
 /**
  * Counts one search against `key` (from lib/rate-limit/client-key.ts searchKey).
- * Reads fail open: if the limiter cannot run, the search is allowed and the
- * cause is logged by the limiter (code only).
+ * Reads fail open: if the limiter cannot run (or times out), the search is
+ * allowed and the cause is logged by the limiter (code only).
  */
 export async function checkSearchRateLimit(
   key: string,
-  isAuthenticated = false
+  isAuthenticated = false,
+  limitOverride?: number
 ): Promise<RateLimitResult> {
-  const limit = isAuthenticated ? SEARCH_LIMITS.AUTHENTICATED : SEARCH_LIMITS.ANONYMOUS;
-  const result = await checkLimit(key, SEARCH_WINDOW_SECONDS, limit, { failOpen: true });
+  const limit = limitOverride ?? (isAuthenticated ? SEARCH_LIMITS.AUTHENTICATED : SEARCH_LIMITS.ANONYMOUS);
+  const result = await checkLimit(key, SEARCH_WINDOW_SECONDS, limit);
 
   return {
     allowed: result.allowed,
@@ -50,6 +54,11 @@ export function checkSearchRequest(
   headers: Pick<Headers, 'get'>,
   userId?: string | null
 ): Promise<RateLimitResult> {
+  if (!userId && clientIp(headers) === UNKNOWN_IP) {
+    // No trustworthy client IP header: a shared bucket with its own limit.
+    console.warn('Search rate limit: no client IP header; using the shared unknown bucket');
+    return checkSearchRateLimit(searchKey(headers), false, UNKNOWN_CLIENT_LIMIT);
+  }
   return checkSearchRateLimit(searchKey(headers, userId), Boolean(userId));
 }
 

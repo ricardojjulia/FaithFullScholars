@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS public.rate_limit_buckets (
   key          TEXT        NOT NULL,
   window_start TIMESTAMPTZ NOT NULL,
   hits         INT         NOT NULL DEFAULT 0,
+  -- The bucket's own window length, so cleanup can retire each row one hour
+  -- after it expired (a fixed age would delete live day-long buckets).
+  window_seconds INT       NOT NULL DEFAULT 3600,
   PRIMARY KEY (key, window_start)
 );
 
@@ -73,13 +76,18 @@ BEGIN
     RAISE EXCEPTION 'invalid rate limit max' USING ERRCODE = '22023';
   END IF;
 
-  -- Bounded cleanup (no external scheduler): at most 100 expired rows per call.
+  -- Bounded cleanup (no external scheduler): at most 100 rows per call, each
+  -- retired one hour after its own window ended. SKIP LOCKED means concurrent
+  -- callers never wait on each other's cleanup. The first predicate lets the
+  -- window_start index prune; the second is the exact per-row retention.
   DELETE FROM public.rate_limit_buckets b
   WHERE (b.key, b.window_start) IN (
     SELECT o.key, o.window_start
     FROM public.rate_limit_buckets o
-    WHERE o.window_start < now() - interval '1 day'
+    WHERE o.window_start < now() - interval '1 hour'
+      AND o.window_start + make_interval(secs => o.window_seconds) < now() - interval '1 hour'
     LIMIT 100
+    FOR UPDATE SKIP LOCKED
   );
 
   v_window_start := to_timestamp(
@@ -87,8 +95,8 @@ BEGIN
   );
 
   -- Atomic upsert: concurrent callers are counted exactly.
-  INSERT INTO public.rate_limit_buckets AS b (key, window_start, hits)
-  VALUES (p_key, v_window_start, 1)
+  INSERT INTO public.rate_limit_buckets AS b (key, window_start, hits, window_seconds)
+  VALUES (p_key, v_window_start, 1, p_window_seconds)
   ON CONFLICT (key, window_start) DO UPDATE SET hits = b.hits + 1
   RETURNING b.hits INTO v_hits;
 
@@ -117,6 +125,12 @@ GRANT EXECUTE ON FUNCTION public.check_search_rate_limit(TEXT, INT, BOOLEAN) TO 
 -- caller's RLS. It is VOLATILE on purpose: a STABLE function would reuse the
 -- calling statement's snapshot and could miss an inquiry committed by a
 -- concurrent transaction while we waited for the advisory lock.
+--
+-- The helper must be executable by the API roles (the guard runs as the caller),
+-- so it would otherwise be a count oracle for any institution id. It therefore
+-- returns 0 unless the caller is a member of that institution
+-- (private.is_institution_user, keyed on auth.uid()). The guard never needs a
+-- non-member's count: a non-member's insert is refused by RLS anyway.
 CREATE OR REPLACE FUNCTION private.recent_inquiry_count(p_institution_id UUID)
 RETURNS INT
 LANGUAGE sql
@@ -124,15 +138,29 @@ VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT count(*)::int
-  FROM public.inquiries
-  WHERE institution_id = p_institution_id
-    AND created_at > now() - interval '1 hour';
+  SELECT CASE
+    WHEN private.is_institution_user(p_institution_id) THEN (
+      SELECT count(*)::int
+      FROM public.inquiries
+      WHERE institution_id = p_institution_id
+        AND created_at > clock_timestamp() - interval '1 hour'
+    )
+    ELSE 0
+  END;
 $$;
 
 REVOKE EXECUTE ON FUNCTION private.recent_inquiry_count(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION private.recent_inquiry_count(UUID) TO anon, authenticated, service_role;
 
+-- created_at is what the cap counts, so a restricted caller must not control it:
+--   INSERT  created_at / updated_at are forced to the real clock (a back-dated
+--           value would hide the row from the count);
+--   UPDATE  created_at may not change (moving it backwards would age a counted
+--           row out of the window).
+-- This lives in guard_inquiry_rate rather than a re-issued guard_inquiries so the
+-- existing guard (ADR 0022) stays verbatim and cannot drift. The trigger is
+-- BEFORE INSERT OR UPDATE; trg_guard_inquiries still fires first on both events.
+-- Deleting counted rows is not possible either: no DELETE policy exists.
 CREATE OR REPLACE FUNCTION private.guard_inquiry_rate()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -141,12 +169,26 @@ SET search_path = ''
 AS $$
 BEGIN
   IF private.is_restricted_caller() THEN
-    -- Serialise concurrent inserts per institution so the count is exact.
-    PERFORM pg_advisory_xact_lock(
-      hashtextextended('inquiry-rate:' || NEW.institution_id::text, 0)
-    );
-    IF private.recent_inquiry_count(NEW.institution_id) >= 10 THEN
-      RAISE EXCEPTION 'Unauthorized: inquiry rate limit reached' USING ERRCODE = 'FS429';
+    IF TG_OP = 'UPDATE' THEN
+      IF NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+        RAISE EXCEPTION 'Unauthorized: inquiry created_at cannot be changed' USING ERRCODE = '42501';
+      END IF;
+      RETURN NEW;
+    END IF;
+
+    NEW.created_at := clock_timestamp();
+    NEW.updated_at := clock_timestamp();
+
+    -- Only members can pass RLS for this institution, so only they need the cap
+    -- (and only they may take its lock: no lock griefing on other institutions).
+    IF private.is_institution_user(NEW.institution_id) THEN
+      -- Serialise concurrent inserts per institution so the count is exact.
+      PERFORM pg_advisory_xact_lock(
+        hashtextextended('inquiry-rate:' || NEW.institution_id::text, 0)
+      );
+      IF private.recent_inquiry_count(NEW.institution_id) >= 10 THEN
+        RAISE EXCEPTION 'Unauthorized: inquiry rate limit reached' USING ERRCODE = 'FS429';
+      END IF;
     END IF;
   END IF;
   RETURN NEW;
@@ -157,8 +199,8 @@ REVOKE EXECUTE ON FUNCTION private.guard_inquiry_rate() FROM PUBLIC;
 
 -- Same-event triggers fire alphabetically. 'trg_guard_inquiries' sorts before
 -- 'trg_guard_inquiry_rate' ('i' < 'y' at the 17th character), so the existing
--- guard messages are unchanged and this one only runs on otherwise-valid inserts.
+-- guard messages are unchanged and this one only runs on otherwise-valid writes.
 DROP TRIGGER IF EXISTS trg_guard_inquiry_rate ON public.inquiries;
 CREATE TRIGGER trg_guard_inquiry_rate
-  BEFORE INSERT ON public.inquiries
+  BEFORE INSERT OR UPDATE ON public.inquiries
   FOR EACH ROW EXECUTE FUNCTION private.guard_inquiry_rate();

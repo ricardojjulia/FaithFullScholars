@@ -216,7 +216,7 @@ describe('Persistent rate limits — real database roles', () => {
     it('resets when the window rolls over', async () => {
       const key = `${uniq}:reset`;
       const hit = async () =>
-        (await checkLimit(key, 2, 1, { failOpen: false })).allowed;
+        (await checkLimit(key, 2, 1)).allowed;
       // Align to the start of a 2-second window so both calls land in the same one.
       await new Promise((r) => setTimeout(r, 2000 - (Date.now() % 2000) + 20));
       expect(await hit()).toBe(true);
@@ -246,6 +246,27 @@ describe('Persistent rate limits — real database roles', () => {
         expect(await aged()).toBe(50);
         await client.query(`SELECT * FROM public.check_rate_limit($1, 60, 5)`, [`${uniq}:clean2`]);
         expect(await aged()).toBe(0);
+      });
+    });
+
+    it('retires each bucket one hour after its own window ended, not before', async () => {
+      await as({ role: 'service_role' }, nothing, async () => {
+        await client.query('RESET ROLE');
+        await client.query(
+          `INSERT INTO public.rate_limit_buckets (key, window_start, hits, window_seconds) VALUES
+             ('it:ret:short-old', now() - interval '90 minutes', 1, 60),
+             ('it:ret:short-recent', now() - interval '30 minutes', 1, 60),
+             ('it:ret:day-live', now() - interval '3 hours', 1, 86400),
+             ('it:ret:hour-old', now() - interval '3 hours', 1, 3600)`
+        );
+        await client.query(`SET LOCAL ROLE service_role`);
+        await client.query(`SELECT * FROM public.check_rate_limit($1, 60, 5)`, [`${uniq}:ret`]);
+        await client.query('RESET ROLE');
+        const left = (
+          await client.query(`SELECT key FROM public.rate_limit_buckets WHERE key LIKE 'it:ret:%' ORDER BY key`)
+        ).rows.map((r) => r.key);
+        // 90 min old / 1 min window and 3 h old / 1 h window are past window+1h; the day-long bucket is live.
+        expect(left).toEqual(['it:ret:day-live', 'it:ret:short-recent']);
       });
     });
 
@@ -373,6 +394,114 @@ describe('Persistent rate limits — real database roles', () => {
           await insertInquiry(INST_A, INST_USER_ACCOUNT);
         }
       );
+    });
+
+    // ---- created_at is server-controlled (the cap counts it) ----------------
+    const insertBackdated = (inst: string, hoursAgo: number) =>
+      client.query(
+        `INSERT INTO public.inquiries (institution_id, scholar_id, sender_account_id, opportunity_type, message, contact_email, created_at, updated_at)
+         VALUES ($1, $2, $3, 'adjunct_teaching', 'Back-dated rate limit probe.', 'dean@wts.edu',
+                 now() - make_interval(hours => $4::int), now() - make_interval(hours => $4::int))
+         RETURNING id, created_at, updated_at`,
+        [inst, scholarId, INST_USER_ACCOUNT, hoursAgo]
+      );
+
+    const eleventh = () =>
+      failure(
+        `INSERT INTO public.inquiries (institution_id, scholar_id, sender_account_id, opportunity_type, message, contact_email)
+         VALUES ($1, $2, $3, 'adjunct_teaching', 'Rate limit probe inquiry message.', 'dean@wts.edu')`,
+        [INST_A, scholarId, INST_USER_ACCOUNT]
+      );
+
+    it('stores now() for a back-dated INSERT by a member, so the row still counts', async () => {
+      await as(asMember, memberOfBoth, async () => {
+        const row = (await insertBackdated(INST_A, 5)).rows[0];
+        expect(Math.abs(Date.now() - new Date(row.created_at).getTime())).toBeLessThan(60_000);
+        expect(Math.abs(Date.now() - new Date(row.updated_at).getTime())).toBeLessThan(60_000);
+      });
+    });
+
+    it('refuses an UPDATE that moves created_at backwards (42501), but allows a status update', async () => {
+      await as(asMember, memberOfBoth, async () => {
+        const id = (await insertBackdated(INST_A, 0)).rows[0].id;
+        const err = await failure(
+          `UPDATE public.inquiries SET created_at = now() - interval '5 hours' WHERE id = $1`,
+          [id]
+        );
+        expect(err.code).toBe('42501');
+        expect(err.message).toMatch(/^Unauthorized: inquiry created_at cannot be changed/);
+        const ok = await client.query(`UPDATE public.inquiries SET status = 'read' WHERE id = $1`, [id]);
+        expect(ok.rowCount).toBe(1);
+      });
+    });
+
+    it('still refuses the 11th insert after back-dated inserts and a created_at UPDATE attempt', async () => {
+      await as(asMember, memberOfBoth, async () => {
+        let lastId = '';
+        for (let i = 0; i < 10; i++) {
+          await client.query('SAVEPOINT ok');
+          lastId = (await insertBackdated(INST_A, 6)).rows[0].id;
+          await client.query('RELEASE SAVEPOINT ok');
+        }
+        await failure(`UPDATE public.inquiries SET created_at = now() - interval '9 hours' WHERE id = $1`, [lastId]);
+        const err = await eleventh();
+        expect(err.code).toBe('FS429');
+      });
+    });
+
+    it('probe: without the created_at protection, back-dating evades the cap', async () => {
+      await as(
+        asMember,
+        async () => {
+          await memberOfBoth();
+          // The cap alone (no created_at forcing, no UPDATE refusal).
+          await client.query(`
+            CREATE OR REPLACE FUNCTION private.guard_inquiry_rate() RETURNS TRIGGER
+            LANGUAGE plpgsql SECURITY INVOKER SET search_path = '' AS $$
+            BEGIN
+              IF private.is_restricted_caller() AND TG_OP = 'INSERT' THEN
+                PERFORM pg_advisory_xact_lock(hashtextextended('inquiry-rate:' || NEW.institution_id::text, 0));
+                IF private.recent_inquiry_count(NEW.institution_id) >= 10 THEN
+                  RAISE EXCEPTION 'Unauthorized: inquiry rate limit reached' USING ERRCODE = 'FS429';
+                END IF;
+              END IF;
+              RETURN NEW;
+            END; $$`);
+        },
+        async () => {
+          for (let i = 0; i < 12; i++) {
+            await client.query('SAVEPOINT ok');
+            const row = (await insertBackdated(INST_A, 6)).rows[0];
+            expect(Date.now() - new Date(row.created_at).getTime()).toBeGreaterThan(5 * 3600 * 1000);
+            await client.query('RELEASE SAVEPOINT ok');
+          }
+          // Twelve inserts went through: the cap was evaded.
+          const n = (await client.query(
+            `SELECT count(*)::int AS n FROM public.inquiries WHERE institution_id = $1 AND message = 'Back-dated rate limit probe.'`,
+            [INST_A]
+          )).rows[0].n;
+          expect(n).toBe(12);
+        }
+      );
+    });
+
+    it('does not let a non-member read an institution count through the helper', async () => {
+      await as(
+        { role: 'authenticated', sub: ADMIN_ACCOUNT },
+        async () => {
+          await memberOfBoth();
+          await fillTen(INST_A);
+          await client.query(`DELETE FROM public.institution_users WHERE account_id = $1`, [ADMIN_ACCOUNT]);
+        },
+        async () => {
+          const r = await client.query(`SELECT private.recent_inquiry_count($1) AS n`, [INST_A]);
+          expect(r.rows[0].n).toBe(0);
+        }
+      );
+      await as(asMember, async () => { await memberOfBoth(); await fillTen(INST_A); }, async () => {
+        const r = await client.query(`SELECT private.recent_inquiry_count($1) AS n`, [INST_A]);
+        expect(r.rows[0].n).toBe(10);
+      });
     });
 
     it('serialises concurrent inserts: 14 parallel inserts into one institution commit exactly the remaining allowance', async () => {

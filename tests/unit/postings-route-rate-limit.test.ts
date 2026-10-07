@@ -6,9 +6,10 @@ covers('api:GET /api/postings');
 
 const checkSearchRequest = vi.fn();
 const getAll = vi.fn();
+let userId: string | null = null;
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: async () => ({ auth: { getUser: async () => ({ data: { user: null }, error: null }) } }),
+  createClient: async () => ({ auth: { getUser: async () => ({ data: { user: userId ? { id: userId } : null }, error: null }) } }),
 }));
 vi.mock('@/lib/search/rate-limiter', async (orig) => ({
   ...(await orig<typeof import('@/lib/search/rate-limiter')>()),
@@ -26,6 +27,7 @@ const req = () =>
 
 describe('GET /api/postings rate limit (ADR 0026)', () => {
   beforeEach(() => {
+    userId = null;
     checkSearchRequest.mockReset();
     getAll.mockReset().mockResolvedValue([{ id: 'p1' }]);
   });
@@ -50,5 +52,14 @@ describe('GET /api/postings rate limit (ADR 0026)', () => {
     expect(res.headers.get('X-RateLimit-Remaining')).toBe('14');
     expect((await res.json()).postings).toEqual([{ id: 'p1' }]);
     expect(checkSearchRequest.mock.calls[0][1]).toBeUndefined();
+  });
+
+  it('keys a signed-in caller by account (second argument is the user id)', async () => {
+    userId = 'user-42';
+    checkSearchRequest.mockResolvedValue({ allowed: true, currentCount: 1, remaining: 119, resetEpoch: Math.floor(Date.now() / 1000) + 60, limit: 120 });
+    const res = await GET(req());
+    expect(res.status).toBe(200);
+    expect(checkSearchRequest.mock.calls[0][1]).toBe('user-42');
+    expect(res.headers.get('X-RateLimit-Limit')).toBe('120');
   });
 });
