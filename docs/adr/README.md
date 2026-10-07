@@ -37,6 +37,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0022-session-derived-identity-and-rls-helper-isolation.md`: Session-derived identity, page-level guards, RLS helper isolation in a non-exposed `private` schema, and trust-column guard triggers.
 - `0023-trust-guards-phase2-and-policy-matrix.md`: Trust guards for subscriptions, contracts, milestones, licensing, endorsements and consortiums; the policy matrix as the declared column-write contract.
 - `0024-scholar-revision-lifecycle-and-atomic-review.md`: Scholar draft/submit/withdraw lifecycle enforced by database guards, owner-and-admin-only revision reads, and the atomic service-role-only `review_profile_revision` function.
+- `0025-review-gated-profile-content.md`: Database-enforced review gating of public profile content (fail-closed `scholars` allow-list, child-table denial), relational promotion on approval, slug contract and always-live baseline. Resolves ADR 0024 residual risks 1 and 2.
 
 
 Each ADR must define:
