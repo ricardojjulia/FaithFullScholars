@@ -28,7 +28,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, data: detail });
   } catch (err) {
-    console.error(`Failed to fetch revision detail ${id}:`, err);
+    console.error('Failed to fetch revision detail:', { name: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json({ error: 'Failed to retrieve revision detail' }, { status: 500 });
   }
 }
@@ -109,7 +109,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, result });
   } catch (err) {
-    console.error('Failed to process review action:', { message: err instanceof Error ? err.name : 'unknown' });
+    console.error('Failed to process review action:', { name: err instanceof Error ? err.name : 'unknown' });
     return NextResponse.json({ error: 'Failed to process review action' }, { status: 500 });
   }
 }

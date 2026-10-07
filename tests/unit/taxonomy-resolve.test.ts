@@ -20,7 +20,7 @@ const taxonomy: Taxonomy = {
 describe('resolveTaxonomySlug', () => {
   it('prefers an exact slug, then an alias, then a case-insensitive name', () => {
     expect(resolveTaxonomySlug('tradition', 'baptist', taxonomy)).toBe('baptist');
-    expect(resolveTaxonomySlug('tradition', ' Confessional Baptist ', taxonomy)).toBe('baptist');
+    expect(resolveTaxonomySlug('tradition', ' BAPTIST ', taxonomy)).toBe('baptist');
     expect(resolveTaxonomySlug('discipline', 'SYSTEMATIC THEOLOGY', taxonomy)).toBe('systematic-theology');
     expect(resolveTaxonomySlug('confession', 'standard-chicago', taxonomy)).toBe('chicago-statement-inerrancy');
     expect(resolveTaxonomySlug('confession', 'chicago-inerrancy', taxonomy)).toBe('chicago-statement-inerrancy');
@@ -72,5 +72,27 @@ describe('TAXONOMY_ALIASES', () => {
         expect(target).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       }
     }
+  });
+});
+
+describe('lossy aliases are not mapped (the scholar picks deliberately)', () => {
+  it('keeps the four ambiguous display names out of the alias map', () => {
+    expect(TAXONOMY_ALIASES.tradition['confessional baptist']).toBeUndefined();
+    expect(TAXONOMY_ALIASES.tradition['evangelical free & independent']).toBeUndefined();
+    expect(TAXONOMY_ALIASES.discipline['pastoral & practical theology']).toBeUndefined();
+    expect(TAXONOMY_ALIASES.discipline['philosophical theology & apologetics']).toBeUndefined();
+  });
+
+  it('leaves them unresolved, so submit asks the scholar to choose', () => {
+    expect(resolveTaxonomySlug('tradition', 'Confessional Baptist')).toBeNull();
+    expect(resolveTaxonomySlug('tradition', 'Evangelical Free & Independent')).toBeNull();
+    expect(resolveTaxonomySlug('discipline', 'Pastoral & Practical Theology')).toBeNull();
+    expect(resolveTaxonomySlug('discipline', 'Philosophical Theology & Apologetics')).toBeNull();
+    expect(
+      findUnresolved({ traditions: ['Confessional Baptist'], disciplines: ['Pastoral & Practical Theology'] }, taxonomy)
+    ).toEqual([
+      { kind: 'discipline', value: 'Pastoral & Practical Theology' },
+      { kind: 'tradition', value: 'Confessional Baptist' },
+    ]);
   });
 });

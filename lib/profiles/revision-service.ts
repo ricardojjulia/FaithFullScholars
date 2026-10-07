@@ -68,6 +68,21 @@ function safeLink(value: string | null): string | null {
   return /^https?:\/\//i.test(value) || /^10\./.test(value) ? value : null;
 }
 
+/** Year bounds; mirrored by private.snapshot_int in the promotion migration (the columns have no CHECK). */
+export const MIN_YEAR = 1000;
+export const MAX_YEAR = 2100;
+
+function safeYear(value: unknown): number | null {
+  return typeof value === 'number' && Number.isInteger(value) && value >= MIN_YEAR && value <= MAX_YEAR
+    ? value
+    : null;
+}
+
+/** A scalar link is kept only as an http(s) URL. */
+function safeUrl(value: string): string | null {
+  return /^https?:\/\//i.test(value) ? value : null;
+}
+
 /** Maps a value to its slug when it resolves, otherwise keeps the raw value (already capped). */
 function toSlug(kind: TaxonomyKind, raw: string, taxonomy?: Taxonomy): string {
   return resolveTaxonomySlug(kind, raw, taxonomy) ?? raw;
@@ -80,7 +95,8 @@ function toSlug(kind: TaxonomyKind, raw: string, taxonomy?: Taxonomy): string {
  * Disciplines, traditions and confessions are mapped to canonical slugs (slug,
  * then legacy alias, then name); values that do not resolve are kept raw but
  * capped so the scholar can fix them, and are reported by findUnresolved.
- * Duplicates are removed (first wins). Publication links with another scheme are cleared.
+ * Duplicates are removed (first wins). Publication and Google Scholar links with
+ * another scheme are cleared; years outside 1000 to 2100 are cleared.
  */
 export function sanitizeSnapshot(input: unknown, taxonomy?: Taxonomy): RevisionSnapshotData {
   const src = input && typeof input === 'object' && !Array.isArray(input)
@@ -103,7 +119,10 @@ export function sanitizeSnapshot(input: unknown, taxonomy?: Taxonomy): RevisionS
     if (!(key in src)) continue;
     const value = nullableStr(src[key], max);
     if (value !== undefined) {
-      (out as unknown as Record<string, unknown>)[key] = value;
+      // A Google Scholar link with another scheme is cleared, as with publication links;
+      // validateRevisionData tells the scholar at submit (see the submit route).
+      (out as unknown as Record<string, unknown>)[key] =
+        key === 'google_scholar_url' && typeof value === 'string' ? safeUrl(value) : value;
     }
   }
 
@@ -113,8 +132,7 @@ export function sanitizeSnapshot(input: unknown, taxonomy?: Taxonomy): RevisionS
       const field = str(c.field_of_study, 200);
       const institution = str(c.institution_name, 200);
       if (degree === undefined || field === undefined || institution === undefined) return [];
-      const year =
-        typeof c.year_awarded === 'number' && Number.isInteger(c.year_awarded) ? c.year_awarded : null;
+      const year = safeYear(c.year_awarded);
       return [
         {
           degree,
@@ -136,7 +154,7 @@ export function sanitizeSnapshot(input: unknown, taxonomy?: Taxonomy): RevisionS
           title,
           publication_type: p.publication_type as PublicationType,
           publisher_or_journal: nullableStr(p.publisher_or_journal, 300) ?? null,
-          year: typeof p.year === 'number' && Number.isInteger(p.year) ? p.year : null,
+          year: safeYear(p.year),
           doi_or_url: safeLink(nullableStr(p.doi_or_url, 500) ?? null),
           citation_text: nullableStr(p.citation_text, 2000) ?? null,
         },
@@ -276,6 +294,12 @@ function joinedSlug(value: unknown): string | null {
   return typeof slug === 'string' ? slug : null;
 }
 
+function joinedName(value: unknown): string {
+  const row = Array.isArray(value) ? value[0] : value;
+  const name = row && typeof row === 'object' ? (row as { name?: unknown }).name : null;
+  return typeof name === 'string' ? name : '';
+}
+
 /**
  * Reads the scholar's real published relational rows. Any read error throws:
  * a partial baseline would reintroduce the first-approval data-loss trap.
@@ -297,44 +321,58 @@ async function loadLiveLists(supabase: SupabaseClient, scholarId: string): Promi
     .order('created_at', { ascending: true });
   const confs = await supabase
     .from('scholar_confessions')
-    .select('adherence_level, exception_notes, confessional_standards(slug)')
+    .select('adherence_level, exception_notes, confessional_standards(slug, name)')
     .eq('scholar_id', scholarId)
     .order('created_at', { ascending: true });
   const discs = await supabase
     .from('scholar_disciplines')
-    .select('is_primary, disciplines(slug)')
+    .select('is_primary, disciplines(slug, name)')
     .eq('scholar_id', scholarId)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: true });
   const trads = await supabase
     .from('scholar_traditions')
-    .select('is_primary, traditions(slug)')
+    .select('is_primary, traditions(slug, name)')
     .eq('scholar_id', scholarId)
     .order('is_primary', { ascending: false })
     .order('created_at', { ascending: true });
   if (creds.error || pubs.error || confs.error || discs.error || trads.error) throw fail();
 
+  // Rows promoted in one statement share created_at, so order in code: the primary
+  // first, then by taxonomy name and slug. Deterministic whatever the database returns.
+  const byName = (a: { name: string; slug: string }, b: { name: string; slug: string }) =>
+    a.name < b.name ? -1 : a.name > b.name ? 1 : a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0;
   const slugs = (rows: unknown, key: string) =>
-    ((rows ?? []) as Array<Record<string, unknown>>).flatMap((r) => {
-      const slug = joinedSlug(r[key]);
-      return slug ? [slug] : [];
-    });
+    ((rows ?? []) as Array<Record<string, unknown>>)
+      .flatMap((r) => {
+        const slug = joinedSlug(r[key]);
+        return slug ? [{ slug, name: joinedName(r[key]), primary: r.is_primary === true }] : [];
+      })
+      .sort((a, b) => Number(b.primary) - Number(a.primary) || byName(a, b))
+      .map((r) => r.slug);
 
   return {
     credentials: (creds.data ?? []) as unknown as LiveLists['credentials'],
     publications: (pubs.data ?? []) as unknown as LiveLists['publications'],
-    confessions: ((confs.data ?? []) as unknown as Array<Record<string, unknown>>).flatMap((r) => {
-      const slug = joinedSlug(r.confessional_standards);
-      return slug
-        ? [
-            {
-              confessional_standard_id: slug,
-              adherence_level: r.adherence_level as AdherenceLevel,
-              exception_notes: (r.exception_notes as string | null) ?? null,
-            },
-          ]
-        : [];
-    }),
+    confessions: ((confs.data ?? []) as unknown as Array<Record<string, unknown>>)
+      .flatMap((r) => {
+        const slug = joinedSlug(r.confessional_standards);
+        return slug
+          ? [
+              {
+                name: joinedName(r.confessional_standards),
+                slug,
+                entry: {
+                  confessional_standard_id: slug,
+                  adherence_level: r.adherence_level as AdherenceLevel,
+                  exception_notes: (r.exception_notes as string | null) ?? null,
+                },
+              },
+            ]
+          : [];
+      })
+      .sort(byName)
+      .map((r) => r.entry),
     disciplines: slugs(discs.data, 'disciplines'),
     traditions: slugs(trads.data, 'traditions'),
   };

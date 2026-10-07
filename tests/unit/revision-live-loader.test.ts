@@ -67,6 +67,40 @@ describe('loadLiveProfileSnapshot', () => {
     ]);
   });
 
+  it('orders lists deterministically: primary first, then name, whatever order the database returns', async () => {
+    const snapshot = await loadLiveProfileSnapshot(
+      fakeClient({
+        scholars: { data: scholarRow, error: null },
+        scholar_disciplines: {
+          data: [
+            { is_primary: false, disciplines: { slug: 'z-last', name: 'Zeta' } },
+            { is_primary: false, disciplines: { slug: 'a-first', name: 'Alpha' } },
+            { is_primary: true, disciplines: { slug: 'm-primary', name: 'Mu' } },
+          ],
+          error: null,
+        },
+        scholar_traditions: {
+          data: [
+            { is_primary: false, traditions: { slug: 'b-two', name: 'Same' } },
+            { is_primary: false, traditions: { slug: 'a-one', name: 'Same' } },
+          ],
+          error: null,
+        },
+        scholar_confessions: {
+          data: [
+            { adherence_level: 'general_agreement', exception_notes: null, confessional_standards: { slug: 'w', name: 'Westminster' } },
+            { adherence_level: 'general_agreement', exception_notes: null, confessional_standards: { slug: 'n', name: 'Nicene' } },
+          ],
+          error: null,
+        },
+      }),
+      's1'
+    );
+    expect(snapshot?.disciplines).toEqual(['m-primary', 'a-first', 'z-last']);
+    expect(snapshot?.traditions).toEqual(['a-one', 'b-two']);
+    expect(snapshot?.confessions?.map((c) => c.confessional_standard_id)).toEqual(['n', 'w']);
+  });
+
   it('returns null when the scholar is not readable, and throws (no partial baseline) when a list fails', async () => {
     expect(await loadLiveProfileSnapshot(fakeClient({ scholars: { data: null, error: null } }), 's1')).toBeNull();
     await expect(

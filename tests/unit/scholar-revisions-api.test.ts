@@ -32,6 +32,7 @@ const TAXONOMY_ROWS: Record<string, Array<{ slug: string; name: string }>> = {
   traditions: [
     { slug: 'baptist', name: 'Baptist' },
     { slug: 'reformed-presbyterian', name: 'Reformed & Presbyterian' },
+    { slug: 'anglican', name: 'Anglican' },
   ],
   confessional_standards: [
     { slug: 'westminster-confession', name: 'Westminster Confession of Faith' },
@@ -620,12 +621,13 @@ describe('sanitizeSnapshot taxonomy handling (ADR 0025)', () => {
       {
         full_name: 'x',
         disciplines: ['church-history', 'Church History & Historical Theology', 'Historical Theology & Church History', 'SYSTEMATIC THEOLOGY'],
-        traditions: ['Baptist', 'Confessional Baptist', 'baptist'],
+        traditions: ['Baptist', 'Anglican & Episcopalian', 'baptist', 'Confessional Baptist'],
       },
       taxonomy
     );
     expect(out.disciplines).toEqual(['church-history', 'systematic-theology']);
-    expect(out.traditions).toEqual(['baptist']);
+    // 'Confessional Baptist' is deliberately not aliased: it stays raw for the scholar to fix.
+    expect(out.traditions).toEqual(['baptist', 'anglican', 'Confessional Baptist']);
   });
 
   it('keeps unresolved values raw but capped', () => {
@@ -652,8 +654,8 @@ describe('sanitizeSnapshot taxonomy handling (ADR 0025)', () => {
   });
 
   it('maps aliases without a taxonomy and keeps unknown values raw', () => {
-    const out = sanitizeSnapshot({ full_name: 'x', traditions: ['Confessional Baptist', 'Unknown'] });
-    expect(out.traditions).toEqual(['baptist', 'Unknown']);
+    const out = sanitizeSnapshot({ full_name: 'x', traditions: ['Anglican & Episcopalian', 'Unknown'] });
+    expect(out.traditions).toEqual(['anglican', 'Unknown']);
   });
 
   it('keeps http(s) and DOI links and clears any other scheme', () => {
@@ -685,12 +687,40 @@ describe('PUT /api/scholars/revisions taxonomy mapping', () => {
     revisionHandler = (call) =>
       call.op === 'insert' ? { data: revisionRow(), error: null } : { data: null, error: null };
     const res = await PUT(
-      putReq({ snapshot: { full_name: 'Dr. A', traditions: ['Confessional Baptist'], disciplines: ['Church History & Historical Theology'] } })
+      putReq({ snapshot: { full_name: 'Dr. A', traditions: ['Anglican & Episcopalian'], disciplines: ['Church History & Historical Theology'] } })
     );
     expect(res.status).toBe(201);
     const [insert] = revisionCalls('insert');
     const stored = insert.payload?.snapshot_data as Record<string, unknown>;
-    expect(stored.traditions).toEqual(['baptist']);
+    expect(stored.traditions).toEqual(['anglican']);
     expect(stored.disciplines).toEqual(['church-history']);
+  });
+});
+
+describe('sanitizeSnapshot scalar links and years (review fixes)', () => {
+  it('clears a Google Scholar link that is not http(s), and keeps one that is', () => {
+    expect(sanitizeSnapshot({ full_name: 'x', google_scholar_url: 'javascript:alert(1)' }).google_scholar_url).toBeNull();
+    expect(sanitizeSnapshot({ full_name: 'x', google_scholar_url: 'ftp://scholar.google.com/x' }).google_scholar_url).toBeNull();
+    const ok = 'https://scholar.google.com/citations?user=abc';
+    expect(sanitizeSnapshot({ full_name: 'x', google_scholar_url: ok }).google_scholar_url).toBe(ok);
+    expect(sanitizeSnapshot({ full_name: 'x', google_scholar_url: null }).google_scholar_url).toBeNull();
+  });
+
+  it('clears years outside 1000 to 2100 in credentials and publications', () => {
+    const out = sanitizeSnapshot({
+      full_name: 'x',
+      credentials: [
+        { degree: 'a', field_of_study: 'b', institution_name: 'c', year_awarded: 999 },
+        { degree: 'a', field_of_study: 'b', institution_name: 'c', year_awarded: 2101 },
+        { degree: 'a', field_of_study: 'b', institution_name: 'c', year_awarded: 1000 },
+        { degree: 'a', field_of_study: 'b', institution_name: 'c', year_awarded: 2100 },
+      ],
+      publications: [
+        { title: 'T', publication_type: 'book', year: -5 },
+        { title: 'T', publication_type: 'book', year: 1999 },
+      ],
+    });
+    expect(out.credentials!.map((c) => c.year_awarded)).toEqual([null, null, 1000, 2100]);
+    expect(out.publications!.map((p) => p.year)).toEqual([null, 1999]);
   });
 });

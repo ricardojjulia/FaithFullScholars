@@ -30,16 +30,16 @@ export const TAXONOMY_ALIASES: Record<TaxonomyKind, Record<string, string>> = {
     // CV-parser display names that differ from the seeded rows
     'new testament & early christianity': 'new-testament',
     'historical theology & church history': 'church-history',
-    'pastoral & practical theology': 'pastoral-ministry',
     'biblical languages': 'biblical-languages',
     'christian ethics & moral theology': 'christian-ethics',
-    'philosophical theology & apologetics': 'apologetics',
     'missions & intercultural studies': 'missiology',
   },
+  // Deliberately NOT aliased (lossy; the scholar must choose): 'confessional baptist',
+  // 'evangelical free & independent', 'pastoral & practical theology',
+  // 'philosophical theology & apologetics'. Each is broader or narrower than any
+  // single seeded row, so a silent mapping would publish a different claim.
   tradition: {
-    'confessional baptist': 'baptist',
     'anglican & episcopalian': 'anglican',
     'methodist & wesleyan': 'wesleyan-methodist',
-    'evangelical free & independent': 'evangelical',
   },
 };

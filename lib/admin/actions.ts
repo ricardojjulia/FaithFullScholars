@@ -34,7 +34,11 @@ export function parseUnmatchedDetail(detail: unknown): UnresolvedEntry[] {
   return out;
 }
 
-/** Only the exact message shape raised by the promotion function is surfaced; anything else is generic. */
+/**
+ * Only the exact message shape raised by approval is surfaced; anything else is generic.
+ * The first token is a list name (credentials, ...) or a scalar field name (orcid_id,
+ * google_scholar_url, ...); the reason is a fixed phrase, never a snapshot value.
+ */
 function describeSnapshotInvalid(message: unknown): string {
   const match =
     typeof message === 'string'
@@ -258,7 +262,7 @@ export async function processInstitutionVerification(
     .eq('id', institutionId);
 
   if (error) {
-    console.error('Error verifying institution:', error);
+    console.error('Error verifying institution:', { code: (error as { code?: string }).code });
     return { success: false, error: 'Failed to process institution verification.' };
   }
 
@@ -285,7 +289,7 @@ export async function processContentReport(
     .eq('id', reportId);
 
   if (error) {
-    console.error('Error processing content report:', error);
+    console.error('Error processing content report:', { code: (error as { code?: string }).code });
     return { success: false, error: 'Failed to process content report.' };
   }
 

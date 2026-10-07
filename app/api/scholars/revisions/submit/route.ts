@@ -45,7 +45,14 @@ export async function POST(req: Request) {
     // Validate the stored snapshot (mapped to slugs), not anything the client sends now.
     const taxonomy = await loadTaxonomy(supabase);
     const snapshot = sanitizeSnapshot(revision.snapshot_data, taxonomy);
-    const validation = validateRevisionData(snapshot);
+    // sanitizeSnapshot clears a Google Scholar link with a bad scheme; validate the
+    // stored value too so the scholar is told instead of the link silently vanishing.
+    const storedUrl = (revision.snapshot_data as { google_scholar_url?: unknown } | null)?.google_scholar_url;
+    const validation = validateRevisionData({
+      ...snapshot,
+      google_scholar_url:
+        snapshot.google_scholar_url ?? (typeof storedUrl === 'string' && storedUrl.trim() ? storedUrl.trim() : null),
+    });
     if (!validation.valid) {
       return NextResponse.json(
         { error: 'The profile is not ready to submit.', errors: validation.errors },

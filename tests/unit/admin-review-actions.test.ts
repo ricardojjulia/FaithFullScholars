@@ -106,6 +106,18 @@ describe('processRevisionReview', () => {
     expect(result).toMatchObject({ success: false, code: 'snapshot_invalid' });
     expect(result.error).toContain('credentials, item 3: degree is required');
 
+    for (const [message, expected] of [
+      ['snapshot_invalid: orcid_id is not a valid ORCID iD', 'orcid_id: is not a valid ORCID iD'],
+      ['snapshot_invalid: google_scholar_url must be a Google Scholar citations https link', 'google_scholar_url: must be a Google Scholar citations https link'],
+      ['snapshot_invalid: doctrinal_statement_text is too long', 'doctrinal_statement_text: is too long'],
+      ['snapshot_invalid: lists violate a database constraint', 'lists: violate a database constraint'],
+    ] as const) {
+      rpc.mockResolvedValue({ error: { code: 'FS002', message } });
+      const scalar = await run('approve');
+      expect(scalar.code).toBe('snapshot_invalid');
+      expect(scalar.error).toContain(expected);
+    }
+
     rpc.mockResolvedValue({ error: { code: 'FS002', message: 'snapshot_invalid: x\nsecret <script>' } });
     const odd = await run('approve');
     expect(odd.code).toBe('snapshot_invalid');

@@ -135,11 +135,9 @@ As **the platform**, no scholar can change public profile content except through
 - CHANGELOG, README and plan.
 
 ### Deploy runbook
-1. **Preflight (read-only):**
-   - the taxonomy slugs are present;
-   - no foreign keys reference `credentials` or `publications` ids;
-   - list **open revisions whose snapshot lists are empty while live rows exist**, and drain or re-save them;
-   - list open revisions with legacy names.
+1. **Preflight.**
+   - **Enforced by the migration (section 0, read-only):** it raises `preflight_failed` with counts and changes nothing if any open revision (draft, submitted, changes_requested) has a list key that is `[]`, absent or not an array while the scholar has live rows in the matching table. Absent counts on purpose (the old editor always wrote every key). If it raises: reject or approve the named revisions, or have the scholars re-save them from the live profile, then re-run.
+   - **Manual, read-only:** the taxonomy slugs are present; no foreign keys reference `credentials` or `publications` ids; list open revisions with legacy names.
 2. **Deploy the app, then apply the migration.** An old editor against the new database could clear rows, so deploy both close together.
 3. **Verify:**
    - a scholar PATCH of `biography` returns 42501;
@@ -151,6 +149,6 @@ No back-fill is required: live rows don't change at migration.
 
 ### Defaults chosen (flagged to the owner)
 - 422 for unmatched or invalid snapshots.
-- No hard SQL refusal to clear a non-empty list with `[]`. The live-baseline editor, the admin diff, and preflight step 3 cover the trap.
+- No hard SQL refusal to clear a non-empty list with `[]`. The live-baseline editor, the admin diff, and the enforced preflight cover the trap.
 - Restricted INSERT keeps `slug` and `full_name`.
 - URL-scheme validation is in scope.

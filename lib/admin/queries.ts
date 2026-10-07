@@ -98,7 +98,7 @@ export async function fetchPendingRevisions(
   const { data, error } = await query;
 
   if (error || !data) {
-    console.error('Failed to fetch pending revisions:', error);
+    console.error('Failed to fetch pending revisions:', { code: error?.code });
     return [];
   }
 
@@ -158,7 +158,7 @@ export async function fetchRevisionWithBaseline(
     .single();
 
   if (revError || !revData) {
-    console.error(`Failed to fetch revision ${revisionId}:`, revError);
+    console.error('Failed to fetch revision:', { code: revError?.code });
     return null;
   }
 
@@ -215,7 +215,7 @@ export async function fetchReviewAuditHistory(scholarId: string): Promise<Profil
     .order('created_at', { ascending: false });
 
   if (error || !data) {
-    console.error(`Failed to fetch review history for scholar ${scholarId}:`, error);
+    console.error('Failed to fetch review history:', { code: error?.code });
     return [];
   }
 
@@ -234,7 +234,7 @@ export async function fetchPendingInstitutions(): Promise<Institution[]> {
     .order('created_at', { ascending: false });
 
   if (error || !data) {
-    console.error('Failed to fetch institutions:', error);
+    console.error('Failed to fetch institutions:', { code: error?.code });
     return [];
   }
 
@@ -258,7 +258,7 @@ export async function fetchContentReports(
   const { data, error } = await query;
 
   if (error || !data) {
-    console.error('Failed to fetch reports:', error);
+    console.error('Failed to fetch reports:', { code: error?.code });
     return [];
   }
 

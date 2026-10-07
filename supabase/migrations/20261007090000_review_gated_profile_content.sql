@@ -26,21 +26,89 @@
 --     the same transaction, before the supersede and the scalar copy.
 -- Service role, admins and direct database sessions are unaffected by the guards.
 --
--- Errors raised by promotion: FS001 (unmatched taxonomy; DETAIL is a JSON array of
--- {kind, value}) and FS002 (invalid snapshot shape; message names list and index).
+-- Errors raised by approval: FS001 (unmatched taxonomy; DETAIL is a JSON array of
+-- {kind, value}) and FS002 (invalid snapshot; the message names the list or scalar
+-- field, an index for list items, and a fixed reason; never a snapshot value).
+-- FS002 also covers a check or not-null violation hit while the lists are replaced.
 --
--- PREFLIGHT (read-only, run BEFORE applying; see ADR 0025 and the spec runbook):
+-- PREFLIGHT (section 0, ENFORCED): the migration aborts, changing nothing, if an
+-- open revision (draft, submitted, changes_requested) has a list key that is
+-- absent, not an array, or [] while the scholar has live rows in the matching
+-- table (credentials, publications, scholar_disciplines, scholar_traditions,
+-- scholar_confessions). The message carries counts only. Drain or re-save those
+-- revisions in the editor (which now starts from the live rows) and re-run.
+-- Absent and non-array deliberately count: under THIS migration they mean "list
+-- unchanged", but the pre-ADR-0025 editor always wrote every key, so a missing or
+-- malformed key is an unknown-intent snapshot, and refusing it is the fail-closed
+-- choice. The cost of a false positive is one re-save; the cost of a miss is lost
+-- published rows.
+-- Still manual, read-only checks (see ADR 0025 and the spec runbook):
 --   1. SELECT slug FROM disciplines/traditions/confessional_standards: the
 --      taxonomy slugs the app maps to are present.
 --   2. No foreign keys reference credentials.id or publications.id (promotion
 --      deletes and re-inserts those rows).
---   3. Open revisions whose snapshot lists are empty while live rows exist:
---      drain or re-save them, or approval will clear the live rows.
---   4. Open revisions that still hold legacy names or ids (standard-*, display
+--   3. Open revisions that still hold legacy names or ids (standard-*, display
 --      names): the editor maps them on load; unmatched ones block approval.
 -- Deploy the app first, then apply this migration, close together. No rows change
 -- at migration time except the Lausanne Covenant insert.
 -- ==============================================================================
+
+-- ------------------------------------------------------------------------------
+-- 0. Preflight: refuse to run where an open revision would clear live rows.
+--    Read-only. The integration test extracts this block (between the PREFLIGHT
+--    markers) and executes it in a rolled-back transaction, so the text below is
+--    exactly what is tested.
+-- ------------------------------------------------------------------------------
+-- PREFLIGHT-BEGIN
+DO $preflight$
+DECLARE
+  v_rec RECORD;
+  v_revisions INTEGER := 0;
+  v_detail TEXT := '';
+BEGIN
+  FOR v_rec IN
+    WITH live(tbl, scholar_id) AS (
+      SELECT 'credentials', scholar_id FROM public.credentials
+      UNION SELECT 'publications', scholar_id FROM public.publications
+      UNION SELECT 'scholar_disciplines', scholar_id FROM public.scholar_disciplines
+      UNION SELECT 'scholar_traditions', scholar_id FROM public.scholar_traditions
+      UNION SELECT 'scholar_confessions', scholar_id FROM public.scholar_confessions
+    ),
+    keys(tbl, snap_key) AS (
+      VALUES ('credentials', 'credentials'),
+             ('publications', 'publications'),
+             ('scholar_disciplines', 'disciplines'),
+             ('scholar_traditions', 'traditions'),
+             ('scholar_confessions', 'confessions')
+    )
+    SELECT k.tbl, k.snap_key,
+           count(DISTINCT r.id) AS revisions,
+           count(DISTINCT r.scholar_id) AS scholars
+    FROM public.scholar_profile_revisions r
+    JOIN keys k ON true
+    WHERE r.status IN ('draft', 'submitted', 'changes_requested')
+      AND CASE
+            WHEN jsonb_typeof(r.snapshot_data -> k.snap_key) = 'array'
+              THEN jsonb_array_length(r.snapshot_data -> k.snap_key) = 0
+            ELSE true
+          END
+      AND EXISTS (SELECT 1 FROM live l WHERE l.tbl = k.tbl AND l.scholar_id = r.scholar_id)
+    GROUP BY k.tbl, k.snap_key
+    ORDER BY k.tbl
+  LOOP
+    v_revisions := v_revisions + v_rec.revisions;
+    v_detail := v_detail || format('%s: %s revision(s) for %s scholar(s) have key "%s" absent, not a list, or empty; ',
+                                   v_rec.tbl, v_rec.revisions, v_rec.scholars, v_rec.snap_key);
+  END LOOP;
+
+  IF v_revisions > 0 THEN
+    RAISE EXCEPTION 'preflight_failed: % open revision-list(s) would clear live profile rows on approval. %',
+      v_revisions, v_detail
+      USING HINT = 'Drain these revisions (reject or approve) or have the scholar re-save them from the live profile, then re-run the migration. Nothing was changed.';
+  END IF;
+END
+$preflight$;
+-- PREFLIGHT-END
 
 -- ------------------------------------------------------------------------------
 -- 1. Lausanne Covenant
@@ -166,6 +234,17 @@ CREATE TRIGGER trg_guard_published_children
 -- 4. Snapshot validation helpers (private; never callable through the API)
 --    Messages never contain snapshot values, only the list name and index.
 -- ------------------------------------------------------------------------------
+-- Trims space, tab, CR, LF, FF and VT (E'\x0b'; Postgres has no \v escape), so whitespace-only text counts as empty
+-- (plain btrim() trims spaces only).
+CREATE OR REPLACE FUNCTION private.snapshot_trim(p_text TEXT)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+SET search_path = ''
+AS $$
+  SELECT btrim(p_text, E' \t\r\n\f\x0b');
+$$;
+
 CREATE OR REPLACE FUNCTION private.snapshot_invalid(p_list TEXT, p_index INTEGER, p_reason TEXT)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -180,7 +259,8 @@ END;
 $$;
 
 -- Reads a trimmed string key of a list item. Absent or JSON null reads as NULL
--- unless required. Wrong type, empty-when-required and over-cap raise FS002.
+-- unless required. Wrong type, empty-when-required (whitespace-only included) and
+-- over-cap raise FS002. The cap applies to the RAW length, before trimming.
 CREATE OR REPLACE FUNCTION private.snapshot_text(
   p_list TEXT, p_index INTEGER, p_item JSONB, p_key TEXT, p_max INTEGER, p_required BOOLEAN
 )
@@ -201,18 +281,22 @@ BEGIN
   IF v_type <> 'string' THEN
     PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' must be text');
   END IF;
-  v_text := btrim(p_item ->> p_key);
+  IF char_length(p_item ->> p_key) > p_max THEN
+    PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' is too long');
+  END IF;
+  v_text := private.snapshot_trim(p_item ->> p_key);
   IF p_required AND v_text = '' THEN
     PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' is required');
-  END IF;
-  IF char_length(v_text) > p_max THEN
-    PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' is too long');
   END IF;
   RETURN v_text;
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION private.snapshot_int(p_list TEXT, p_index INTEGER, p_item JSONB, p_key TEXT)
+-- Whole number within [p_min, p_max] (years: 1000 to 2100; the year columns carry
+-- no CHECK of their own, so this is the only bound), or absent / null.
+CREATE OR REPLACE FUNCTION private.snapshot_int(
+  p_list TEXT, p_index INTEGER, p_item JSONB, p_key TEXT, p_min INTEGER, p_max INTEGER
+)
 RETURNS INTEGER
 LANGUAGE plpgsql
 SET search_path = ''
@@ -226,13 +310,70 @@ BEGIN
   IF v_type <> 'number' OR (p_item ->> p_key) !~ '^-?[0-9]{1,9}$' THEN
     PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' must be a whole number');
   END IF;
+  IF (p_item ->> p_key)::INTEGER NOT BETWEEN p_min AND p_max THEN
+    PERFORM private.snapshot_invalid(p_list, p_index, p_key || ' is out of range');
+  END IF;
   RETURN (p_item ->> p_key)::INTEGER;
 END;
 $$;
 
+-- Validates the scalar profile fields the approval copies. Mirrors the caps in
+-- sanitizeSnapshot (lib/profiles/revision-service.ts) and the column CHECKs, so a
+-- direct-written snapshot gets a clear FS002 instead of a raw constraint error.
+-- A key that is absent or not a string is left alone by the copy, so it is not
+-- checked here. Messages carry the field name and a fixed reason only.
+CREATE OR REPLACE FUNCTION private.validate_snapshot_scalars(p_snapshot JSONB)
+RETURNS VOID
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+DECLARE
+  v_field TEXT;
+  v_cap INTEGER;
+  v_raw TEXT;
+  v_val TEXT;
+BEGIN
+  IF p_snapshot IS NULL OR jsonb_typeof(p_snapshot) <> 'object' THEN
+    RETURN;
+  END IF;
+
+  FOR v_field, v_cap IN
+    SELECT * FROM (VALUES
+      ('full_name', 200), ('title', 200), ('current_institution', 200),
+      ('institutional_role', 200), ('location', 200), ('biography', 5000),
+      ('doctrinal_statement_text', 10000), ('timezone', 100),
+      ('orcid_id', 50), ('google_scholar_url', 500)
+    ) AS f(field, cap)
+  LOOP
+    IF jsonb_typeof(p_snapshot -> v_field) = 'string'
+       AND char_length(p_snapshot ->> v_field) > v_cap THEN
+      PERFORM private.snapshot_invalid(v_field, NULL, 'is too long');
+    END IF;
+  END LOOP;
+
+  -- Same shapes as the scholars column CHECKs (20260924140000); empty reads as NULL.
+  v_raw := p_snapshot ->> 'orcid_id';
+  IF jsonb_typeof(p_snapshot -> 'orcid_id') = 'string' THEN
+    v_val := private.snapshot_trim(v_raw);
+    IF v_val <> '' AND v_val !~ '^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$' THEN
+      PERFORM private.snapshot_invalid('orcid_id', NULL, 'is not a valid ORCID iD');
+    END IF;
+  END IF;
+
+  IF jsonb_typeof(p_snapshot -> 'google_scholar_url') = 'string' THEN
+    v_val := private.snapshot_trim(p_snapshot ->> 'google_scholar_url');
+    IF v_val <> '' AND v_val !~ '^https://scholar\.google\.[a-z.]+/citations\?.*user=' THEN
+      PERFORM private.snapshot_invalid('google_scholar_url', NULL, 'must be a Google Scholar citations https link');
+    END IF;
+  END IF;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION private.snapshot_trim(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.validate_snapshot_scalars(JSONB) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION private.snapshot_invalid(TEXT, INTEGER, TEXT) FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION private.snapshot_text(TEXT, INTEGER, JSONB, TEXT, INTEGER, BOOLEAN) FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION private.snapshot_int(TEXT, INTEGER, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION private.snapshot_int(TEXT, INTEGER, JSONB, TEXT, INTEGER, INTEGER) FROM PUBLIC, anon, authenticated;
 
 -- ------------------------------------------------------------------------------
 -- 5. Taxonomy resolver — canonical slug only (legacy-name mapping is app-side)
@@ -301,8 +442,8 @@ BEGIN
         IF jsonb_typeof(v_item) <> 'string' THEN
           PERFORM private.snapshot_invalid(v_list, v_i, 'must be a slug string');
         END IF;
-        v_text := btrim(v_arr ->> v_i);
-        IF v_text = '' OR char_length(v_text) > 200 THEN
+        v_text := private.snapshot_trim(v_arr ->> v_i);
+        IF v_text = '' OR char_length(v_arr ->> v_i) > 200 THEN
           PERFORM private.snapshot_invalid(v_list, v_i, 'must be a slug of 1 to 200 characters');
         END IF;
         v_kind := CASE v_list WHEN 'disciplines' THEN 'discipline' ELSE 'tradition' END;
@@ -320,7 +461,7 @@ BEGIN
         PERFORM private.snapshot_text(v_list, v_i, v_item, 'degree', 200, true);
         PERFORM private.snapshot_text(v_list, v_i, v_item, 'field_of_study', 200, true);
         PERFORM private.snapshot_text(v_list, v_i, v_item, 'institution_name', 200, true);
-        PERFORM private.snapshot_int(v_list, v_i, v_item, 'year_awarded');
+        PERFORM private.snapshot_int(v_list, v_i, v_item, 'year_awarded', 1000, 2100);
         IF jsonb_typeof(v_item -> 'is_terminal') NOT IN ('boolean', 'null') AND v_item ? 'is_terminal' THEN
           PERFORM private.snapshot_invalid(v_list, v_i, 'is_terminal must be true or false');
         END IF;
@@ -333,7 +474,7 @@ BEGIN
           PERFORM private.snapshot_invalid(v_list, v_i, 'publication_type is not allowed');
         END IF;
         PERFORM private.snapshot_text(v_list, v_i, v_item, 'publisher_or_journal', 300, false);
-        PERFORM private.snapshot_int(v_list, v_i, v_item, 'year');
+        PERFORM private.snapshot_int(v_list, v_i, v_item, 'year', 1000, 2100);
         v_text := private.snapshot_text(v_list, v_i, v_item, 'doi_or_url', 500, false);
         IF v_text IS NOT NULL AND v_text <> '' AND v_text !~* '^https?://' AND v_text !~ '^10\.' THEN
           PERFORM private.snapshot_invalid(v_list, v_i, 'doi_or_url must be an http(s) URL or a DOI');
@@ -348,9 +489,9 @@ BEGIN
           PERFORM private.snapshot_invalid(v_list, v_i, 'adherence_level is not allowed');
         END IF;
         PERFORM private.snapshot_text(v_list, v_i, v_item, 'exception_notes', 2000, false);
-        IF private.resolve_taxonomy_id('confession', btrim(v_item ->> 'confessional_standard_id')) IS NULL THEN
+        IF private.resolve_taxonomy_id('confession', private.snapshot_trim(v_item ->> 'confessional_standard_id')) IS NULL THEN
           v_unmatched := v_unmatched || jsonb_build_array(
-            jsonb_build_object('kind', 'confession', 'value', btrim(v_item ->> 'confessional_standard_id')));
+            jsonb_build_object('kind', 'confession', 'value', private.snapshot_trim(v_item ->> 'confessional_standard_id')));
         END IF;
       END IF;
     END LOOP;
@@ -362,81 +503,89 @@ BEGIN
   END IF;
 
   -- ---- Pass 2: replace -------------------------------------------------------
-  IF jsonb_typeof(v_creds) = 'array' THEN
-    DELETE FROM public.credentials WHERE scholar_id = p_scholar;
-    INSERT INTO public.credentials
-      (scholar_id, degree, field_of_study, institution_name, year_awarded, is_terminal, display_order)
-    SELECT p_scholar,
-           btrim(e.item ->> 'degree'),
-           btrim(e.item ->> 'field_of_study'),
-           btrim(e.item ->> 'institution_name'),
-           CASE WHEN jsonb_typeof(e.item -> 'year_awarded') = 'number' THEN (e.item ->> 'year_awarded')::INTEGER END,
-           COALESCE((e.item ->> 'is_terminal')::BOOLEAN, false),
-           (e.ord - 1)::INTEGER
-    FROM jsonb_array_elements(v_creds) WITH ORDINALITY AS e(item, ord);
-  END IF;
+  -- Pass 1 mirrors every column rule, but a rule added to a table later must not
+  -- surface as a raw 500: a check or not-null violation is re-raised as a generic
+  -- FS002 (no constraint name, no value).
+  BEGIN
+    IF jsonb_typeof(v_creds) = 'array' THEN
+      DELETE FROM public.credentials WHERE scholar_id = p_scholar;
+      INSERT INTO public.credentials
+        (scholar_id, degree, field_of_study, institution_name, year_awarded, is_terminal, display_order)
+      SELECT p_scholar,
+             private.snapshot_trim(e.item ->> 'degree'),
+             private.snapshot_trim(e.item ->> 'field_of_study'),
+             private.snapshot_trim(e.item ->> 'institution_name'),
+             CASE WHEN jsonb_typeof(e.item -> 'year_awarded') = 'number' THEN (e.item ->> 'year_awarded')::INTEGER END,
+             COALESCE((e.item ->> 'is_terminal')::BOOLEAN, false),
+             (e.ord - 1)::INTEGER
+      FROM jsonb_array_elements(v_creds) WITH ORDINALITY AS e(item, ord);
+    END IF;
 
-  IF jsonb_typeof(v_pubs) = 'array' THEN
-    DELETE FROM public.publications WHERE scholar_id = p_scholar;
-    INSERT INTO public.publications
-      (scholar_id, title, publication_type, publisher_or_journal, year, doi_or_url, citation_text, display_order)
-    SELECT p_scholar,
-           btrim(e.item ->> 'title'),
-           btrim(e.item ->> 'publication_type'),
-           NULLIF(btrim(e.item ->> 'publisher_or_journal'), ''),
-           CASE WHEN jsonb_typeof(e.item -> 'year') = 'number' THEN (e.item ->> 'year')::INTEGER END,
-           NULLIF(btrim(e.item ->> 'doi_or_url'), ''),
-           NULLIF(btrim(e.item ->> 'citation_text'), ''),
-           (e.ord - 1)::INTEGER
-    FROM jsonb_array_elements(v_pubs) WITH ORDINALITY AS e(item, ord);
-  END IF;
+    IF jsonb_typeof(v_pubs) = 'array' THEN
+      DELETE FROM public.publications WHERE scholar_id = p_scholar;
+      INSERT INTO public.publications
+        (scholar_id, title, publication_type, publisher_or_journal, year, doi_or_url, citation_text, display_order)
+      SELECT p_scholar,
+             private.snapshot_trim(e.item ->> 'title'),
+             private.snapshot_trim(e.item ->> 'publication_type'),
+             NULLIF(private.snapshot_trim(e.item ->> 'publisher_or_journal'), ''),
+             CASE WHEN jsonb_typeof(e.item -> 'year') = 'number' THEN (e.item ->> 'year')::INTEGER END,
+             NULLIF(private.snapshot_trim(e.item ->> 'doi_or_url'), ''),
+             NULLIF(private.snapshot_trim(e.item ->> 'citation_text'), ''),
+             (e.ord - 1)::INTEGER
+      FROM jsonb_array_elements(v_pubs) WITH ORDINALITY AS e(item, ord);
+    END IF;
 
-  IF jsonb_typeof(v_confs) = 'array' THEN
-    DELETE FROM public.scholar_confessions WHERE scholar_id = p_scholar;
-    INSERT INTO public.scholar_confessions
-      (scholar_id, confessional_standard_id, adherence_level, exception_notes)
-    SELECT p_scholar, f.sid, f.adherence, f.notes
-    FROM (
-      SELECT DISTINCT ON (r.sid) r.sid, r.adherence, r.notes, r.ord
+    IF jsonb_typeof(v_confs) = 'array' THEN
+      DELETE FROM public.scholar_confessions WHERE scholar_id = p_scholar;
+      INSERT INTO public.scholar_confessions
+        (scholar_id, confessional_standard_id, adherence_level, exception_notes)
+      SELECT p_scholar, f.sid, f.adherence, f.notes
       FROM (
-        SELECT private.resolve_taxonomy_id('confession', btrim(e.item ->> 'confessional_standard_id')) AS sid,
-               btrim(e.item ->> 'adherence_level') AS adherence,
-               NULLIF(btrim(e.item ->> 'exception_notes'), '') AS notes,
-               e.ord
-        FROM jsonb_array_elements(v_confs) WITH ORDINALITY AS e(item, ord)
-      ) r
-      ORDER BY r.sid, r.ord
-    ) f
-    ORDER BY f.ord;
-  END IF;
+        SELECT DISTINCT ON (r.sid) r.sid, r.adherence, r.notes, r.ord
+        FROM (
+          SELECT private.resolve_taxonomy_id('confession', private.snapshot_trim(e.item ->> 'confessional_standard_id')) AS sid,
+                 private.snapshot_trim(e.item ->> 'adherence_level') AS adherence,
+                 NULLIF(private.snapshot_trim(e.item ->> 'exception_notes'), '') AS notes,
+                 e.ord
+          FROM jsonb_array_elements(v_confs) WITH ORDINALITY AS e(item, ord)
+        ) r
+        ORDER BY r.sid, r.ord
+      ) f
+      ORDER BY f.ord;
+    END IF;
 
-  IF jsonb_typeof(v_discs) = 'array' THEN
-    DELETE FROM public.scholar_disciplines WHERE scholar_id = p_scholar;
-    INSERT INTO public.scholar_disciplines (scholar_id, discipline_id, is_primary)
-    SELECT p_scholar, f.sid, (f.ord = min(f.ord) OVER ())
-    FROM (
-      SELECT r.sid, min(r.ord) AS ord
+    IF jsonb_typeof(v_discs) = 'array' THEN
+      DELETE FROM public.scholar_disciplines WHERE scholar_id = p_scholar;
+      INSERT INTO public.scholar_disciplines (scholar_id, discipline_id, is_primary)
+      SELECT p_scholar, f.sid, (f.ord = min(f.ord) OVER ())
       FROM (
-        SELECT private.resolve_taxonomy_id('discipline', e.val) AS sid, e.ord
-        FROM jsonb_array_elements_text(v_discs) WITH ORDINALITY AS e(val, ord)
-      ) r
-      GROUP BY r.sid
-    ) f;
-  END IF;
+        SELECT r.sid, min(r.ord) AS ord
+        FROM (
+          SELECT private.resolve_taxonomy_id('discipline', e.val) AS sid, e.ord
+          FROM jsonb_array_elements_text(v_discs) WITH ORDINALITY AS e(val, ord)
+        ) r
+        GROUP BY r.sid
+      ) f;
+    END IF;
 
-  IF jsonb_typeof(v_trads) = 'array' THEN
-    DELETE FROM public.scholar_traditions WHERE scholar_id = p_scholar;
-    INSERT INTO public.scholar_traditions (scholar_id, tradition_id, is_primary)
-    SELECT p_scholar, f.sid, (f.ord = min(f.ord) OVER ())
-    FROM (
-      SELECT r.sid, min(r.ord) AS ord
+    IF jsonb_typeof(v_trads) = 'array' THEN
+      DELETE FROM public.scholar_traditions WHERE scholar_id = p_scholar;
+      INSERT INTO public.scholar_traditions (scholar_id, tradition_id, is_primary)
+      SELECT p_scholar, f.sid, (f.ord = min(f.ord) OVER ())
       FROM (
-        SELECT private.resolve_taxonomy_id('tradition', e.val) AS sid, e.ord
-        FROM jsonb_array_elements_text(v_trads) WITH ORDINALITY AS e(val, ord)
-      ) r
-      GROUP BY r.sid
-    ) f;
-  END IF;
+        SELECT r.sid, min(r.ord) AS ord
+        FROM (
+          SELECT private.resolve_taxonomy_id('tradition', e.val) AS sid, e.ord
+          FROM jsonb_array_elements_text(v_trads) WITH ORDINALITY AS e(val, ord)
+        ) r
+        GROUP BY r.sid
+      ) f;
+    END IF;
+  EXCEPTION
+    WHEN check_violation OR not_null_violation THEN
+      PERFORM private.snapshot_invalid('lists', NULL, 'violate a database constraint');
+  END;
 END;
 $$;
 
@@ -493,7 +642,9 @@ BEGIN
   IF p_action = 'approve' THEN
     v_status := 'approved';
 
-    -- Lists first: any FS001 / FS002 aborts the whole approval, audit row included.
+    -- Validate before any write; then lists: any FS001 / FS002 aborts the whole
+    -- approval, audit row included.
+    PERFORM private.validate_snapshot_scalars(v_snap);
     PERFORM private.promote_snapshot_lists(v_sch.id, v_snap);
 
     IF v_sch.published_revision_id IS NOT NULL AND v_sch.published_revision_id <> v_rev.id THEN
@@ -512,7 +663,8 @@ BEGIN
           draft_revision_id = NULL,
           updated_at = now(),
           full_name = CASE
-            WHEN jsonb_typeof(v_snap -> 'full_name') = 'string' AND v_snap ->> 'full_name' <> ''
+            WHEN jsonb_typeof(v_snap -> 'full_name') = 'string'
+                 AND private.snapshot_trim(v_snap ->> 'full_name') <> ''
               THEN v_snap ->> 'full_name' ELSE s.full_name END,
           title = CASE
             WHEN jsonb_typeof(v_snap -> 'title') IN ('string', 'null') THEN v_snap ->> 'title' ELSE s.title END,
@@ -532,10 +684,11 @@ BEGIN
             WHEN jsonb_typeof(v_snap -> 'doctrinal_statement_text') IN ('string', 'null')
               THEN v_snap ->> 'doctrinal_statement_text' ELSE s.doctrinal_statement_text END,
           orcid_id = CASE
-            WHEN jsonb_typeof(v_snap -> 'orcid_id') IN ('string', 'null') THEN v_snap ->> 'orcid_id' ELSE s.orcid_id END,
+            WHEN jsonb_typeof(v_snap -> 'orcid_id') IN ('string', 'null')
+              THEN NULLIF(private.snapshot_trim(v_snap ->> 'orcid_id'), '') ELSE s.orcid_id END,
           google_scholar_url = CASE
             WHEN jsonb_typeof(v_snap -> 'google_scholar_url') IN ('string', 'null')
-              THEN v_snap ->> 'google_scholar_url' ELSE s.google_scholar_url END
+              THEN NULLIF(private.snapshot_trim(v_snap ->> 'google_scholar_url'), '') ELSE s.google_scholar_url END
       WHERE s.id = v_sch.id;
 
   ELSIF p_action = 'request_changes' THEN

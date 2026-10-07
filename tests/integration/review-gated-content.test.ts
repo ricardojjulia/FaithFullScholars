@@ -659,6 +659,28 @@ describe('Review-gated profile content — real database roles', () => {
     ['an unknown adherence level', { confessions: [{ confessional_standard_id: 'nicene-creed', adherence_level: 'whatever' }] }, /confessions\[0\] adherence_level/],
     ['a non-string discipline', { disciplines: ['church-history', 5] }, /disciplines\[1\]/],
     ['too many items', { credentials: Array.from({ length: 51 }, (_, i) => cred(`D${i}`)) }, /credentials has more than 50 items/],
+    // Scalars (name the field, never the value)
+    ['an over-long full_name', { full_name: 'n'.repeat(201) }, /^snapshot_invalid: full_name is too long$/],
+    ['an over-long title', { title: 't'.repeat(201) }, /^snapshot_invalid: title is too long$/],
+    ['an over-long biography', { biography: 'b'.repeat(5001) }, /^snapshot_invalid: biography is too long$/],
+    ['an over-long doctrinal statement', { doctrinal_statement_text: 'd'.repeat(10001) }, /^snapshot_invalid: doctrinal_statement_text is too long$/],
+    ['a timezone over 100 characters', { timezone: 'z'.repeat(101) }, /^snapshot_invalid: timezone is too long$/],
+    ['a malformed ORCID', { orcid_id: '0000-0000-0000' }, /^snapshot_invalid: orcid_id is not a valid ORCID iD$/],
+    ['a javascript: Google Scholar link', { google_scholar_url: 'javascript:alert(1)' }, /^snapshot_invalid: google_scholar_url must be/],
+    ['an http (not https) Google Scholar link', { google_scholar_url: 'http://scholar.google.com/citations?user=a' }, /^snapshot_invalid: google_scholar_url must be/],
+    ['an https link that is not a Scholar profile', { google_scholar_url: 'https://example.org/citations?user=a' }, /^snapshot_invalid: google_scholar_url must be/],
+    // Years (1000 to 2100)
+    ['a credential year below 1000', { credentials: [cred('ok', { year_awarded: 999 })] }, /credentials\[0\] year_awarded is out of range/],
+    ['a credential year above 2100', { credentials: [cred('ok', { year_awarded: 2101 })] }, /credentials\[0\] year_awarded is out of range/],
+    ['a publication year above 2100', { publications: [pub('T', { year: 2101 })] }, /publications\[0\] year is out of range/],
+    ['a negative publication year', { publications: [pub('T', { year: -4 })] }, /publications\[0\] year is out of range/],
+    // Whitespace-only required text (tab, CR, LF as well as spaces)
+    ['a whitespace-only degree', { credentials: [cred('x', { degree: ' \t\r\n ' })] }, /credentials\[0\] degree is required/],
+    ['a newline-only publication title', { publications: [pub('\n\n')] }, /publications\[0\] title is required/],
+    ['a whitespace-only confession standard', { confessions: [{ confessional_standard_id: '\t', adherence_level: 'general_agreement' }] }, /confessions\[0\] confessional_standard_id is required/],
+    ['a whitespace-only discipline slug', { disciplines: ['\r\n'] }, /disciplines\[0\] must be a slug of 1 to 200 characters/],
+    // Raw length is capped before trimming
+    ['padding that hides an over-long value', { credentials: [cred('ok', { field_of_study: ' '.repeat(150) + 'f'.repeat(100) })] }, /credentials\[0\] field_of_study is too long/],
   ];
 
   it('FS002: an invalid shape names the list and index, and nothing changes', async () => {
@@ -692,6 +714,167 @@ describe('Review-gated profile content — real database roles', () => {
       });
       expect((await failure(approveSql, [id, ADMIN_ACCOUNT])).code).toBe('FS002');
     });
+  });
+
+  it('treats an empty or whitespace-only ORCID and Google Scholar link as NULL, and keeps a whitespace-only full_name out', async () => {
+    await asService(nothing, async () => {
+      const before = (await client.query(`SELECT full_name FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+      const id = await submitted(scholarA, { full_name: ' \t\n ', orcid_id: '  ', google_scholar_url: '' });
+      await approve(id);
+      const after = (
+        await client.query(`SELECT full_name, orcid_id, google_scholar_url FROM public.scholars WHERE id = $1`, [scholarA])
+      ).rows[0];
+      expect(after.full_name).toBe(before.full_name);
+      expect(after.orcid_id).toBeNull();
+      expect(after.google_scholar_url).toBeNull();
+    });
+  });
+
+  it('accepts valid scalars and boundary years, trimming the ORCID', async () => {
+    await asService(nothing, async () => {
+      const id = await submitted(scholarA, {
+        full_name: 'Boundary Probe',
+        orcid_id: ' 0000-0002-1825-009X ',
+        google_scholar_url: 'https://scholar.google.com/citations?user=abc',
+        timezone: 'z'.repeat(100),
+        credentials: [cred('ok', { year_awarded: 1000 }), cred('ok2', { year_awarded: 2100 })],
+        publications: [pub('P1', { year: 1000 }), pub('P2', { year: 2100 })],
+      });
+      await approve(id);
+      const row = (await client.query(`SELECT orcid_id, google_scholar_url FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+      expect(row.orcid_id).toBe('0000-0002-1825-009X');
+      expect(row.google_scholar_url).toBe('https://scholar.google.com/citations?user=abc');
+      expect((await lists(scholarA)).credentials.map((r) => r.year_awarded)).toEqual([1000, 2100]);
+    });
+  });
+
+  it('FS002 on a scalar is raised before any write: no list, scalar, status or audit row changes', async () => {
+    await asService(
+      async () => {
+        await ensureChildRows(scholarA);
+      },
+      async () => {
+        const before = await lists(scholarA);
+        const scalars = (await client.query(`SELECT * FROM public.scholars WHERE id = $1`, [scholarA])).rows[0];
+        const audits = await reviewCount(scholarA);
+        const id = await submitted(scholarA, {
+          full_name: 'Scalar First',
+          credentials: [cred('Would Replace')],
+          orcid_id: 'not-an-orcid',
+        });
+        const error = await failure(approveSql, [id, ADMIN_ACCOUNT]);
+        expect(error.code).toBe('FS002');
+        expect(error.message).toBe('snapshot_invalid: orcid_id is not a valid ORCID iD');
+        expect(await lists(scholarA)).toEqual(before);
+        expect((await client.query(`SELECT * FROM public.scholars WHERE id = $1`, [scholarA])).rows[0]).toEqual(scalars);
+        expect(await reviewCount(scholarA)).toBe(audits);
+      }
+    );
+  });
+
+  it('maps a check violation and a not-null violation hit while replacing to a generic FS002', async () => {
+    await asService(
+      async () => {
+        // A column rule the validate pass does not know about (as if added later).
+        await client.query(
+          `ALTER TABLE public.credentials ADD CONSTRAINT zz_probe_no_forbidden CHECK (degree <> 'Forbidden Degree') NOT VALID`
+        );
+        await client.query(`UPDATE public.credentials SET year_awarded = 2000 WHERE year_awarded IS NULL`);
+        await client.query(`ALTER TABLE public.credentials ALTER COLUMN year_awarded SET NOT NULL`);
+      },
+      async () => {
+        const check = await submitted(scholarA, { full_name: 'Check Probe', credentials: [cred('Forbidden Degree')] });
+        const checkError = await failure(approveSql, [check, ADMIN_ACCOUNT]);
+        expect(checkError.code).toBe('FS002');
+        expect(checkError.message).toBe('snapshot_invalid: lists violate a database constraint');
+        expect(checkError.message).not.toMatch(/zz_probe|Forbidden|credentials_/);
+
+        const notNull = await submitted(scholarA, { full_name: 'Null Probe', credentials: [cred('Fine', { year_awarded: null })] });
+        const nullError = await failure(approveSql, [notNull, ADMIN_ACCOUNT]);
+        expect(nullError.code).toBe('FS002');
+        expect(nullError.message).toBe('snapshot_invalid: lists violate a database constraint');
+        expect(
+          (await client.query(`SELECT status FROM public.scholar_profile_revisions WHERE id = $1`, [notNull])).rows[0].status
+        ).toBe('submitted');
+      }
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // C2. enforced preflight (migration section 0). The test extracts the DO block
+  //     between the PREFLIGHT markers from the migration file and runs that exact
+  //     text, so it cannot drift from what ships. Everything is rolled back.
+  // ---------------------------------------------------------------------------
+  const migrationSql = readFileSync(
+    path.resolve(process.cwd(), 'supabase/migrations/20261007090000_review_gated_profile_content.sql'),
+    'utf8'
+  );
+  const preflightSql = /-- PREFLIGHT-BEGIN\n([\s\S]*?)\n-- PREFLIGHT-END/.exec(migrationSql)?.[1] ?? '';
+
+  it('preflight: extracts a DO block from the migration', () => {
+    expect(preflightSql).toMatch(/^DO \$preflight\$/);
+    expect(preflightSql).toMatch(/\$preflight\$;$/);
+  });
+
+  it('preflight: raises (with counts, changing nothing) for each list key that is [], absent or not an array while live rows exist', async () => {
+    const full = {
+      full_name: 'Preflight Probe',
+      credentials: [cred('Kept')],
+      publications: [pub('Kept')],
+      disciplines: ['church-history'],
+      traditions: ['baptist'],
+      confessions: [{ confessional_standard_id: 'nicene-creed', adherence_level: 'general_agreement' }],
+    };
+    const cases: Array<[table: string, key: keyof typeof full]> = [
+      ['credentials', 'credentials'],
+      ['publications', 'publications'],
+      ['scholar_disciplines', 'disciplines'],
+      ['scholar_traditions', 'traditions'],
+      ['scholar_confessions', 'confessions'],
+    ];
+    await client.query('BEGIN');
+    try {
+      await ensureChildRows(scholarA);
+      // Neutralise every other open revision so the baseline is clean.
+      await client.query(
+        `UPDATE public.scholar_profile_revisions SET status = 'superseded'
+         WHERE status IN ('draft', 'submitted', 'changes_requested')`
+      );
+      const liveBefore = JSON.stringify(await lists(scholarA));
+
+      // A complete snapshot passes.
+      await submitted(scholarA, full);
+      await client.query(preflightSql);
+
+      for (const [table, key] of cases) {
+        const variants: Array<[string, unknown]> = [['empty', []], ['absent', undefined], ['not an array', 'oops']];
+        for (const [label, value] of variants) {
+          const snapshot: Record<string, unknown> = { ...full, [key]: value };
+          if (value === undefined) delete snapshot[key];
+          await submitted(scholarA, snapshot);
+          const error = await failure(preflightSql);
+          expect(error.message, `${table} ${label}`).toMatch(/^preflight_failed: 1 open revision-list\(s\)/);
+          expect(error.message, `${table} ${label}`).toContain(`${table}: 1 revision(s) for 1 scholar(s) have key "${key}"`);
+          // Counts only: no snapshot value or name leaks into the message.
+          expect(error.message).not.toContain('Preflight Probe');
+        }
+      }
+
+      // Read-only: the failed and passing runs changed no live row.
+      expect(JSON.stringify(await lists(scholarA))).toBe(liveBefore);
+
+      // No live rows in the matching table: an empty list is harmless.
+      await client.query(`DELETE FROM public.credentials WHERE scholar_id = $1`, [scholarA]);
+      await submitted(scholarA, { ...full, credentials: [] });
+      await client.query(preflightSql);
+
+      // Closed revisions never count: the trap, but rejected.
+      await submitted(scholarA, { ...full, publications: [] });
+      await client.query(`UPDATE public.scholar_profile_revisions SET status = 'rejected' WHERE scholar_id = $1 AND status = 'submitted'`, [scholarA]);
+      await client.query(preflightSql);
+    } finally {
+      await client.query('ROLLBACK');
+    }
   });
 
   // ---------------------------------------------------------------------------
