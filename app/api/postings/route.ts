@@ -1,9 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { checkSearchRequest, getRateLimitHeaders, retryAfterSeconds } from '@/lib/search/rate-limiter';
 import { getAllPublishedPostings, validatePostingInput } from '@/lib/postings/postings-service';
 
 export async function GET(request: NextRequest) {
   try {
+    // Public listing: rate-limited like directory search (ADR 0008 / 0026).
+    // Signed-in callers are keyed by account, others by hashed client IP.
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const limit = await checkSearchRequest(request.headers, user?.id);
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: `Too many requests. Try again in ${retryAfterSeconds(limit)} seconds.` },
+        { status: 429, headers: getRateLimitHeaders(limit) }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || undefined;
     const disciplineSlug = searchParams.get('discipline') || undefined;
@@ -15,7 +30,7 @@ export async function GET(request: NextRequest) {
       traditionSlug,
     });
 
-    return NextResponse.json({ postings });
+    return NextResponse.json({ postings }, { headers: getRateLimitHeaders(limit) });
   } catch (err: unknown) {
     console.error('/api/postings failed:', err);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

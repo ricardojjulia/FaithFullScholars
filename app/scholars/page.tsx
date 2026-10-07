@@ -1,11 +1,14 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Link from 'next/link';
-import { Lock, Search } from 'lucide-react';
+import { Clock, Lock, Search } from 'lucide-react';
 import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/lib/domain/queries';
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
 import { ScholarRecommendationsRail } from '@/components/scholars/scholar-recommendations-rail';
 import { ScholarDirectoryHeader } from '@/components/scholars/scholar-directory-header';
+import { createClient } from '@/lib/supabase/server';
+import { checkSearchRequest, retryAfterSeconds } from '@/lib/search/rate-limiter';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
@@ -40,8 +43,25 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
     page: currentPage,
   };
 
+  // Rate limit (ADR 0008 / 0026): only requests that carry search or filter
+  // parameters count. A page cannot set a status code, so the rendered state is
+  // the response. Reads fail open: a limiter error never takes search down.
+  const hasSearchParams = Boolean(
+    params.search || params.discipline || params.tradition || params.confession || params.available || params.page
+  );
+  let retryAfter: number | null = null;
+  if (hasSearchParams && !isPageGated) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const limit = await checkSearchRequest(await headers(), user?.id);
+    if (!limit.allowed) retryAfter = retryAfterSeconds(limit);
+  }
+  const isRateLimited = retryAfter !== null;
+
   const [scholars, taxonomies] = await Promise.all([
-    isPageGated ? Promise.resolve([]) : getPublicScholars(filters),
+    isPageGated || isRateLimited ? Promise.resolve([]) : getPublicScholars(filters),
     getTaxonomies(),
   ]);
 
@@ -68,7 +88,22 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
 
           {/* Center Column (5 or 6 of 12): Main Content Feed */}
           <section className="lg:col-span-8 xl:col-span-6 space-y-6">
-            {isPageGated ? (
+            {isRateLimited ? (
+              <div
+                role="status"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 text-center shadow-xs space-y-3"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                  <Clock className="w-6 h-6" />
+                </div>
+                <h3 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+                  Too many searches
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                  Too many searches. Try again in {retryAfter} {retryAfter === 1 ? 'second' : 'seconds'}.
+                </p>
+              </div>
+            ) : isPageGated ? (
               /* Anti-Harvesting Deep Pagination Wall (ADR 0008) */
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 text-center shadow-xs space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900 shadow-inner">

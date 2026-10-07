@@ -59,3 +59,9 @@ We establish a comprehensive, multi-layer security architecture for search, data
 ### Negative / Trade-offs
 - Anonymous visitors cannot browse an entire 500-scholar catalog in one uninterrupted session without creating a free account.
 - Introduces additional state and validation overhead in search route handlers.
+
+---
+
+## Amendment (2026-10-08, ADR 0026)
+
+The limits in this ADR (15 per minute anonymous, 120 per minute authenticated, 429 with `Retry-After`) were specified but never enforced: nothing in production called the limiter, the legacy RPC was executable by any signed-in user, and the inquiry cap lived in a per-instance in-memory `Map`. [ADR 0026](./0026-persistent-enforced-rate-limits.md) replaces that with a single persistent limiter (`public.check_rate_limit`, service role only), wires it into `/scholars` and `GET /api/postings`, and moves the inquiry cap into a database guard. The legacy `search_rate_limits` table and `check_search_rate_limit` are superseded (the function is service-role only; removal is a follow-up). The limits themselves are unchanged.

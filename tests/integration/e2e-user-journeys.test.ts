@@ -344,8 +344,8 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
     });
 
     it('enforces anonymous search rate limiter tracking without errors', async () => {
-      const testIp = '198.51.100.42';
-      const check = await checkSearchRateLimit(testIp, false);
+      const key = `search:ip:e2e-${Date.now()}`;
+      const check = await checkSearchRateLimit(key, false);
       expect(check.allowed).toBe(true);
       expect(check.remaining).toBeLessThanOrEqual(15);
     });

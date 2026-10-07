@@ -23,10 +23,9 @@ export async function POST(req: NextRequest) {
     );
 
     if (!result.success) {
-      const isRateLimit = result.error?.includes('rate limit');
       return NextResponse.json(
         { error: result.error },
-        { status: isRateLimit ? 429 : 400 }
+        { status: result.status ?? 400 }
       );
     }
 

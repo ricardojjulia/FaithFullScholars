@@ -46,7 +46,7 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > - scholar express-interest;
 > - institution invitations;
 > - live data in several portal screens;
-> - a persistent rate limiter;
+> - deploying the persistent rate limits ([ADR 0026](./docs/adr/0026-persistent-enforced-rate-limits.md)): the code is built, but migration `20261008090000` must be applied to production first. Until then search is not rate-limited (the limiter fails open) and the inquiry cap is not enforced in the database;
 > - GDPR and field-level encryption.
 >
 > The full per-feature history, including the known-broken and demo-only list, is in the **[Feature Catalog](./docs/feature-catalog.md)**.

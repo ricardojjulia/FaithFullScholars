@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/server';
 import { CreateInquiryInput, InquiryStatus, Institution } from '@/lib/domain/types';
-import { checkInquiryRateLimit, recordInquirySent } from '@/lib/inquiries/rate-limiter';
 import {
   notifyScholarOfNewInquiry,
   notifyInstitutionOfInquiryResponse,
@@ -11,7 +10,14 @@ export interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  /** HTTP status the API layer should use for a failure (default 400). */
+  status?: number;
 }
+
+/** SQLSTATE raised by the database inquiry-rate guard (ADR 0026). */
+export const INQUIRY_RATE_LIMIT_SQLSTATE = 'FS429';
+export const INQUIRY_RATE_LIMIT_MESSAGE =
+  'You have reached the hourly inquiry limit. Verified institutions can send up to 10 inquiries per hour; please try again later.';
 
 /**
  * Validates email format.
@@ -51,14 +57,8 @@ export async function sendInquiry(
     return { success: false, error: 'A valid institutional contact email is required.' };
   }
 
-  // 2. Rate limit verification (ADR 0008)
-  const rateLimit = checkInquiryRateLimit(input.institution_id);
-  if (!rateLimit.allowed) {
-    return {
-      success: false,
-      error: 'Inquiry rate limit exceeded. Verified institutions can send up to 10 inquiries per hour.',
-    };
-  }
+  // 2. The hourly inquiry cap (10 per institution) is enforced by the database
+  //    guard on INSERT (ADR 0026), so it also covers direct API writes.
 
   // 3. Verify Institution Approval Status
   const { data: institution, error: instError } = await supabase
@@ -115,13 +115,14 @@ export async function sendInquiry(
     .select('id')
     .single();
 
+  if (insertError?.code === INQUIRY_RATE_LIMIT_SQLSTATE) {
+    return { success: false, error: INQUIRY_RATE_LIMIT_MESSAGE, status: 429 };
+  }
+
   if (insertError || !newInquiry) {
     console.error('Error inserting inquiry:', insertError);
     return { success: false, error: 'Unable to dispatch inquiry at this time. Please try again later.' };
   }
-
-  // Record rate limit consumption
-  recordInquirySent(input.institution_id);
 
   // 7. Dispatch Notification. The scholar's private email is read server-side with
   // the service role (RLS correctly hides it from institutions) and never returned.

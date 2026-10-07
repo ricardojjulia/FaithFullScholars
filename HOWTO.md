@@ -50,6 +50,7 @@ Open [http://localhost:3845](http://localhost:3845).
 | `TURNSTILE_SECRET_KEY` ¹ | optional | Cloudflare Turnstile verification on scholar and institution sign-up |
 | `NEXT_PUBLIC_PILOT_FEEDBACK_ENABLED`, `PILOT_FEEDBACK_ENABLED` ¹ | optional | Pilot feedback widget (client) and API (server) |
 | `ENABLE_DEV_ROUTES` ¹ | never in production | Guardrail flag: the app does not read it, but `npm run verify:deploy` fails if it is `true` in a production deploy |
+| `RATE_LIMIT_SALT` | optional | Secret salt mixed into the SHA-256 of the client IP used as the search rate-limit key (ADR 0026). Empty is allowed; set a random value in production. In `.env.example` |
 | `VERCEL_ENV` | automatic | Set by Vercel and used by the deploy checks |
 
 ¹ Not in `.env.example`; add it manually when needed.

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Persistent, enforced rate limits, backend (ADR 0026, migration `20261008090000_persistent_rate_limits.sql`).** Amends ADR 0008, whose limits were specified but enforced nowhere.
+  - **One limiter primitive:** `public.check_rate_limit(key, window, max)` is a SECURITY DEFINER fixed-window counter on the new `rate_limit_buckets` table (FORCE RLS, explicit deny-all policy, no API grants). It is atomic under concurrency, validates its inputs, deletes at most 100 expired buckets per call, and is executable by `service_role` only. Keys are derived on the server (`search:ip:<hash>`, `search:user:<account>`); raw IPs are never stored or logged, and the optional `RATE_LIMIT_SALT` salts the hash.
+  - **Search is actually limited:** `/scholars` (requests with search, filter or page parameters) and `GET /api/postings` apply 15 per minute for anonymous visitors and 120 per minute for signed-in users. The page shows "Too many searches. Try again in N seconds."; the API returns 429 with `Retry-After` and `X-RateLimit-*` headers. If the limiter errors, search stays available and only the SQLSTATE is logged.
+  - **Over-broad grant closed:** `check_search_rate_limit` is no longer executable by `authenticated` (service role only). It and `search_rate_limits` stay in place unused; removal is a follow-up.
+  - **Inquiry cap in the database:** the 10 per hour per institution cap is now a BEFORE INSERT guard (`trg_guard_inquiry_rate`, SQLSTATE `FS429`, advisory lock per institution), so direct PostgREST inserts are covered, it survives restarts and it fails closed. The in-memory limiter (`lib/inquiries/rate-limiter.ts`) is deleted; `sendInquiry` maps `FS429` to a friendly message with status 429.
+  - **Tests:** real-role integration suite with concurrency (20 parallel limiter hits, 14 parallel inquiry inserts) and in-suite rollback probes; unit tests for client keys, the limiter fail-open and fail-closed paths, the postings 429, the `/scholars` limited state and the action mapping. The `page:/scholars` and `api:GET /api/postings` test-surface exemptions were removed because they are now covered.
+  - **Docs:** ADR 0026, ADR 0008 amendment, `RATE_LIMIT_SALT` in `.env.example` and HOWTO. The stale `record_search_query` mention (no migration defines that function) was removed from the pinned-search-path entry here and in the feature catalog.
+  - Deploy: apply the migration first, then deploy the app. Until the migration is applied, search is not limited and the inquiry cap is not enforced in the database.
+
 ### Added
 - **Repository presentation aligned with ChurchCore-Orthos.**
   - **README:** rewritten as an overview with a hero banner (`public/assets/brand/hero-banner.svg`), stack badges and live CI/E2E status badges. It adds sections on why the project exists, project status (including the not-launch-ready caveats), personas, quality gates and the software factory, plus Mermaid diagrams of the product surface, architecture, revision lifecycle and factory flow.
@@ -481,7 +491,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Database Security Hardening & Vulnerability Remediation (Supabase Splinter Advisor)**:
   - **Eliminated `rls_references_user_metadata` Vulnerability**: Removed mutable JWT `user_metadata` checks from RLS policies in favor of server-verified `auth.uid()` references, preventing unprivileged clients from tampering with role or tenant metadata.
-  - **Pinned Function Search Paths (`function_search_path_mutable`)**: Applied `SET search_path = public, pg_temp` to all stored PostgreSQL functions and triggers (`handle_updated_at`, `record_search_query`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), preventing malicious search-path hijacking.
+  - **Pinned Function Search Paths (`function_search_path_mutable`)**: Applied `SET search_path = public, pg_temp` to all stored PostgreSQL functions and triggers (`handle_updated_at`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), preventing malicious search-path hijacking.
   - **Restricted Permissive Insert Policies (`rls_policy_always_true`)**: Hardened `inquiries` insert policy (`"Institutions or visitors can submit inquiries"`) by verifying target scholar existence rather than accepting blanket `WITH CHECK (true)` bypasses.
   - **Auth RLS InitPlan Optimization (`auth_rls_initplan`)**: Converted repetitive inline `auth.uid()` policy calls across 16 policies into scalar subqueries `(select auth.uid())`, allowing PostgreSQL query planner to evaluate auth context once per query instead of re-evaluating per row.
   - **Covering Indexes for Unindexed Foreign Keys (`unindexed_foreign_keys`)**: Added 20 covering indexes on foreign key columns across child tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `inquiries`, `saved_scholars`, `saved_courses`, etc.), preventing full sequential table scans during cascading deletes and foreign key validation.
