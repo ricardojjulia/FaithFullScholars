@@ -1,7 +1,7 @@
 # Council Review 15 — Synthesis: PR #65 Persistent, Enforced Rate Limits
 
 - **Date:** 2026-10-08
-- **Subject:** PR #65 (`fix/persistent-rate-limits`, ADR 0026, migration `20261008090000_persistent_rate_limits.sql`), head `9135620`.
+- **Subject:** PR #65 (`fix/persistent-rate-limits`, ADR 0026, migration `20261008090000_persistent_rate_limits.sql`), head `affc243`.
 - **Scope statement:** This Council was scoped to a single vertical slice. Seats run: Agent 1 (data/API) and Agent 7 (Stakeholder & Trust Lens). Agents 2 and 3 (routes/pages, UX/shell) were folded into `pr-review` because the only UI change is one new state on `/scholars`. Agents 4 (feature/competitive) and 5 (Wildcard) were omitted for a single slice. Agent 6 (Documenter) wrote this record. Individual agent reports were not written as separate files; findings are consolidated below.
 - **Result:** One Critical finding, fixed. No open Critical findings. Merge awaits owner approval. Migration `20261008090000` is NOT applied to production.
 
@@ -56,7 +56,7 @@ The fix builder reported CI as green by citing runs from the previous commit. Th
 ## 8. Verification
 
 - **Proof of failure (in-suite, runs in CI):** granting the limiter functions to `authenticated` lets the calls succeed; dropping the inquiry trigger lets the 11th insert succeed; removing the `created_at` protection lets back-dating evade the cap.
-- **CI on 9135620: <pending>** (to be filled by the orchestrator; do not read this as green). CI on `d097c8f` was RED (one stale-copy assertion), fixed in `9135620`.
+- **CI on `affc243` (code head; later commits are docs-only): all green on both runs (push and pull_request): lint, typecheck, unit-tests (unit + serialized DB integration incl. persistent-rate-limits, `audit:rls` and the policy matrix), test-surface, build and E2E. The Vercel preview fails by design. `8858a0b` had one red push run: a pre-existing minute-boundary flake in `tests/integration/triage.test.ts`, fixed in `affc243`.** CI on `d097c8f` was RED (one stale-copy assertion), fixed in `9135620`.
 - The Vercel preview fails by design.
 
 ## 9. Deploy runbook (migration FIRST, then merge)

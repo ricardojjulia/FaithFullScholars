@@ -2,8 +2,8 @@
 
 ## 1. Run Metadata
 - **Branch:** `fix/persistent-rate-limits`
-- **Head reviewed:** `9135620` (builds on `d097c8f`, `1161fac`)
-- **Execution status:** VERIFIED PENDING CI CONFIRMATION, AWAITING OWNER APPROVAL AND DEPLOY. CI on 9135620: <pending>. Migration `20261008090000` is not applied to production.
+- **Head reviewed:** `affc243` (builds on `9135620`, `d097c8f`, `1161fac`)
+- **Execution status:** VERIFIED (CI green on `affc243`), AWAITING OWNER APPROVAL AND DEPLOY. Migration `20261008090000` is not applied to production.
 
 ## 2. Intent
 Make the search rate limits of ADR 0008 real (the old limiter was never called and the inquiry limiter was in memory), and make the inquiry cap database-enforced so direct PostgREST inserts, restarts and multiple instances cannot bypass it.
@@ -23,7 +23,7 @@ Make the search rate limits of ADR 0008 real (the old limiter was never called a
 ## 5. Verification Results
 | Check | Command | Status | Details |
 |---|---|---|---|
-| CI on `9135620` | GitHub Actions | <pending> | to be filled by the orchestrator |
+| CI on `affc243` | GitHub Actions | PASS | CI on `affc243` (code head; later commits are docs-only): all green on both runs (push and pull_request): lint, typecheck, unit-tests (unit + serialized DB integration incl. persistent-rate-limits, `audit:rls` and the policy matrix), test-surface, build and E2E. The Vercel preview fails by design. `8858a0b` had one red push run: a pre-existing minute-boundary flake in `tests/integration/triage.test.ts`, fixed in `affc243`. |
 | CI on `d097c8f` | GitHub Actions | FAIL | one test asserted the old inquiry-limit copy; fixed in `9135620` |
 | Proof of failure | in-suite probes | PASS (per orchestrator; runs in CI) | grant to `authenticated` lets calls succeed; dropping the trigger lets the 11th insert succeed; removing the `created_at` protection lets back-dating evade the cap |
 | Concurrency | integration suite | PASS (per orchestrator) | 20 parallel limiter hits, 14 parallel inquiry inserts |
