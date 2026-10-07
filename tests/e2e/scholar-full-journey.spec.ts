@@ -99,6 +99,13 @@ test.describe('Scholar End-to-End User Journey', () => {
     await expect(page.getByRole('button', { name: 'Withdraw' })).toHaveCount(0);
     await expect(title).toBeEnabled();
     await expect(title).toHaveValue(uniqueTitle);
+
+    // The preview can submit and withdraw too, leaving the persona back in draft.
+    await page.goto('/dashboard/preview');
+    await page.getByRole('button', { name: 'Submit for Admin Review' }).click();
+    await expect(page.getByText('Submitted for Review')).toBeVisible();
+    await page.getByRole('button', { name: 'Withdraw' }).click();
+    await expect(page.getByRole('button', { name: 'Submit for Admin Review' })).toBeVisible();
   });
 
   test('scholar onboarding page renders for a signed-in scholar', async ({ page }) => {

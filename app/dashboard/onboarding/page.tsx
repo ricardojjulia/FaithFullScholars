@@ -243,10 +243,11 @@ export default function OnboardingPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1" htmlFor="onboarding-full-name">
                     Full Professional Name
                   </label>
                   <input
+                    id="onboarding-full-name"
                     type="text"
                     value={draft.full_name || ''}
                     onChange={(e) => setDraft({ ...draft, full_name: e.target.value })}
@@ -255,10 +256,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1" htmlFor="onboarding-title">
                     Academic Title / Headline
                   </label>
                   <input
+                    id="onboarding-title"
                     type="text"
                     value={draft.title || ''}
                     onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -267,10 +269,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1" htmlFor="onboarding-institution">
                     Current Institution
                   </label>
                   <input
+                    id="onboarding-institution"
                     type="text"
                     value={draft.current_institution || ''}
                     onChange={(e) => setDraft({ ...draft, current_institution: e.target.value })}
@@ -279,10 +282,11 @@ export default function OnboardingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1" htmlFor="onboarding-role">
                     Role / Position
                   </label>
                   <input
+                    id="onboarding-role"
                     type="text"
                     value={draft.institutional_role || ''}
                     onChange={(e) => setDraft({ ...draft, institutional_role: e.target.value })}
@@ -292,10 +296,11 @@ export default function OnboardingPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1" htmlFor="onboarding-biography">
                   Academic Biography
                 </label>
                 <textarea
+                  id="onboarding-biography"
                   rows={3}
                   value={draft.biography || ''}
                   onChange={(e) => setDraft({ ...draft, biography: e.target.value })}
