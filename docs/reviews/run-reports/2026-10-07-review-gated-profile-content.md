@@ -27,7 +27,7 @@ Close ADR 0024 residual risks 1 (scholars can edit live profile content and rela
 | Proof of failure | in-suite probes | PASS | each guard or promotion replaced inside a rolled-back transaction; probe then succeeds; runs in CI every push |
 | Vercel preview | Vercel | FAIL (by design) | no preview environment; not a required check |
 
-Local command output and `npm run audit:rls` were not reported to the Documenter for this run; not recorded as passed.
+`npm run audit:rls` ran in CI against the live local Supabase stack on head `000d9f5` (unit-tests job, step "Verify PostgreSQL Row Level Security"): "ALL TABLES PASS". The real-role suites (`rls-authenticated`, `review-gated-content`, `policy-matrix`) passed in the same job. Full CI on `000d9f5` was green (lint, typecheck, unit-tests, test-surface, build, E2E; the Vercel preview fails by design). Local runs: lint, `tsc --noEmit`, unit tests and test:surface were clean. `npm run build` cannot run on the shared volume (Turbopack cache ioctl error), so CI is the build evidence.
 
 ## 6. Documenter Updates
 `docs/FAITHFULL_SCHOLARS_FULL_PLAN.md`, `docs/product/roadmap.md`, `docs/product/MVP_AND_COMPETITIVE_STATUS.md`, `README.md`, the spec status line, ADR 0025 (residual risk), ADR 0024 cross-check (items 1 and 2 already marked RESOLVED by ADR 0025), CHANGELOG (entry already present; see flag below), Council 14 synthesis, this report.

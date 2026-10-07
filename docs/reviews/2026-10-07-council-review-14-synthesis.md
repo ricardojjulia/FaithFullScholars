@@ -50,7 +50,7 @@ Agents 2 and 3 ran concurrently with other agents in a single shared working tre
 
 - Proof of failure: the in-suite probes replace each guard or promotion inside a rolled-back transaction and assert the probe then succeeds. They run in CI on every push.
 - CI on `a5677ee`: all green — lint, typecheck, unit tests including the serialized integration suite, test-surface, build and E2E. `e86320f` was green twice. The Vercel preview fails by design (no preview environment).
-- `npm run audit:rls` was not reported to the Documenter for this run; not recorded as passed here.
+- `npm run audit:rls` ran in CI against the live local Supabase stack on head `000d9f5` (unit-tests job, step "Verify PostgreSQL Row Level Security"): "ALL TABLES PASS". The real-role suites (`rls-authenticated`, `review-gated-content`, `policy-matrix`) passed in the same job. Full CI on `000d9f5` was green (lint, typecheck, unit-tests, test-surface, build, E2E; the Vercel preview fails by design). Local runs: lint, `tsc --noEmit`, unit tests and test:surface were clean. `npm run build` cannot run on the shared volume (Turbopack cache ioctl error), so CI is the build evidence.
 
 ## 8. Deploy runbook
 
