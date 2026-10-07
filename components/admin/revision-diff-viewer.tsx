@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Scale, Check, Sparkles, MapPin, GraduationCap } from 'lucide-react';
-import { RevisionSnapshotData } from '@/lib/domain/types';
+import { RevisionSnapshotData, Taxonomy } from '@/lib/domain/types';
+import { nameForSlug } from '@/lib/profiles/profile-rows';
 import { ProfileRevisionDiff } from '@/lib/domain/diff';
 import { formatAdherenceLevel } from '@/lib/domain/taxonomies';
 
@@ -10,12 +11,15 @@ interface RevisionDiffViewerProps {
   publishedSnapshot: RevisionSnapshotData | null;
   submittedSnapshot: RevisionSnapshotData;
   diff: ProfileRevisionDiff;
+  /** Taxonomy for showing names instead of slugs; falls back to the slug when absent. */
+  taxonomy?: Taxonomy | null;
 }
 
 export function RevisionDiffViewer({
   publishedSnapshot,
   submittedSnapshot,
   diff,
+  taxonomy = null,
 }: RevisionDiffViewerProps) {
   const isInitialSubmission = !publishedSnapshot;
 
@@ -80,7 +84,7 @@ export function RevisionDiffViewer({
               </p>
             </div>
           ) : (
-            <SnapshotCardDisplay snapshot={publishedSnapshot} isBaseline />
+            <SnapshotCardDisplay snapshot={publishedSnapshot} isBaseline taxonomy={taxonomy} />
           )}
         </div>
 
@@ -95,7 +99,7 @@ export function RevisionDiffViewer({
             </span>
           </div>
 
-          <SnapshotCardDisplay snapshot={submittedSnapshot} isBaseline={false} />
+          <SnapshotCardDisplay snapshot={submittedSnapshot} isBaseline={false} taxonomy={taxonomy} />
         </div>
       </div>
     </div>
@@ -105,10 +109,13 @@ export function RevisionDiffViewer({
 function SnapshotCardDisplay({
   snapshot,
   isBaseline,
+  taxonomy,
 }: {
   snapshot: RevisionSnapshotData;
   isBaseline: boolean;
+  taxonomy: Taxonomy | null;
 }) {
+  const nameOf = (kind: keyof Taxonomy, slug: string) => (taxonomy ? nameForSlug(taxonomy[kind], slug) : slug);
   return (
     <div
       className={`rounded-2xl border p-5 space-y-5 ${
@@ -169,7 +176,7 @@ function SnapshotCardDisplay({
                 className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs"
               >
                 <div className="font-semibold text-slate-900 dark:text-white">
-                  {c.confessional_standard_name || c.confessional_standard_id}
+                  {c.confessional_standard_name || nameOf('confessions', c.confessional_standard_id)}
                 </div>
                 <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium mt-0.5">
                   Subscription: {formatAdherenceLevel(c.adherence_level)}
@@ -193,20 +200,22 @@ function SnapshotCardDisplay({
           Disciplines & Traditions
         </span>
         <div className="flex flex-wrap gap-1.5">
-          {(snapshot.disciplines || []).map((d) => (
+          {(snapshot.disciplines || []).map((d, i) => (
             <span
               key={d}
               className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 text-[11px] font-medium"
             >
-              {d}
+              {nameOf('disciplines', d)}
+              {i === 0 && <span className="ml-1 font-bold uppercase text-[9px]">(Primary)</span>}
             </span>
           ))}
-          {(snapshot.traditions || []).map((t) => (
+          {(snapshot.traditions || []).map((t, i) => (
             <span
               key={t}
               className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium"
             >
-              {t}
+              {nameOf('traditions', t)}
+              {i === 0 && <span className="ml-1 font-bold uppercase text-[9px]">(Primary)</span>}
             </span>
           ))}
           {(!snapshot.disciplines || snapshot.disciplines.length === 0) &&

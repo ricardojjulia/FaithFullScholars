@@ -1,9 +1,10 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState } from 'react';
 import { Check, Plus, Star, X } from 'lucide-react';
 import type { TaxonomyOption } from '@/lib/domain/types';
 import { makePrimary } from '@/lib/profiles/profile-rows';
+import { useFocusAfterRender } from './use-row-editor';
 
 interface TaxonomyMultiSelectProps {
   /** Group label, e.g. "Disciplines". Also used in button names. */
@@ -24,13 +25,27 @@ export function TaxonomyMultiSelect({ label, noun, options, value, onChange, tes
   const known = new Set(options.map((o) => o.slug));
   const unmatched = value.filter((v) => !known.has(v));
   const primary = value[0];
+  const [announcement, setAnnouncement] = useState('');
+  const { containerRef, requestFocus } = useFocusAfterRender();
+
+  function removeUnmatched(v: string) {
+    const index = unmatched.indexOf(v);
+    const next = unmatched[index + 1] ?? unmatched[index - 1];
+    onChange(value.filter((x) => x !== v));
+    // Keep keyboard focus in the list: the next unmatched entry, else the first option.
+    requestFocus(...(next ? [`[data-unmatched-remove="${next}"]`] : []), '[aria-pressed]');
+    setAnnouncement(`Removed unmatched ${noun} ${v}. ${unmatched.length - 1} unmatched remaining.`);
+  }
 
   function toggle(slug: string) {
     onChange(value.includes(slug) ? value.filter((v) => v !== slug) : [...value, slug]);
   }
 
   return (
-    <div className="space-y-3" data-testid={`${testIdPrefix}-select`}>
+    <div className="space-y-3" data-testid={`${testIdPrefix}-select`} ref={containerRef}>
+      <div role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       {unmatched.length > 0 && (
         <div
           role="alert"
@@ -46,7 +61,8 @@ export function TaxonomyMultiSelect({ label, noun, options, value, onChange, tes
                 <span>{v}</span>
                 <button
                   type="button"
-                  onClick={() => onChange(value.filter((x) => x !== v))}
+                  data-unmatched-remove={v}
+                  onClick={() => removeUnmatched(v)}
                   aria-label={`Remove unmatched ${noun} ${v}`}
                   className="p-0.5 rounded hover:bg-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
                 >

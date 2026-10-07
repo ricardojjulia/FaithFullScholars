@@ -6,11 +6,14 @@ import { useRouter } from 'next/navigation';
 import { Sparkles, Check, Loader2 } from 'lucide-react';
 import { CvUploadParser } from '@/components/forms/cv-upload-parser';
 import { ParsedCvDraft } from '@/lib/profiles/cv-parser';
-import { RevisionSnapshotData, PublicationType, Taxonomy, UnresolvedEntry } from '@/lib/domain/types';
+import { RevisionSnapshotData, Taxonomy, UnresolvedEntry } from '@/lib/domain/types';
 import { TaxonomyMultiSelect } from '@/components/forms/taxonomy-multi-select';
 import { CredentialsEditor } from '@/components/forms/credentials-editor';
 import { PublicationsEditor } from '@/components/forms/publications-editor';
-import { hasRowErrors, mapSuggestions } from '@/lib/profiles/profile-rows';
+import { describeProblems, summarizeProblems } from '@/lib/profiles/profile-rows';
+import { buildCvImport } from '@/lib/profiles/cv-import';
+import { FIELD_LIMITS } from '@/lib/profiles/limits';
+import { PublicDataNotice } from '@/components/forms/public-data-notice';
 import { ConfessionalStandardsSelector } from '@/components/forms/confessional-standards-selector';
 import { DoctrinalStatementForm } from '@/components/forms/doctrinal-statement-form';
 import { buildDraftSnapshot } from '@/lib/profiles/revision-actions';
@@ -22,23 +25,6 @@ import {
 
 const SUBMITTED_MESSAGE =
   'You have a submission awaiting review — withdraw it from your profile page to make changes.';
-
-function mapPubType(type: string): PublicationType {
-  switch (type) {
-    case 'book':
-      return 'book';
-    case 'monograph':
-      return 'monograph';
-    case 'journal_article':
-      return 'journal_article';
-    case 'book_chapter':
-      return 'book_chapter';
-    case 'essay':
-      return 'popular_essay';
-    default:
-      return 'journal_article';
-  }
-}
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -53,6 +39,9 @@ export default function OnboardingPage() {
   const [taxonomy, setTaxonomy] = useState<Taxonomy>({ disciplines: [], traditions: [], confessions: [] });
   // CV suggestions that match no taxonomy row: listed for the scholar instead of silently dropped.
   const [unmatchedSuggestions, setUnmatchedSuggestions] = useState<UnresolvedEntry[]>([]);
+  // What the CV import did to lists the scholar already had (nothing is removed).
+  const [cvNotices, setCvNotices] = useState<string[]>([]);
+  const [cvAnnouncement, setCvAnnouncement] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -85,35 +74,27 @@ export default function OnboardingPage() {
   }, [router]);
 
   function handleCvParsed(parsed: ParsedCvDraft) {
-    const disciplines = mapSuggestions('discipline', parsed.suggested_disciplines, taxonomy);
-    const traditions = mapSuggestions('tradition', parsed.suggested_traditions, taxonomy);
-    setUnmatchedSuggestions([...disciplines.unmatched, ...traditions.unmatched]);
-    const populated = buildDraftSnapshot(draft, {
-      full_name: parsed.full_name || undefined,
-      title: parsed.title || undefined,
-      current_institution: parsed.current_institution || undefined,
-      institutional_role: parsed.institutional_role || undefined,
-      biography: parsed.biography || undefined,
-      credentials: parsed.credentials.map((c) => ({
-        degree: c.degree,
-        field_of_study: c.field || 'Theological Studies',
-        institution_name: c.institution,
-        year_awarded: c.year ?? null,
-        is_terminal: ['Ph.D.', 'Th.D.', 'D.Min.'].includes(c.degree)
-      })),
-      publications: parsed.publications.map((p) => ({
-        title: p.title,
-        publication_type: mapPubType(p.publication_type),
-        year: p.year ?? null,
-        citation_text: p.citation_string
-      })),
-      disciplines: disciplines.slugs,
-      traditions: traditions.slugs,
-      doctrinal_statement_text: parsed.personal_doctrinal_statement || undefined
-    });
-
-    setDraft(populated);
+    const result = buildCvImport(draft, parsed, taxonomy);
+    setUnmatchedSuggestions(result.unmatched);
+    setCvNotices(result.notices);
+    setCvAnnouncement(
+      result.unmatched.length > 0
+        ? `CV imported. ${result.unmatched.length} suggested ${result.unmatched.length === 1 ? 'entry needs' : 'entries need'} your choice.`
+        : 'CV imported.'
+    );
+    setDraft(buildDraftSnapshot(draft, result.updates));
     setStep('review');
+  }
+
+  /** The scholar has dealt with a suggestion (picked a closest option or decided to skip it). */
+  function resolveSuggestion(entry: UnresolvedEntry) {
+    const remaining = unmatchedSuggestions.filter((u) => !(u.kind === entry.kind && u.value === entry.value));
+    setUnmatchedSuggestions(remaining);
+    setCvAnnouncement(
+      remaining.length > 0
+        ? `Marked "${entry.value}" as handled. ${remaining.length} remaining.`
+        : `Marked "${entry.value}" as handled. No suggestions remain.`
+    );
   }
 
   async function handleSaveOnboarding() {
@@ -145,6 +126,13 @@ export default function OnboardingPage() {
     }
     setSaveErrors(describeFailure(res));
   }
+
+  const problems = summarizeProblems(draft);
+  const saveBlockedReason = !draft.full_name?.trim()
+    ? 'Enter your full professional name to save.'
+    : problems.total > 0
+      ? `Save is unavailable: ${describeProblems(problems)} Fix the highlighted fields.`
+      : null;
 
   if (loading) {
     return (
@@ -259,6 +247,7 @@ export default function OnboardingPage() {
                   </label>
                   <input
                     id="onboarding-full-name"
+                    maxLength={FIELD_LIMITS.full_name}
                     type="text"
                     value={draft.full_name || ''}
                     onChange={(e) => setDraft({ ...draft, full_name: e.target.value })}
@@ -272,6 +261,7 @@ export default function OnboardingPage() {
                   </label>
                   <input
                     id="onboarding-title"
+                    maxLength={FIELD_LIMITS.title}
                     type="text"
                     value={draft.title || ''}
                     onChange={(e) => setDraft({ ...draft, title: e.target.value })}
@@ -285,6 +275,7 @@ export default function OnboardingPage() {
                   </label>
                   <input
                     id="onboarding-institution"
+                    maxLength={FIELD_LIMITS.current_institution}
                     type="text"
                     value={draft.current_institution || ''}
                     onChange={(e) => setDraft({ ...draft, current_institution: e.target.value })}
@@ -298,6 +289,7 @@ export default function OnboardingPage() {
                   </label>
                   <input
                     id="onboarding-role"
+                    maxLength={FIELD_LIMITS.institutional_role}
                     type="text"
                     value={draft.institutional_role || ''}
                     onChange={(e) => setDraft({ ...draft, institutional_role: e.target.value })}
@@ -313,10 +305,15 @@ export default function OnboardingPage() {
                 <textarea
                   id="onboarding-biography"
                   rows={3}
+                  maxLength={FIELD_LIMITS.biography}
+                  aria-describedby="onboarding-biography-count"
                   value={draft.biography || ''}
                   onChange={(e) => setDraft({ ...draft, biography: e.target.value })}
                   className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
                 />
+                <p id="onboarding-biography-count" className="mt-1 text-right text-[11px] text-slate-400">
+                  {(draft.biography || '').length.toLocaleString('en-US')} / {FIELD_LIMITS.biography.toLocaleString('en-US')} characters
+                </p>
               </div>
             </div>
 
@@ -328,7 +325,8 @@ export default function OnboardingPage() {
               <ConfessionalStandardsSelector
                 value={draft.confessions || []}
                 standards={taxonomy.confessions}
-                onChange={(val) => setDraft({ ...draft, confessions: val })}
+                // Rows may hold an unset adherence level; Save is blocked until each is chosen.
+                onChange={(val) => setDraft({ ...draft, confessions: val as RevisionSnapshotData['confessions'] })}
               />
             </div>
 
@@ -337,19 +335,39 @@ export default function OnboardingPage() {
               <h2 className="text-sm font-display font-bold tracking-tight text-slate-900 dark:text-white border-b border-slate-100 dark:border-slate-800 pb-2">
                 Disciplines & Traditions
               </h2>
+              <div role="status" aria-live="polite" className="sr-only">{cvAnnouncement}</div>
+              {cvNotices.length > 0 && (
+                <div
+                  data-testid="cv-import-notice"
+                  className="p-3 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 text-xs space-y-1"
+                >
+                  {cvNotices.map((n) => (
+                    <p key={n}>{n}</p>
+                  ))}
+                </div>
+              )}
               {unmatchedSuggestions.length > 0 && (
                 <div
-                  role="status"
                   data-testid="cv-unmatched-notice"
                   className="p-3 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 text-xs space-y-1"
                 >
                   <p className="font-semibold">
-                    Your CV suggested these entries, but they match no discipline or tradition on the platform. Choose the closest options below.
+                    Your CV suggested these entries, but they match no discipline or tradition on the platform. Choose the closest options below, then mark each entry as handled.
                   </p>
-                  <ul className="list-disc pl-5">
+                  <ul className="space-y-1">
                     {unmatchedSuggestions.map((u) => (
-                      <li key={`${u.kind}:${u.value}`}>
-                        {u.kind === 'discipline' ? 'Discipline' : 'Tradition'}: {u.value}
+                      <li key={`${u.kind}:${u.value}`} className="flex items-center justify-between gap-2">
+                        <span>
+                          {u.kind === 'discipline' ? 'Discipline' : 'Tradition'}: {u.value}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => resolveSuggestion(u)}
+                          aria-label={`Mark ${u.kind} ${u.value} as handled`}
+                          className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600"
+                        >
+                          Handled
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -368,6 +386,7 @@ export default function OnboardingPage() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Traditions</h3>
+                <PublicDataNotice subject="Your traditions" testId="tradition-public-notice" />
                 <TaxonomyMultiSelect
                   label="Traditions"
                   noun="tradition"
@@ -433,15 +452,16 @@ export default function OnboardingPage() {
                 ← Back to Upload
               </button>
 
-              {hasRowErrors(draft) && (
-                <span role="status" className="text-xs text-amber-800">
-                  Complete the highlighted credential and publication fields to save.
+              {saveBlockedReason && (
+                <span id="onboarding-save-blocked" data-testid="onboarding-save-blocked" role="status" className="text-xs text-amber-800 max-w-xs text-right">
+                  {saveBlockedReason}
                 </span>
               )}
               <button
                 type="button"
                 onClick={handleSaveOnboarding}
-                disabled={isSaving || submitted || !draft.full_name || hasRowErrors(draft)}
+                aria-describedby={saveBlockedReason ? 'onboarding-save-blocked' : undefined}
+                disabled={isSaving || submitted || !!saveBlockedReason}
                 className="px-6 py-2.5 bg-indigo-900 hover:bg-indigo-800 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
               >
                 <span>{isSaving ? 'Creating Draft Revision...' : 'Confirm & Save Initial Revision →'}</span>

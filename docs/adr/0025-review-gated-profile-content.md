@@ -65,9 +65,17 @@ ADR 0024 made drafts reach admin review, but two gaps remained, and research on 
   - `[]` clearing a non-empty published list is not refused in SQL. The live-baseline editor and the admin diff make it visible instead.
 - **Deploy preflight.** Section 0 of the migration is an ENFORCED, read-only `DO` block: it raises `preflight_failed` (counts per table only) and applies nothing if any open revision (draft, submitted, changes_requested) has a list key that is `[]`, absent or not an array while the scholar has live rows in the matching table (`credentials`/`credentials`, `publications`/`publications`, `scholar_disciplines`/`disciplines`, `scholar_traditions`/`traditions`, `scholar_confessions`/`confessions`). Absent and non-array count on purpose: under this migration they mean "unchanged", but the old editor always wrote every key, so a missing key is unknown intent and the fail-closed choice costs one re-save. Runbook: if it raises, reject or approve the named revisions, or have the scholars re-save them from the live profile, then re-run. An integration test extracts the exact `DO` block between the `PREFLIGHT-BEGIN`/`PREFLIGHT-END` markers and runs it in a rolled-back transaction against each trap. Still manual and read-only: taxonomy slugs present; no foreign keys reference `credentials` or `publications` ids; open revisions with legacy names (the editor maps them on load).
 
+## Data protection
+
+Confessional standards, tradition and the doctrinal statement reveal religious belief, which is special-category personal data (GDPR Art. 9). The scholar publishes it deliberately:
+
+- **Basis and consent.** Nothing is published by default. A standard is only added when the scholar ticks it and chooses an adherence level (no default level), and nothing goes public until an administrator approves the submitted revision. The editor states next to each of these inputs that approved content is published on the public profile and visible to anyone.
+- **Withdrawal.** The scholar removes any of it by submitting a revision without it; approval replaces the public rows (see decision 8).
+- **Follow-up.** The GDPR erasure and retention slice (deleting superseded revision snapshots, which still contain the earlier values, and account-level erasure) is a separate piece of work and is not delivered here.
+
 ## Residual risk and accepted risks
 
 1. **Accepted:** Courses, `course_disciplines`, media links, speaker topics and availability stay self-service by owner decision. Their public free text is not reviewed.
 2. **Accepted:** Replace-by-delete-and-insert changes the row ids of credentials, publications and the taxonomy join rows on every approval. Nothing references those ids today (preflight confirms it). A future foreign key to them needs an upsert strategy first.
 3. **Accepted:** A scholar whose draft contains an incomplete credential row is blocked at submit (validation) rather than at approval.
-4. **Follow-up:** Profile photo and doctrinal statement file upload, GDPR retention and erasure, and notifications remain separate slices.
+4. **Follow-up:** GDPR erasure and retention (see Data protection), profile photo and doctrinal statement file upload, and notifications remain separate slices.

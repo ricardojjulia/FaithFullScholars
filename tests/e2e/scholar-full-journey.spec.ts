@@ -92,8 +92,25 @@ test.describe('Scholar End-to-End User Journey', () => {
     // An incomplete row blocks saving with a visible reason instead of silently dropping it.
     await credential.getByLabel('Institution *', { exact: true }).fill('');
     await expect(page.getByRole('button', { name: 'Save Draft' })).toBeDisabled();
-    await expect(page.getByTestId('submit-blocked-reason')).toContainText('credential and publication');
+    await expect(page.getByTestId('submit-blocked-reason')).toContainText(/1 problem to fix \(1 credential\)/);
     await credential.getByLabel('Institution *', { exact: true }).fill(institution);
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toBeEnabled();
+
+    // A newly ticked confession has NO default adherence level: Save stays blocked with a visible reason
+    // until the scholar chooses. Unticked again before saving, so reruns start from the same state.
+    const confessionBox = page.locator('[data-confession-card] input[type="checkbox"]:not(:checked)').first();
+    await confessionBox.check();
+    const levelSelect = page.locator('[data-confession-card] select').first();
+    await expect(levelSelect).toHaveValue('');
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toBeDisabled();
+    await expect(page.getByTestId('submit-blocked-reason')).toContainText(/1 confession/);
+    await expect(levelSelect.locator('option[value="strict_subscription"]')).toHaveCount(1);
+    await levelSelect.selectOption('with_exceptions');
+    await expect(page.getByTestId('submit-blocked-reason')).toContainText(/1 confession/); // notes required
+    await levelSelect.selectOption('strict_subscription');
+    await expect(page.getByRole('button', { name: 'Save Draft' })).toBeEnabled();
+    await confessionBox.uncheck();
+    await expect(page.getByTestId('confession-public-notice')).toContainText('visible to anyone');
 
     // Pick a tradition from the database-backed list (idempotent across reruns).
     const lutheran = page.getByTestId('tradition-option-lutheran');
@@ -146,5 +163,38 @@ test.describe('Scholar End-to-End User Journey', () => {
   test('scholar onboarding page renders for a signed-in scholar', async ({ page }) => {
     await page.goto('/dashboard/onboarding');
     await expect(page.getByRole('heading', { name: /Set Up Your Academic/ })).toBeVisible();
+  });
+
+  test('onboarding CV import keeps existing credentials and lists unmatched suggestions (nothing is saved)', async ({ page }) => {
+    await page.goto('/dashboard/onboarding');
+    await page.getByRole('button', { name: /Skip upload and start from scratch/ }).click();
+
+    // A credential the scholar already typed.
+    const existing = await page.locator('[data-testid^="credential-row-"]').count();
+    await page.getByTestId('credential-add').click();
+    const row = page.getByTestId(`credential-row-${existing}`);
+    await row.getByLabel('Degree *', { exact: true }).fill('Th.M.');
+    await row.getByLabel('Field of study *', { exact: true }).fill('Church History');
+    await row.getByLabel('Institution *', { exact: true }).fill('E2E Seminary');
+
+    // Import a CV that has no education section and mentions a lossy discipline.
+    await page.getByRole('button', { name: /Back to Upload/ }).click();
+    await page.getByRole('button', { name: /Paste CV Text/ }).click();
+    await page.getByPlaceholder('Paste your CV text here...').fill('Dr. Test Person\nI teach pastoral theology and homiletics.\n');
+    await page.getByRole('button', { name: 'Parse CV Content' }).click();
+
+    const notice = page.getByTestId('cv-unmatched-notice');
+    await expect(notice).toContainText('Pastoral & Practical Theology');
+    await expect(page.getByTestId('cv-import-notice')).toContainText('The CV had no credentials');
+    await expect(page.getByTestId(`credential-row-${existing}`).getByLabel('Institution *', { exact: true })).toHaveValue('E2E Seminary');
+
+    // The notice updates as the scholar handles entries.
+    await page.getByRole('button', { name: /Mark discipline Pastoral & Practical Theology as handled/ }).click();
+    await expect(notice).toHaveCount(0);
+
+    // Adding a row focuses its first field; the public-data notice is shown beside the traditions.
+    await page.getByTestId('credential-add').click();
+    await expect(page.getByTestId(`credential-row-${existing + 1}`).getByLabel('Degree *', { exact: true })).toBeFocused();
+    await expect(page.getByTestId('tradition-public-notice')).toBeVisible();
   });
 });

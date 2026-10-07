@@ -3,7 +3,17 @@
 import { useState } from 'react';
 import { RevisionSnapshotData, Taxonomy, UnresolvedEntry } from '@/lib/domain/types';
 import { findUnresolved } from '@/lib/taxonomy/resolve';
-import { hasRowErrors } from '@/lib/profiles/profile-rows';
+import {
+  ORCID_ERROR,
+  SCHOLAR_URL_ERROR,
+  describeProblems,
+  isValidOrcid,
+  isValidScholarUrl,
+  summarizeProblems
+} from '@/lib/profiles/profile-rows';
+import { FIELD_LIMITS } from '@/lib/profiles/limits';
+import { FieldError } from './use-row-editor';
+import { PublicDataNotice } from './public-data-notice';
 import { TaxonomyMultiSelect } from './taxonomy-multi-select';
 import { CredentialsEditor } from './credentials-editor';
 import { PublicationsEditor } from './publications-editor';
@@ -62,13 +72,17 @@ export function ScholarProfileForm({
   for (const u of initialUnresolved) {
     if (present(u) && !stillUnresolved.some((x) => x.kind === u.kind && x.value === u.value)) stillUnresolved.push(u);
   }
-  const rowProblems = hasRowErrors(formData);
-  const submitBlockedReason =
+  const problems = summarizeProblems(formData);
+  const rowProblems = problems.total > 0;
+  const rowReason = rowProblems
+    ? `Save and Submit are unavailable: ${describeProblems(problems)} Fix the highlighted fields.`
+    : null;
+  const unresolvedReason =
     stillUnresolved.length > 0
-      ? 'Submit is unavailable until every unmatched entry below is replaced or removed.'
-      : rowProblems
-        ? 'Fix the highlighted credential and publication fields before saving or submitting.'
-        : null;
+      ? `Submit is unavailable until ${stillUnresolved.length} unmatched ${stillUnresolved.length === 1 ? 'entry' : 'entries'} below ${stillUnresolved.length === 1 ? 'is' : 'are'} replaced or removed.`
+      : null;
+  const submitBlockedReason = [rowReason, unresolvedReason].filter(Boolean).join(' ') || null;
+  const [touchedLinks, setTouchedLinks] = useState({ orcid: false, scholar: false });
 
   function updateField<K extends keyof RevisionSnapshotData>(key: K, value: RevisionSnapshotData[K]) {
     setFormData((prev) => ({
@@ -141,10 +155,12 @@ export function ScholarProfileForm({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-col items-start sm:items-end gap-1.5 shrink-0 max-w-sm">
+        <div className="flex items-center gap-2">
           <button
             type="submit"
             disabled={isSaving || readOnly || rowProblems}
+            aria-describedby={rowReason ? 'submit-blocked-reason' : undefined}
             className="px-4 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 text-xs font-semibold rounded-xl transition-all shadow-xs disabled:opacity-50"
           >
             {isSaving ? 'Saving...' : 'Save Draft'}
@@ -162,16 +178,26 @@ export function ScholarProfileForm({
             </button>
           )}
         </div>
+        {submitBlockedReason && !readOnly && (
+          <p
+            id="submit-blocked-reason"
+            data-testid="submit-blocked-reason"
+            role="status"
+            className="text-[11px] font-medium text-amber-900 dark:text-amber-300 sm:text-right"
+          >
+            {submitBlockedReason}
+          </p>
+        )}
+        </div>
       </div>
 
-      {submitBlockedReason && !readOnly && (
+      {unresolvedReason && !readOnly && (
         <div
-          id="submit-blocked-reason"
-          data-testid="submit-blocked-reason"
+          data-testid="unresolved-entries"
           role="status"
           className="p-3.5 rounded-xl text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200 space-y-1"
         >
-          <p>{submitBlockedReason}</p>
+          <p>{unresolvedReason}</p>
           {stillUnresolved.length > 0 && (
             <ul className="list-disc pl-5">
               {stillUnresolved.map((u) => (
@@ -219,6 +245,7 @@ export function ScholarProfileForm({
               Full Legal & Professional Name *
             </label>
             <input id="profile-full-name"
+              maxLength={FIELD_LIMITS.full_name}
               type="text"
               required
               value={formData.full_name || ''}
@@ -233,6 +260,7 @@ export function ScholarProfileForm({
               Professional Headline / Academic Title
             </label>
             <input id="profile-title"
+              maxLength={FIELD_LIMITS.title}
               type="text"
               value={formData.title || ''}
               onChange={(e) => updateField('title', e.target.value)}
@@ -246,6 +274,7 @@ export function ScholarProfileForm({
               Current Institution
             </label>
             <input id="profile-institution"
+              maxLength={FIELD_LIMITS.current_institution}
               type="text"
               value={formData.current_institution || ''}
               onChange={(e) => updateField('current_institution', e.target.value)}
@@ -259,6 +288,7 @@ export function ScholarProfileForm({
               Institutional Role
             </label>
             <input id="profile-role"
+              maxLength={FIELD_LIMITS.institutional_role}
               type="text"
               value={formData.institutional_role || ''}
               onChange={(e) => updateField('institutional_role', e.target.value)}
@@ -272,6 +302,7 @@ export function ScholarProfileForm({
               Location
             </label>
             <input id="profile-location"
+              maxLength={FIELD_LIMITS.location}
               type="text"
               value={formData.location || ''}
               onChange={(e) => updateField('location', e.target.value)}
@@ -285,6 +316,7 @@ export function ScholarProfileForm({
               Timezone
             </label>
             <input id="profile-timezone"
+              maxLength={FIELD_LIMITS.timezone}
               type="text"
               value={formData.timezone || 'America/New_York'}
               onChange={(e) => updateField('timezone', e.target.value)}
@@ -302,9 +334,16 @@ export function ScholarProfileForm({
               value={formData.orcid_id || ''}
               onChange={(e) => updateField('orcid_id', e.target.value)}
               placeholder="e.g. 0000-0002-1825-0097"
-              pattern="^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$"
-              title="Must be a valid 16-character ORCID identifier (e.g. 0000-0002-1825-0097)"
+              maxLength={FIELD_LIMITS.orcid_id}
+              onBlur={() => setTouchedLinks((t) => ({ ...t, orcid: true }))}
+              aria-invalid={!isValidOrcid(formData.orcid_id)}
+              aria-describedby={!isValidOrcid(formData.orcid_id) ? 'profile-orcid-err' : undefined}
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+            />
+            <FieldError
+              id="profile-orcid-err"
+              message={isValidOrcid(formData.orcid_id) ? undefined : ORCID_ERROR}
+              announce={touchedLinks.orcid}
             />
           </div>
 
@@ -313,11 +352,21 @@ export function ScholarProfileForm({
               Google Scholar Citations URL
             </label>
             <input id="profile-scholar-url"
-              type="url"
+              type="text"
+              inputMode="url"
+              maxLength={FIELD_LIMITS.google_scholar_url}
+              onBlur={() => setTouchedLinks((t) => ({ ...t, scholar: true }))}
+              aria-invalid={!isValidScholarUrl(formData.google_scholar_url)}
+              aria-describedby={!isValidScholarUrl(formData.google_scholar_url) ? 'profile-scholar-url-err' : undefined}
               value={formData.google_scholar_url || ''}
               onChange={(e) => updateField('google_scholar_url', e.target.value)}
               placeholder="https://scholar.google.com/citations?user=..."
               className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-2.5 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
+            />
+            <FieldError
+              id="profile-scholar-url-err"
+              message={isValidScholarUrl(formData.google_scholar_url) ? undefined : SCHOLAR_URL_ERROR}
+              announce={touchedLinks.scholar}
             />
           </div>
         </div>
@@ -328,11 +377,16 @@ export function ScholarProfileForm({
           </label>
           <textarea id="profile-biography"
             rows={4}
+            maxLength={FIELD_LIMITS.biography}
+            aria-describedby="profile-biography-count"
             value={formData.biography || ''}
             onChange={(e) => updateField('biography', e.target.value)}
             placeholder="Share your academic journey, specialized focus areas, and teaching philosophy..."
             className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 p-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:outline-hidden"
           />
+          <p id="profile-biography-count" data-testid="biography-count" className="mt-1 text-right text-[11px] text-slate-400">
+            {(formData.biography || '').length.toLocaleString('en-US')} / {FIELD_LIMITS.biography.toLocaleString('en-US')} characters
+          </p>
         </div>
       </div>
 
@@ -362,6 +416,7 @@ export function ScholarProfileForm({
         <p className="text-xs text-slate-500 dark:text-slate-400">
           Select the traditions you teach and write within. The first one you pick is your primary tradition.
         </p>
+        <PublicDataNotice subject="Your traditions" testId="tradition-public-notice" />
         <TaxonomyMultiSelect
           label="Traditions"
           noun="tradition"
@@ -377,7 +432,8 @@ export function ScholarProfileForm({
         <ConfessionalStandardsSelector
           standards={taxonomy.confessions}
           value={formData.confessions || []}
-          onChange={(val) => updateField('confessions', val)}
+          // Rows may hold an unset adherence level; Save is blocked until each is chosen.
+          onChange={(val) => updateField('confessions', val as RevisionSnapshotData['confessions'])}
         />
       </div>
 
