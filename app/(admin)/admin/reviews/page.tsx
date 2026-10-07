@@ -14,16 +14,18 @@ export default async function AdminReviewsPage(props: {
   await requireStaffPage();
 
   const searchParams = await props.searchParams;
-  const currentFilter = (searchParams.status as RevisionStatus | 'all') || 'all';
-
-  const revisions = await fetchPendingRevisions(currentFilter);
-
   const TABS: Array<{ label: string; value: RevisionStatus | 'all' }> = [
     { label: 'All Revisions', value: 'all' },
     { label: 'Submitted', value: 'submitted' },
     { label: 'Changes Requested', value: 'changes_requested' },
     { label: 'Approved', value: 'approved' },
+    { label: 'Rejected', value: 'rejected' },
   ];
+
+  // Only known tab values reach the query; anything else shows all revisions.
+  const currentFilter = TABS.find((tab) => tab.value === searchParams.status)?.value ?? 'all';
+
+  const revisions = await fetchPendingRevisions(currentFilter);
 
   return (
     <div className="space-y-6">

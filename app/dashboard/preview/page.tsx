@@ -12,7 +12,8 @@ import {
   RevisionState,
   describeFailure,
   fetchRevisionState,
-  submitRevision
+  submitRevision,
+  withdrawRevision
 } from '@/components/dashboard/revision-client';
 
 export default function DraftPreviewPage() {
@@ -59,6 +60,16 @@ export default function DraftPreviewPage() {
     } else {
       await load();
     }
+    setSubmitting(false);
+  }
+
+  async function handleWithdraw() {
+    if (!state?.revision) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    const res = await withdrawRevision(state.revision.id);
+    if (!res.ok) setSubmitError(describeFailure(res));
+    await load();
     setSubmitting(false);
   }
 
@@ -235,10 +246,20 @@ export default function DraftPreviewPage() {
             </button>
           )}
           {isSubmitted && (
-            <span role="status" className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Submitted for Review</span>
-            </span>
+            <>
+              <span role="status" className="px-3 py-1.5 bg-emerald-700 text-white text-xs font-bold rounded-xl inline-flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Submitted for Review</span>
+              </span>
+              <button
+                type="button"
+                onClick={handleWithdraw}
+                disabled={submitting}
+                className="px-3 py-1.5 bg-white text-slate-950 hover:bg-slate-100 disabled:opacity-50 text-xs font-bold rounded-xl transition-colors shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+              >
+                {submitting ? 'Withdrawing...' : 'Withdraw'}
+              </button>
+            </>
           )}
         </div>
       </div>
