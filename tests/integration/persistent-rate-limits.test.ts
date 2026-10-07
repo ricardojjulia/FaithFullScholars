@@ -630,7 +630,7 @@ describe('Persistent rate limits — real database roles', () => {
           );
           expect(result.success).toBe(false);
           expect(result.status).toBe(429);
-          expect(result.error).toMatch(/hourly inquiry limit/);
+          expect(result.error).toMatch(/institution has reached its limit of 10 inquiries per hour/);
         }
       );
     });
