@@ -600,6 +600,53 @@ describe('Review-gated profile content — real database roles', () => {
     );
   });
 
+  it('an approved revision is readable by an anonymous visitor in the shape getPublicScholarBySlug embeds', async () => {
+    await asService(
+      async () => {
+        await ensureChildRows(scholarA);
+      },
+      async () => {
+        const id = await submitted(scholarA, {
+          full_name: 'Public Read Probe',
+          credentials: [cred('Public Degree')],
+          publications: [pub('Public Publication')],
+          disciplines: ['church-history'],
+          traditions: ['baptist'],
+          confessions: [{ confessional_standard_id: 'lausanne-covenant', adherence_level: 'full_subscription' }],
+        });
+        await approve(id);
+        const slug = (await client.query(`SELECT slug FROM public.scholars WHERE id = $1`, [scholarA])).rows[0].slug;
+
+        // Switch to the anonymous visitor, as PostgREST does for the public profile page.
+        await client.query('RESET ROLE');
+        await client.query('SET LOCAL ROLE anon');
+        await client.query(`SELECT set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ role: 'anon' })]);
+        const rows = async (sql: string) => (await client.query(sql, [slug])).rows;
+        expect(await rows(`SELECT full_name FROM public.scholars WHERE slug = $1 AND profile_status = 'approved'`)).toEqual([
+          { full_name: 'Public Read Probe' },
+        ]);
+        expect(
+          await rows(`SELECT c.degree FROM public.credentials c JOIN public.scholars s ON s.id = c.scholar_id WHERE s.slug = $1`)
+        ).toEqual([{ degree: 'Public Degree' }]);
+        expect(
+          await rows(`SELECT p.title FROM public.publications p JOIN public.scholars s ON s.id = p.scholar_id WHERE s.slug = $1`)
+        ).toEqual([{ title: 'Public Publication' }]);
+        expect(
+          await rows(`SELECT d.slug FROM public.scholar_disciplines sd JOIN public.disciplines d ON d.id = sd.discipline_id
+                      JOIN public.scholars s ON s.id = sd.scholar_id WHERE s.slug = $1`)
+        ).toEqual([{ slug: 'church-history' }]);
+        expect(
+          await rows(`SELECT t.slug FROM public.scholar_traditions st JOIN public.traditions t ON t.id = st.tradition_id
+                      JOIN public.scholars s ON s.id = st.scholar_id WHERE s.slug = $1`)
+        ).toEqual([{ slug: 'baptist' }]);
+        expect(
+          await rows(`SELECT c.slug FROM public.scholar_confessions sc JOIN public.confessional_standards c ON c.id = sc.confessional_standard_id
+                      JOIN public.scholars s ON s.id = sc.scholar_id WHERE s.slug = $1`)
+        ).toEqual([{ slug: 'lausanne-covenant' }]);
+      }
+    );
+  });
+
   const INVALID_SNAPSHOTS: Array<[string, object, RegExp]> = [
     ['an item that is not an object', { credentials: ['nope'] }, /credentials\[0\]/],
     ['a missing credential degree', { credentials: [cred('x', { degree: '' })] }, /credentials\[0\] degree/],
@@ -670,6 +717,33 @@ describe('Review-gated profile content — real database roles', () => {
     });
   });
 
+  it('probe: with the scholars guard replaced by a pass-through, a restricted INSERT carrying content succeeds', async () => {
+    await as(
+      { role: 'authenticated', sub: NEW_ACCOUNT },
+      async () => {
+        await client.query(
+          `INSERT INTO auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+             raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+           VALUES ($1, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+             'gate.new.scholar@faithfullscholars.org', '', now(), '{"provider":"email","providers":["email"]}', '{}', now(), now())`,
+          [NEW_ACCOUNT]
+        );
+        await client.query(
+          `INSERT INTO public.accounts (id, email, role) VALUES ($1, 'gate.new.scholar@faithfullscholars.org', 'scholar')
+           ON CONFLICT (id) DO NOTHING`,
+          [NEW_ACCOUNT]
+        );
+        await client.query(passThroughTrigger('guard_scholars'));
+      },
+      async () => {
+        await allowed(
+          `INSERT INTO public.scholars (account_id, slug, full_name, biography) VALUES ($1, 'gate-new', 'Gate New', 'x')`,
+          [NEW_ACCOUNT]
+        );
+      }
+    );
+  });
+
   it('probe: with the child guard replaced by a pass-through, scholar INSERT, UPDATE and DELETE succeed', async () => {
     await asScholar(
       async () => {
@@ -677,11 +751,12 @@ describe('Review-gated profile content — real database roles', () => {
         await client.query(passThroughTrigger('guard_scholar_published_children'));
       },
       async () => {
-        for (const { table, update } of CHILD_STATEMENTS) {
+        for (const { table, insert, update } of CHILD_STATEMENTS) {
           await allowed(update, [scholarA]);
           await allowed(`DELETE FROM public.${table} WHERE scholar_id = $1`, [scholarA]);
+          // After the delete no unique key can collide, so an INSERT now proves the guard (not a constraint) was the barrier.
+          await allowed(insert, [scholarA]);
         }
-        await allowed(CHILD_STATEMENTS[0].insert, [scholarA]);
       }
     );
     await asScholar(nothing, async () => {
