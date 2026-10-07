@@ -10,7 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - **CAPTCHA bypass closed.** `verifyCaptchaToken` accepted the literal client placeholder `mock-turnstile-token` even when a Turnstile secret was configured, so anyone could skip sign-up bot protection by sending that string.
   - With a secret configured, every token is now verified by Cloudflare and a missing token is refused. Provider error codes are no longer echoed to the client.
+  - The `NODE_ENV === 'test'` shortcut is gone, so a misconfigured deployment cannot switch verification off. The siteverify call has a 5-second timeout and fails closed on a non-OK response.
   - With no secret configured, CAPTCHA is still not enforced, and `npm run verify:deploy` now warns about it.
+  - `verify:deploy` fails when `TURNSTILE_SECRET_KEY` is set without `NEXT_PUBLIC_TURNSTILE_SITE_KEY`. The widget would otherwise fall back to Cloudflare's always-pass test key, and every sign-up would fail. Production needs both keys, set together.
   - The new test fails against the old code.
 
 ### Fixed

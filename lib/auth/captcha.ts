@@ -11,8 +11,9 @@ export async function verifyCaptchaToken(
 
   // Without a configured secret, CAPTCHA is not enforced (local dev, CI, or a
   // deployment that has not enabled Turnstile; `verify:deploy` warns about it).
-  // The unit-test runner never calls Cloudflare.
-  if (!secretKey || process.env.NODE_ENV === 'test') {
+  // There is deliberately no NODE_ENV shortcut: a misconfigured deployment must
+  // not be able to switch verification off while a secret is set.
+  if (!secretKey) {
     return { success: true };
   }
 
@@ -35,11 +36,16 @@ export async function verifyCaptchaToken(
       {
         method: 'POST',
         body: formData,
+        signal: AbortSignal.timeout(5000),
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
       }
     );
+
+    if (!response.ok) {
+      return { success: false, error: 'CAPTCHA verification failed. Please try again.' };
+    }
 
     const data = (await response.json()) as {
       success: boolean;

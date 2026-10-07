@@ -4,6 +4,7 @@ import { verifyCaptchaToken } from '@/lib/auth/captcha';
 const fetchMock = vi.fn();
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   fetchMock.mockReset();
@@ -16,14 +17,24 @@ function enforce() {
   vi.stubGlobal('fetch', fetchMock);
 }
 
-const cloudflare = (body: unknown) => ({ json: async () => body });
+const cloudflare = (body: unknown, ok = true) => ({ ok, json: async () => body });
 
 describe('Cloudflare Turnstile CAPTCHA verification', () => {
-  it('is not enforced in the unit-test runner or without a configured secret', async () => {
+  it('is not enforced without a configured secret', async () => {
+    vi.stubEnv('TURNSTILE_SECRET_KEY', '');
+    vi.stubGlobal('fetch', fetchMock);
     expect((await verifyCaptchaToken('mock-turnstile-token')).success).toBe(true);
     vi.stubEnv('NODE_ENV', 'production');
-    vi.stubEnv('TURNSTILE_SECRET_KEY', '');
     expect((await verifyCaptchaToken(undefined)).success).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('still verifies when NODE_ENV is "test" but a secret is configured', async () => {
+    enforce();
+    vi.stubEnv('NODE_ENV', 'test');
+    fetchMock.mockResolvedValue(cloudflare({ success: false }));
+    expect((await verifyCaptchaToken('mock-turnstile-token')).success).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('never accepts the mock token when a secret is configured; Cloudflare decides', async () => {
@@ -51,6 +62,12 @@ describe('Cloudflare Turnstile CAPTCHA verification', () => {
     expect(body).toContain('secret=test-secret');
     expect(body).toContain('response=real-token');
     expect(body).toContain('remoteip=203.0.113.7');
+  });
+
+  it('fails closed on a non-OK provider response', async () => {
+    enforce();
+    fetchMock.mockResolvedValue(cloudflare({ success: true }, false));
+    expect((await verifyCaptchaToken('real-token')).success).toBe(false);
   });
 
   it('fails closed when Cloudflare cannot be reached', async () => {

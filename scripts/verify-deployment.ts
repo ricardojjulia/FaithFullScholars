@@ -70,8 +70,12 @@ async function verifyDeployment() {
   }
 
   // Bot protection: without a Turnstile secret, sign-up CAPTCHA is not enforced.
-  if (process.env.TURNSTILE_SECRET_KEY) {
-    record('Environment', 'TURNSTILE_SECRET_KEY', 'PASS', 'Configured (sign-up CAPTCHA enforced)');
+  if (process.env.TURNSTILE_SECRET_KEY && !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY) {
+    // The widget would fall back to Cloudflare's always-pass test site key, whose
+    // dummy tokens a real secret rejects, so every sign-up would fail.
+    record('Environment', 'TURNSTILE_SECRET_KEY', 'FAIL', 'Secret set without NEXT_PUBLIC_TURNSTILE_SITE_KEY: every sign-up would fail CAPTCHA');
+  } else if (process.env.TURNSTILE_SECRET_KEY) {
+    record('Environment', 'TURNSTILE_SECRET_KEY', 'PASS', 'Configured with site key (sign-up CAPTCHA enforced)');
   } else {
     record('Environment', 'TURNSTILE_SECRET_KEY', 'WARN', 'Not set: sign-up CAPTCHA is not enforced');
   }
