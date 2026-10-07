@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- **`sharp` 0.35.4 → 0.35.5** (lockfile only, within Next's `^0.35.4` range). Fixes the high-severity librsvg vulnerability in the bundled libvips (GHSA-wq5f-xc86-pv6w / CVE-2026-96889). `npm audit --omit=dev` is now clean. `source-map-js` 1.2.2 (CVE-2026-93749) landed in #55.
 - **CAPTCHA bypass closed.** `verifyCaptchaToken` accepted the literal client placeholder `mock-turnstile-token` even when a Turnstile secret was configured, so anyone could skip sign-up bot protection by sending that string.
   - With a secret configured, every token is now verified by Cloudflare and a missing token is refused. Provider error codes are no longer echoed to the client.
   - The `NODE_ENV === 'test'` shortcut is gone, so a misconfigured deployment cannot switch verification off. The siteverify call has a 5-second timeout and fails closed on a non-OK response.
@@ -25,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
 
 ### Added
+- **Repository presentation aligned with ChurchCore-Orthos.**
+  - **README:** rewritten as an overview with a hero banner (`public/assets/brand/hero-banner.svg`), stack badges and live CI/E2E status badges. It adds sections on why the project exists, project status (including the not-launch-ready caveats), personas, quality gates and the software factory, plus Mermaid diagrams of the product surface, architecture, revision lifecycle and factory flow.
+  - **Feature log moved, not deleted:** the per-phase feature log moved verbatim to [`docs/feature-catalog.md`](docs/feature-catalog.md).
+  - **Community and policy files:** new `LICENSE` (**AGPL-3.0**, chosen by the owner), `HOWTO.md`, `SECURITY.md` (private vulnerability reporting, data-isolation invariants), `SUPPORT.md`, `VERSIONING.md`, `CODE_OF_CONDUCT.md` and `.github/pull_request_template.md` (security, migration and review-gate checklists).
+  - **Docs:** new hub [`docs/README.md`](docs/README.md), and [`docs/architecture.md`](docs/architecture.md) with topology, request-lifecycle, admin-review, data-model (ER) and CI diagrams.
+  - All diagrams were validated with `@mermaid-js/mermaid-cli`.
 - **Review-gated profile content and relational promotion on approval, backend (ADR 0025, migration `20261007090000_review_gated_profile_content.sql`).** Closes ADR 0024 residual risks 1 and 2.
   - **Database-enforced gating:** a scholar can no longer UPDATE any `scholars` column except `contact_preference`, `draft_revision_id` (own open revision), `updated_at` and `profile_tier` (the tier trigger still owns that refusal). The guard is a fail-closed allow-list over `to_jsonb(NEW)` versus `to_jsonb(OLD)`, so columns added later are protected automatically. Restricted INSERTs must leave content and file-path columns empty. The five published child tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `credentials`, `publications`) refuse every restricted INSERT, UPDATE and DELETE. Admins, the service role and direct sessions are unaffected.
   - **Atomic promotion:** approval now replaces each list present in the snapshot (absent or non-array leaves it unchanged, `[]` clears it, `display_order` follows array order, the first discipline and tradition are primary, duplicates removed), in the same transaction as the scalar copy and the audit row. The function re-validates every snapshot item (caps, enums, URL schemes), because snapshots can be written through PostgREST. `FS001` (unmatched taxonomy, with the entries in `DETAIL`) and `FS002` (invalid shape, naming the list and index) abort the whole approval. The admin route returns both as 422 (`taxonomy_unmatched`, `snapshot_invalid`).
