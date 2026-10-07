@@ -82,7 +82,7 @@ sequenceDiagram
 - **RLS is the boundary.** Every public table has `FORCE ROW LEVEL SECURITY`. Application `WHERE` clauses are never the only protection.
 - **Trust columns are guarded.** Roles, publication status, verification status and tiers can be changed only by admins or the service role. The guard triggers fail closed through `private.is_restricted_caller()`.
 - **Helpers stay private.** SECURITY DEFINER helpers live in the unexposed `private` schema with `search_path = ''`.
-- **The service role is fenced.** An ESLint rule blocks importing the service-role client outside a reviewed allow-list of staff-only and server-only modules. On `main`, admin review writes go through `lib/admin/actions.ts`. PR #56 replaces them with one atomic, service-role-only database function.
+- **The service role is fenced.** An ESLint rule blocks importing the service-role client outside a reviewed allow-list of staff-only and server-only modules. Approve, request-changes and reject go through one atomic, service-role-only database function (`review_profile_revision`, ADR 0024).
 - **Behaviour is tested, not just presence.** Integration suites sign in as real roles. The policy matrix fails on any undeclared column write or on a probe that silently changes nothing.
 
 ---
@@ -91,11 +91,11 @@ sequenceDiagram
 
 Approved profiles stay live while edits are reviewed ([ADR 0005](adr/0005-draft-published-profile-revisions.md)).
 
-> **Planned, not on `main`.** The flow below (the `/api/scholars/revisions` routes and `review_profile_revision()`) is defined in ADR 0024 and lands with PR #56. On `main`, scholar drafts are still held in the browser, and admin decisions are separate service-role writes in `lib/admin/actions.ts`.
+> Defined in [ADR 0024](adr/0024-scholar-revision-lifecycle-and-atomic-review.md). Known gaps: approval publishes scalar fields only, and scholars can still edit live profile content directly (see the ADR's residual risks).
 
 ```mermaid
 ---
-title: Target flow (ADR 0024, PR #56)
+title: Revision submit and review (ADR 0024)
 ---
 sequenceDiagram
     autonumber

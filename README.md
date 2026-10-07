@@ -42,7 +42,7 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > **Pilot stage. Not launch-ready.** Phases 0–18 are built and the automated gates pass, but "built" is not "working end to end".
 >
 > The authorization review in [Council Review 12](./docs/reviews/2026-10-05-council-review-12-synthesis.md) found and fixed defects ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). These are still outstanding:
-> - persisted scholar draft and submit;
+> - closing direct edits to live profile content, which still bypass review, and publishing credentials, publications and confessions on approval (ADR 0024 residual risks);
 > - scholar express-interest;
 > - institution invitations;
 > - live data in several portal screens;
@@ -146,11 +146,11 @@ More diagrams (request lifecycle, data model, revision lifecycle, directory layo
 
 ## 🔒 Trust & Moderation Model
 
-Today, guard triggers stop scholars and institutions from publishing, verifying or promoting themselves ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). PR #56 adds the persisted draft-and-review lifecycle below. **It is not on `main` yet.**
+Guard triggers stop scholars and institutions from publishing, verifying or promoting themselves ([ADR 0022](./docs/adr/0022-session-derived-identity-and-rls-helper-isolation.md), [ADR 0023](./docs/adr/0023-trust-guards-phase2-and-policy-matrix.md)). Profile edits follow the persisted draft-and-review lifecycle below ([ADR 0024](./docs/adr/0024-scholar-revision-lifecycle-and-atomic-review.md)):
 
 ```mermaid
 ---
-title: Target revision lifecycle (ADR 0024, PR #56, not yet on main)
+title: Profile revision lifecycle (ADR 0024)
 ---
 stateDiagram-v2
     direction LR
@@ -167,9 +167,9 @@ stateDiagram-v2
     superseded --> [*]
 ```
 
-What PR #56 adds, once merged (ADR 0024 lands with it):
+Guarantees:
 - **Database-enforced transitions.** A scholar can never set `approved`, `rejected` or `superseded`, and cannot edit a submitted revision.
-- **Atomic approval.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction. On `main` today, admin actions are separate service-role writes in `lib/admin/actions.ts`.
+- **Atomic approval.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction.
 - **Private revisions.** Only the owning scholar and admins can read revisions.
 - **Moderation wins.** Approving a hidden scholar's revision keeps the profile hidden.
 
