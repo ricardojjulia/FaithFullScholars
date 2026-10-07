@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Production deploys had silently stopped.** The Vercel `ignoreCommand` added in #51 (`[ "$VERCEL_ENV" != "production" ]`) skipped builds, including production builds of `main`. The likely cause is that `VERCEL_ENV` is not available in the ignore step.
+  - Production stayed on #50 (`f971bd4`), so #51, #54 (the Next.js 16.3.6 security bump) and #56 never deployed.
+  - The ignore command is removed, restoring the previously working behaviour.
+  - Merging deploys #56, so apply migration `20261006090000` to production first.
+  - Preview builds for branches will run again and fail without preview environment variables. Those failures are not required checks.
+  - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
+
 ### Added
 - **Scholar revision lifecycle, backend (ADR 0024, migration `20261006090000_scholar_revision_lifecycle.sql`).**
   - **Database-enforced lifecycle:** a guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edits or resubmits. The database assigns `revision_number`, `submitted_at`, and `updated_at`. One open revision per scholar (partial unique index). `rejected` is now a valid status, and `snapshot_data` must be a JSON object of at most 256 KB.
