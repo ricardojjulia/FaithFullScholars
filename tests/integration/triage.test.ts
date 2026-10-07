@@ -35,6 +35,13 @@ describe('PostgreSQL Pilot Feedback & Rate Limit Live Integration Tests', () => 
   });
 
   it('atomically rate-limits submissions in shared PostgreSQL storage', async () => {
+    // The limiter uses a per-minute fixed window (date_trunc('minute', now())), so the
+    // 21 calls must land in one window: if we are near a minute boundary, wait it out.
+    const msIntoMinute = Date.now() % 60_000;
+    if (msIntoMinute > 50_000) {
+      await new Promise((resolve) => setTimeout(resolve, 60_000 - msIntoMinute + 1_000));
+    }
+
     // 20 requests should succeed
     for (let i = 0; i < 20; i++) {
       const allowed = await checkRateLimit(testSessionId, 20);
@@ -44,7 +51,7 @@ describe('PostgreSQL Pilot Feedback & Rate Limit Live Integration Tests', () => 
     // 21st request should be rejected by PostgreSQL atomic check
     const exceeded = await checkRateLimit(testSessionId, 20);
     expect(exceeded).toBe(false);
-  });
+  }, 20_000);
 
   it('atomically deduplicates reports, increments hit count, and reopens processed rows', async () => {
     // First submission
