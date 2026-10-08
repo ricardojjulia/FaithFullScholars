@@ -2,85 +2,14 @@
 
 import React, { useState } from 'react';
 import { Mail, Building2, Target, Calendar, Radio, BookOpen } from 'lucide-react';
-import { InquiryStatus, OpportunityType, DeliveryMode } from '@/lib/domain/types';
+import type { InquiryStatus } from '@/lib/domain/types';
+import { OPPORTUNITY_LABELS, isAwaiting } from '@/lib/inquiries/labels';
+import type { InboxInquiryItem } from '@/lib/inquiries/mappers';
 import { useTranslation } from '@/lib/i18n/i18n-context';
 
-export interface InboxInquiryItem {
-  id: string;
-  institution_id: string;
-  institution_name: string;
-  institution_location?: string | null;
-  institution_type: string;
-  opportunity_type: OpportunityType;
-  proposed_term?: string | null;
-  delivery_mode?: DeliveryMode | null;
-  message: string;
-  contact_email: string;
-  status: InquiryStatus;
-  created_at: string;
-  course_title?: string | null;
-}
+export type { InboxInquiryItem };
 
-const DEFAULT_INQUIRIES: InboxInquiryItem[] = [
-  {
-    id: 'inq-sample-1',
-    institution_id: 'f2000000-0000-0000-0000-000000000001',
-    institution_name: 'Westminster Theological Seminary',
-    institution_location: 'Glenside, PA',
-    institution_type: 'seminary',
-    opportunity_type: 'adjunct_teaching',
-    proposed_term: 'Fall 2027',
-    delivery_mode: 'in_person_modular',
-    message:
-      'We are expanding our modular Th.M. offerings and would like to formally explore your availability to lead a 1-week intensive seminar on Reformed Covenant Theology and Federal Vision historical critiques.',
-    contact_email: 'academic.dean@wts.edu',
-    status: 'pending',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-    course_title: 'Reformed Covenant Theology & Post-Reformation Scholasticism',
-  },
-  {
-    id: 'inq-sample-2',
-    institution_id: 'f2000000-0000-0000-0000-000000000002',
-    institution_name: 'Trinity Evangelical Divinity School',
-    institution_location: 'Deerfield, IL',
-    institution_type: 'seminary',
-    opportunity_type: 'guest_lecturing',
-    proposed_term: 'Spring 2028',
-    delivery_mode: 'in_person_semester',
-    message:
-      'Our department of New Testament would be honored to host you for our annual Kantzer Lecture Series on Pauline Justification in Recent Hermeneutical Debates.',
-    contact_email: 'nt.department@tiu.edu',
-    status: 'accepted',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-  },
-  {
-    id: 'inq-sample-3',
-    institution_id: 'f2000000-0000-0000-0000-000000000003',
-    institution_name: 'Southern Baptist Theological Seminary',
-    institution_location: 'Louisville, KY',
-    institution_type: 'seminary',
-    opportunity_type: 'doctoral_supervision',
-    proposed_term: 'Academic Year 2027–2028',
-    delivery_mode: 'online_sync',
-    message:
-      'We have an incoming Ph.D. candidate working on Seventeenth-Century Particular Baptist Ecclesiology and would value your external service on their dissertation committee.',
-    contact_email: 'phd.office@sbts.edu',
-    status: 'pending',
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-  },
-];
-
-const OPPORTUNITY_LABELS: Record<string, string> = {
-  adjunct_teaching: 'Adjunct Teaching',
-  online_instruction: 'Online Course',
-  guest_lecturing: 'Guest Lecture',
-  intensives_modular: 'Modular Intensive',
-  curriculum_consulting: 'Curriculum Consulting',
-  doctoral_supervision: 'Doctoral Supervision',
-  conference_speaking: 'Conference Speaking',
-};
-
-export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { initialInquiries?: InboxInquiryItem[] }) {
+export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: InboxInquiryItem[] }) {
   const { t } = useTranslation();
   const [inquiries, setInquiries] = useState<InboxInquiryItem[]>(initialInquiries);
   const [activeTab, setActiveTab] = useState<InquiryStatus | 'all'>('all');
@@ -89,6 +18,7 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
   const [actionType, setActionType] = useState<'accept' | 'decline' | null>(null);
   const [responseNotes, setResponseNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filteredInquiries = inquiries.filter((inq) => {
     if (activeTab !== 'all' && inq.status !== activeTab) return false;
@@ -108,33 +38,36 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
 
   const handleStatusUpdate = async (status: InquiryStatus) => {
     if (!selectedInquiry) return;
+    const target = selectedInquiry;
+    const previousStatus = target.status;
     setSubmitting(true);
+    setActionError(null);
+
+    const setStatus = (next: InquiryStatus) =>
+      setInquiries((prev) => prev.map((item) => (item.id === target.id ? { ...item, status: next } : item)));
+
+    // Optimistic update, rolled back if the server does not confirm it.
+    setStatus(status);
 
     try {
-      // Optimistic update
-      setInquiries((prev) =>
-        prev.map((item) =>
-          item.id === selectedInquiry.id ? { ...item, status } : item
-        )
-      );
-
-      // Call API if not a local mock id
-      if (!selectedInquiry.id.startsWith('inq-sample-')) {
-        await fetch(`/api/inquiries/${selectedInquiry.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            status,
-            response_notes: responseNotes.trim() || null,
-          }),
-        });
+      const res = await fetch(`/api/inquiries/${target.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          response_notes: responseNotes.trim() || null,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error('update rejected');
       }
 
       setActionType(null);
       setSelectedInquiry(null);
       setResponseNotes('');
-    } catch (err) {
-      console.error('Failed to update inquiry status:', err);
+    } catch {
+      setStatus(previousStatus);
+      setActionError('We could not update this inquiry. Nothing was changed; please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -218,6 +151,7 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
         <div className="space-y-4">
           {filteredInquiries.map((inq) => {
             const isPending = inq.status === 'pending';
+            const canRespond = isAwaiting(inq.status);
             const isAccepted = inq.status === 'accepted';
             const isDeclined = inq.status === 'declined';
 
@@ -275,7 +209,7 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
                   {inq.delivery_mode && (
                     <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1.5">
                       <Radio className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      <span>{inq.delivery_mode.replace('_', ' ')}</span>
+                      <span>{inq.delivery_mode.replaceAll('_', ' ')}</span>
                     </span>
                   )}
                   {inq.course_title && (
@@ -307,10 +241,11 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
                 )}
 
                 {/* Actions */}
-                {isPending && (
+                {canRespond && (
                   <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end space-x-2">
                     <button
                       onClick={() => {
+                        setActionError(null);
                         setSelectedInquiry(inq);
                         setActionType('decline');
                       }}
@@ -320,6 +255,7 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
                     </button>
                     <button
                       onClick={() => {
+                        setActionError(null);
                         setSelectedInquiry(inq);
                         setActionType('accept');
                       }}
@@ -338,7 +274,7 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
       {/* Decision Modal */}
       {selectedInquiry && actionType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+          <div role="dialog" aria-modal="true" aria-label="Respond to inquiry" className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">
               {actionType === 'accept'
                 ? `Accept Inquiry from ${selectedInquiry.institution_name}`
@@ -374,12 +310,19 @@ export function ScholarInquiryInbox({ initialInquiries = DEFAULT_INQUIRIES }: { 
               />
             </div>
 
+            {actionError && (
+              <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+                {actionError}
+              </p>
+            )}
+
             <div className="flex justify-end space-x-2 pt-2">
               <button
                 type="button"
                 onClick={() => {
                   setSelectedInquiry(null);
                   setActionType(null);
+                  setActionError(null);
                 }}
                 className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
               >

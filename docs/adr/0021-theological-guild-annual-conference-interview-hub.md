@@ -1,6 +1,6 @@
 # ADR 0021: Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub
 
-- **Status:** Approved
+- **Status:** Approved. **Amended 2026-10-08:** the hub runs on in-memory demo data, so it is a staff-only preview labelled "Preview — demo data, nothing is saved" (non-staff see "coming soon" and no nav link), the false "Saved to Committee Docket" message and the default scores are removed, and the demo conference appearances no longer appear on public scholar profiles. Spec: `docs/superpowers/specs/2026-10-08-real-portal-data.md`.
 - **Date:** 2026-10-02
 - **Deciders:** Council Review #11 (Agents 1–5, Documenter, Lead Architect)
 - **Consulted:** Deans of Faculty, Search Committee Chairs, Theological Society Members, Contingent Faculty

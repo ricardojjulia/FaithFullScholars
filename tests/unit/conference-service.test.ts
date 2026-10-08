@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  CONFERENCE_PREVIEW_INSTITUTION,
   getUpcomingConferences,
   getConferenceBySlug,
   getConferenceAttendees,
@@ -49,7 +50,8 @@ describe('Theological Guild Conference Service (ADR 0021)', () => {
   });
 
   it('5. returns institution conference docket with attendees and scheduled interviews', () => {
-    const institutionId = 'f2000000-0000-0000-0000-000000000001';
+    // The seeded demo interview belongs to the preview placeholder, not a real institution.
+    const institutionId = CONFERENCE_PREVIEW_INSTITUTION.id;
     const docket = getInstitutionConferenceDocket(institutionId, 'ets-2026');
 
     expect(docket.conference.slug).toBe('ets-2026');

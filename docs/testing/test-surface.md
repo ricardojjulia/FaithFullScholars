@@ -46,6 +46,7 @@ Runs on every PR against a production build and a disposable local Supabase stac
    - `admin`: an account with role `admin`.
    - `scholar`: an account with role `scholar` and a draft profile.
    - `institution`: an owner of the approved seed institution.
+   - It also seeds data for `tests/e2e/portal-real-data.spec.ts`, idempotently: one inquiry from the institution to the scholar, an availability row for the scholar, and an isolated third scholar (`e2e-removal-scholar`, approved, one public course) that the spec adds to and removes from the shortlist so the two shared shortlist rows are never touched. Specs read expected values from the database with the service role (`tests/e2e/portal-fixtures.ts`, local stack only).
 3. The Playwright `setup` project signs each persona in through the real `/login` form and saves its session outside the repository (`tests/e2e/personas.ts`).
 4. Specs opt in with `test.use({ storageState: storageStatePath('scholar') })`. `tests/e2e/role-boundaries.spec.ts` checks every persona's access at both page and API level.
 

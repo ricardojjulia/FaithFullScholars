@@ -354,6 +354,53 @@ export async function toggleSaveCourse(
 }
 
 /**
+ * Removes a scholar from an institution's shortlist. Unlike the toggle, this can
+ * never add a row. Idempotent: removing an absent entry succeeds with
+ * `removed: false`. `supabase` is the caller's user client (RLS applies) and
+ * `institutionId` must come from the verified session.
+ */
+export async function removeSavedScholar(
+  supabase: SupabaseClient,
+  institutionId: string,
+  scholarId: string
+): Promise<ActionResult<{ removed: boolean }>> {
+  const { data, error } = await supabase
+    .from('saved_scholars')
+    .delete()
+    .eq('institution_id', institutionId)
+    .eq('scholar_id', scholarId)
+    .select('id');
+
+  if (error) {
+    console.error('Error removing scholar from shortlist (code):', error.code);
+    return { success: false, error: 'Failed to remove scholar from shortlist.' };
+  }
+  return { success: true, data: { removed: (data?.length ?? 0) > 0 } };
+}
+
+/**
+ * Removes a course bookmark. Never adds; idempotent (see removeSavedScholar).
+ */
+export async function removeSavedCourse(
+  supabase: SupabaseClient,
+  institutionId: string,
+  courseId: string
+): Promise<ActionResult<{ removed: boolean }>> {
+  const { data, error } = await supabase
+    .from('saved_courses')
+    .delete()
+    .eq('institution_id', institutionId)
+    .eq('course_id', courseId)
+    .select('id');
+
+  if (error) {
+    console.error('Error removing course from saved list (code):', error.code);
+    return { success: false, error: 'Failed to remove course from saved list.' };
+  }
+  return { success: true, data: { removed: (data?.length ?? 0) > 0 } };
+}
+
+/**
  * Updates institutional profile settings.
  */
 export async function updateInstitutionProfile(

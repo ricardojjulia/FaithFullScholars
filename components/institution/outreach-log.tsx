@@ -1,0 +1,203 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { Send, Target, Calendar, Radio, BookOpen, Check } from 'lucide-react';
+import type { InquiryStatus } from '@/lib/domain/types';
+import { OPPORTUNITY_LABELS } from '@/lib/inquiries/labels';
+import type { OutboxInquiryItem } from '@/lib/inquiries/mappers';
+
+export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
+  const [activeTab, setActiveTab] = useState<InquiryStatus | 'all'>('all');
+  const [search, setSearch] = useState('');
+
+  const filtered = inquiries.filter((inq) => {
+    if (activeTab !== 'all' && inq.status !== activeTab) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        inq.scholar_name.toLowerCase().includes(q) ||
+        inq.message.toLowerCase().includes(q) ||
+        (inq.course_title && inq.course_title.toLowerCase().includes(q))
+      );
+    }
+    return true;
+  });
+
+  const pendingCount = inquiries.filter((i) => i.status === 'pending').length;
+  const acceptedCount = inquiries.filter((i) => i.status === 'accepted').length;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+            Institutional Outreach & Inquiries
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            Track structured opportunity requests sent to prospective faculty members and monitor responses.
+          </p>
+        </div>
+
+        <Link
+          href="/scholars"
+          className="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white rounded-xl text-xs font-semibold shadow-xs transition"
+        >
+          + New Faculty Outreach
+        </Link>
+      </div>
+
+      {/* Filter Toolbar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
+        <div className="flex flex-wrap gap-1">
+          {(['all', 'pending', 'accepted', 'declined'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              aria-pressed={activeTab === tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                activeTab === tab
+                  ? 'bg-indigo-900 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'pending' && pendingCount > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px]">
+                  {pendingCount}
+                </span>
+              )}
+              {tab === 'accepted' && acceptedCount > 0 && (
+                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px]">
+                  {acceptedCount}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-full sm:w-64">
+          <input
+            type="text"
+            aria-label="Search outreach by scholar or course"
+            placeholder="Search by scholar or course..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-2 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+      </div>
+
+      {/* Inquiries Outbox List */}
+      {filtered.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
+            <Send className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white mt-1">
+            No Outgoing Inquiries
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+            Discover qualified professors in the Scholar Directory and send structured teaching or speaking requests.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filtered.map((inq) => {
+            const isPending = inq.status === 'pending';
+            const isAccepted = inq.status === 'accepted';
+            const isDeclined = inq.status === 'declined';
+
+            return (
+              <div
+                key={inq.id}
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs"
+              >
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-sm font-bold text-slate-700 dark:text-slate-300 overflow-hidden">
+                      {inq.scholar_name.charAt(0)}
+                    </div>
+                    <div>
+                      <Link
+                        href={`/scholars/${inq.scholar_slug}`}
+                        className="text-base font-bold text-slate-900 dark:text-white hover:text-indigo-600 transition"
+                      >
+                        {inq.scholar_name}
+                      </Link>
+                      <p className="text-xs text-slate-500">
+                        Outreach initiated {new Date(inq.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      isPending
+                        ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                        : isAccepted
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
+                        : isDeclined
+                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300'
+                        : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    }`}
+                  >
+                    {inq.status.toUpperCase()}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 mt-3 text-xs">
+                  <span className="px-2.5 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-medium inline-flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span>{OPPORTUNITY_LABELS[inq.opportunity_type] || inq.opportunity_type}</span>
+                  </span>
+                  {inq.proposed_term && (
+                    <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{inq.proposed_term}</span>
+                    </span>
+                  )}
+                  {inq.delivery_mode && (
+                    <span className="px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 inline-flex items-center gap-1.5">
+                      <Radio className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      <span>{inq.delivery_mode.replaceAll('_', ' ')}</span>
+                    </span>
+                  )}
+                  {inq.course_title && (
+                    <span className="px-2.5 py-1 rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/40 inline-flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400" />
+                      <span>{inq.course_title}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-xl text-xs sm:text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                  {inq.message}
+                </div>
+
+                {isAccepted && (
+                  <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold inline-flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Scholar Accepted: </span>
+                      </span>
+                      <span> The scholar has agreed to connect regarding this opportunity.</span>
+                    </div>
+                    <Link
+                      href={`/scholars/${inq.scholar_slug}`}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Calendar, Clock, MapPin, X, Check, Award, AlertCircle } from 'lucide-react';
 import { ScholarConferenceAppearance } from '@/lib/conferences/conference-types';
-import { scheduleConferenceInterview } from '@/lib/conferences/conference-service';
+import { scheduleConferenceInterview, CONFERENCE_PREVIEW_INSTITUTION } from '@/lib/conferences/conference-service';
 
 interface ConferenceInterviewModalProps {
   appearance: ScholarConferenceAppearance;
@@ -36,8 +36,8 @@ export function ConferenceInterviewModal({
       const result = await scheduleConferenceInterview({
         conferenceSlug: appearance.conferenceSlug,
         scholarId: appearance.scholarId,
-        institutionId: 'f2000000-0000-0000-0000-000000000001',
-        institutionName: 'Westminster Theological Seminary',
+        institutionId: CONFERENCE_PREVIEW_INSTITUTION.id,
+        institutionName: CONFERENCE_PREVIEW_INSTITUTION.name,
         timeSlot: selectedSlot,
         locationLabel,
         candidateFocus,

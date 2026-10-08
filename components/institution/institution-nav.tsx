@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Building2, Check } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/i18n-context';
 
-export function InstitutionNav() {
+export function InstitutionNav({ showConferences = false }: { showConferences?: boolean }) {
   const pathname = usePathname();
   const { t } = useTranslation();
 
@@ -47,11 +47,6 @@ export function InstitutionNav() {
       exact: false,
     },
     {
-      href: '/institution/conferences',
-      label: t('institution.nav_conferences') || 'Conferences',
-      exact: false,
-    },
-    {
       href: '/institution/subscription',
       label: t('institution.nav_subscription') || 'Subscription',
       exact: false,
@@ -67,6 +62,15 @@ export function InstitutionNav() {
       exact: false,
     },
   ];
+
+  // The conference hub is a staff-only preview (ADR 0021); hide it from everyone else.
+  if (showConferences) {
+    navItems.splice(navItems.findIndex((item) => item.href === '/institution/subscription'), 0, {
+      href: '/institution/conferences',
+      label: t('institution.nav_conferences') || 'Conferences',
+      exact: false,
+    });
+  }
 
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-16 z-30 shadow-2xs print:hidden">

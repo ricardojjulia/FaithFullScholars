@@ -45,7 +45,7 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > - review-gated profile content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)) is live in production (PR #62; migration `20261007090000` applied 2026-10-07): direct edits to live profile content are closed and credentials, publications and confessions publish on approval;
 > - scholar express-interest;
 > - institution invitations;
-> - live data in several portal screens;
+> - live data on the remaining demo screens: the institution home, shortlist, outreach log, scholar dashboard and inbox now show real data, analytics is labelled as sample data and the conference hub is a staff-only preview, but `/institution/profile` still shows a fixture profile;
 > - deploying the persistent rate limits ([ADR 0026](./docs/adr/0026-persistent-enforced-rate-limits.md)): the code is built and reviewed (PR #65), but it is not deployed: the owner must set `RATE_LIMIT_SALT` and apply migration `20261008090000` to production before merging. Until then search is not rate-limited (the limiter fails open) and the inquiry cap is not enforced in the database;
 > - GDPR and field-level encryption.
 >

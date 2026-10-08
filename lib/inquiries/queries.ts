@@ -118,13 +118,38 @@ interface SavedCourseRow {
     slug: string;
     delivery_modes?: string[] | null;
     scholar_id: string;
+    scholars?: { full_name: string } | null;
   } | null;
 }
 
 /**
- * Fetches all incoming inquiries for a scholar.
+ * A failed portal read. Carries only the database error code (never the message,
+ * which can contain schema detail) so callers can log it safely and render an
+ * error panel instead of fake zeros.
  */
-export async function fetchScholarInquiries(
+export class PortalQueryError extends Error {
+  readonly code: string;
+  constructor(label: string, code?: string | null) {
+    super(`${label} query failed`);
+    this.name = 'PortalQueryError';
+    this.code = code ?? 'unknown';
+  }
+}
+
+/** Runs a throwing fetcher and degrades to a fallback, logging the code only. */
+async function orFallback<T>(label: string, run: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await run();
+  } catch (err) {
+    console.error(`Error fetching ${label} (code):`, err instanceof PortalQueryError ? err.code : 'unknown');
+    return fallback;
+  }
+}
+
+/**
+ * Fetches all incoming inquiries for a scholar. Throws PortalQueryError on failure.
+ */
+export async function fetchScholarInquiriesOrThrow(
   supabase: SupabaseClient,
   scholarId: string,
   statusFilter?: InquiryStatus | 'all'
@@ -171,8 +196,7 @@ export async function fetchScholarInquiries(
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching scholar inquiries:', error);
-    return [];
+    throw new PortalQueryError('scholar inquiries', error.code);
   }
 
   return ((data || []) as unknown as ScholarInquiryRow[]).map((row) => ({
@@ -202,10 +226,19 @@ export async function fetchScholarInquiries(
   }));
 }
 
+/** Non-throwing variant: returns [] on failure (use the OrThrow variant when zero must not be faked). */
+export async function fetchScholarInquiries(
+  supabase: SupabaseClient,
+  scholarId: string,
+  statusFilter?: InquiryStatus | 'all'
+): Promise<DetailedScholarInquiry[]> {
+  return orFallback('scholar inquiries', () => fetchScholarInquiriesOrThrow(supabase, scholarId, statusFilter), []);
+}
+
 /**
- * Fetches all inquiries sent by an institution.
+ * Fetches all inquiries sent by an institution. Throws PortalQueryError on failure.
  */
-export async function fetchInstitutionInquiries(
+export async function fetchInstitutionInquiriesOrThrow(
   supabase: SupabaseClient,
   institutionId: string,
   statusFilter?: InquiryStatus | 'all'
@@ -251,8 +284,7 @@ export async function fetchInstitutionInquiries(
   const { data, error } = await query;
 
   if (error) {
-    console.error('Error fetching institution inquiries:', error);
-    return [];
+    throw new PortalQueryError('institution inquiries', error.code);
   }
 
   return ((data || []) as unknown as InstitutionInquiryRow[]).map((row) => ({
@@ -288,10 +320,23 @@ export async function fetchInstitutionInquiries(
   }));
 }
 
+/** Non-throwing variant: returns [] on failure. */
+export async function fetchInstitutionInquiries(
+  supabase: SupabaseClient,
+  institutionId: string,
+  statusFilter?: InquiryStatus | 'all'
+): Promise<DetailedInstitutionInquiry[]> {
+  return orFallback(
+    'institution inquiries',
+    () => fetchInstitutionInquiriesOrThrow(supabase, institutionId, statusFilter),
+    []
+  );
+}
+
 /**
- * Fetches shortlisted scholars for an institution.
+ * Fetches shortlisted scholars for an institution. Throws PortalQueryError on failure.
  */
-export async function fetchSavedScholars(
+export async function fetchSavedScholarsOrThrow(
   supabase: SupabaseClient,
   institutionId: string
 ): Promise<SavedScholar[]> {
@@ -316,8 +361,7 @@ export async function fetchSavedScholars(
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching saved scholars:', error);
-    return [];
+    throw new PortalQueryError('saved scholars', error.code);
   }
 
   return ((data || []) as unknown as SavedScholarRow[]).map((row) => ({
@@ -338,10 +382,18 @@ export async function fetchSavedScholars(
   }));
 }
 
+/** Non-throwing variant: returns [] on failure. */
+export async function fetchSavedScholars(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<SavedScholar[]> {
+  return orFallback('saved scholars', () => fetchSavedScholarsOrThrow(supabase, institutionId), []);
+}
+
 /**
- * Fetches bookmarked courses for an institution.
+ * Fetches bookmarked courses for an institution. Throws PortalQueryError on failure.
  */
-export async function fetchSavedCourses(
+export async function fetchSavedCoursesOrThrow(
   supabase: SupabaseClient,
   institutionId: string
 ): Promise<SavedCourse[]> {
@@ -358,15 +410,15 @@ export async function fetchSavedCourses(
         title,
         slug,
         delivery_modes,
-        scholar_id
+        scholar_id,
+        scholars!courses_scholar_id_fkey ( full_name )
       )
     `)
     .eq('institution_id', institutionId)
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching saved courses:', error);
-    return [];
+    throw new PortalQueryError('saved courses', error.code);
   }
 
   return ((data || []) as unknown as SavedCourseRow[]).map((row) => ({
@@ -382,9 +434,18 @@ export async function fetchSavedCourses(
           slug: row.courses.slug,
           delivery_mode: row.courses.delivery_modes?.[0] || null,
           scholar_id: row.courses.scholar_id,
+          scholar_name: row.courses.scholars?.full_name ?? null,
         }
       : null,
   }));
+}
+
+/** Non-throwing variant: returns [] on failure. */
+export async function fetchSavedCourses(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<SavedCourse[]> {
+  return orFallback('saved courses', () => fetchSavedCoursesOrThrow(supabase, institutionId), []);
 }
 
 /**
@@ -408,56 +469,102 @@ export async function checkIsScholarSaved(
   return !!data;
 }
 
+/** Columns the institution home needs; the full row (contact email etc.) is not required. */
+const INSTITUTION_HOME_COLUMNS =
+  'id, name, slug, location, institution_type, status, accreditation_body, accreditation_status';
+
 /**
- * Fetches institutional profile data.
+ * Fetches institutional profile data. Returns null when the row is not visible
+ * to the caller. Throws PortalQueryError when the read itself fails.
  */
-export async function fetchInstitutionProfile(
+export async function fetchInstitutionProfileOrThrow(
   supabase: SupabaseClient,
   institutionId: string
-): Promise<Institution | null> {
+): Promise<InstitutionHomeProfile | null> {
   const { data, error } = await supabase
     .from('institutions')
-    .select('*')
+    .select(INSTITUTION_HOME_COLUMNS)
     .eq('id', institutionId)
     .maybeSingle();
 
-  if (error || !data) {
-    return null;
+  if (error) {
+    throw new PortalQueryError('institution profile', error.code);
   }
-  return data as Institution;
+  return (data as InstitutionHomeProfile | null) ?? null;
+}
+
+/** Non-throwing variant: returns null on failure or when not visible. */
+export async function fetchInstitutionProfile(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<InstitutionHomeProfile | null> {
+  return orFallback('institution profile', () => fetchInstitutionProfileOrThrow(supabase, institutionId), null);
+}
+
+export type InstitutionHomeProfile = Pick<
+  Institution,
+  'id' | 'name' | 'slug' | 'location' | 'institution_type' | 'status'
+> & {
+  accreditation_body?: string | null;
+  accreditation_status?: string | null;
+};
+
+export interface InstitutionStats {
+  totalInquiries: number;
+  /** Inquiries still `pending`. */
+  pendingInquiries: number;
+  /** Inquiries awaiting the scholar's response: `pending` + `read`. */
+  awaitingInquiries: number;
+  acceptedInquiries: number;
+  savedScholarsCount: number;
+  savedCoursesCount: number;
 }
 
 /**
- * Fetches aggregate metrics for an institution dashboard.
+ * Aggregate metrics for an institution dashboard, as exact `head` counts that
+ * are all filtered on the given institution (under RLS). Throws
+ * PortalQueryError if any count fails, so an error is never shown as zero.
  */
 export async function fetchInstitutionStats(
   supabase: SupabaseClient,
   institutionId: string
-) {
-  const [inquiriesRes, savedScholarsRes, savedCoursesRes] = await Promise.all([
-    supabase
+): Promise<InstitutionStats> {
+  const countInquiries = (statuses?: InquiryStatus[]) => {
+    let q = supabase
       .from('inquiries')
-      .select('status', { count: 'exact' })
-      .eq('institution_id', institutionId),
+      .select('id', { count: 'exact', head: true })
+      .eq('institution_id', institutionId);
+    if (statuses) q = q.in('status', statuses);
+    return q;
+  };
+
+  const [total, pending, awaiting, accepted, savedScholars, savedCourses] = await Promise.all([
+    countInquiries(),
+    countInquiries(['pending']),
+    countInquiries(['pending', 'read']),
+    countInquiries(['accepted']),
     supabase
       .from('saved_scholars')
-      .select('id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .eq('institution_id', institutionId),
     supabase
       .from('saved_courses')
-      .select('id', { count: 'exact' })
+      .select('id', { count: 'exact', head: true })
       .eq('institution_id', institutionId),
   ]);
 
-  const inquiries = inquiriesRes.data || [];
-  const pendingCount = inquiries.filter((i) => i.status === 'pending').length;
-  const acceptedCount = inquiries.filter((i) => i.status === 'accepted').length;
+  for (const res of [total, pending, awaiting, accepted, savedScholars, savedCourses]) {
+    if (res.error || res.count === null) {
+      throw new PortalQueryError('institution stats', res.error?.code);
+    }
+  }
 
   return {
-    totalInquiries: inquiriesRes.count || 0,
-    pendingInquiries: pendingCount,
-    acceptedInquiries: acceptedCount,
-    savedScholarsCount: savedScholarsRes.count || 0,
-    savedCoursesCount: savedCoursesRes.count || 0,
+    totalInquiries: total.count ?? 0,
+    pendingInquiries: pending.count ?? 0,
+    awaitingInquiries: awaiting.count ?? 0,
+    acceptedInquiries: accepted.count ?? 0,
+    savedScholarsCount: savedScholars.count ?? 0,
+    savedCoursesCount: savedCourses.count ?? 0,
   };
 }
