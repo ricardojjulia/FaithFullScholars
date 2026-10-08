@@ -13,24 +13,33 @@
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
--- 0. Preflight: every institution must have an owner, otherwise tightening the
---    UPDATE policy could leave an institution that nobody can edit.
+-- 0. Preflight (ENFORCED): abort on a real lockout only, that is an institution
+--    that HAS members but none of them is an owner or admin, so tightening the
+--    UPDATE policy would leave nobody able to edit it. Institutions with no
+--    members at all (e.g. seed institutions) are unaffected: only platform
+--    admins can edit them, which is correct. The integration test extracts the
+--    block between the PREFLIGHT markers and runs that exact text.
 -- ------------------------------------------------------------------------------
-DO $$
+-- PREFLIGHT-BEGIN
+DO $preflight$
 DECLARE
-  ownerless INT;
+  locked_out INT;
 BEGIN
-  SELECT count(*) INTO ownerless
+  SELECT count(*) INTO locked_out
   FROM public.institutions i
-  WHERE NOT EXISTS (
-    SELECT 1 FROM public.institution_users iu
-    WHERE iu.institution_id = i.id AND iu.role = 'owner'
-  );
-  IF ownerless > 0 THEN
-    RAISE EXCEPTION 'Preflight failed: % institution(s) have no owner. Assign an owner before applying this migration.', ownerless;
+  WHERE EXISTS (
+          SELECT 1 FROM public.institution_users m WHERE m.institution_id = i.id
+        )
+    AND NOT EXISTS (
+          SELECT 1 FROM public.institution_users iu
+          WHERE iu.institution_id = i.id AND iu.role IN ('owner', 'admin')
+        );
+  IF locked_out > 0 THEN
+    RAISE EXCEPTION 'Preflight failed: % institution(s) have members but no owner or admin. Promote a member to owner or admin before applying this migration.', locked_out;
   END IF;
 END
-$$;
+$preflight$;
+-- PREFLIGHT-END
 
 -- ------------------------------------------------------------------------------
 -- 1. Helper: owner/admin role check (same private/public pattern as 20261004120000)

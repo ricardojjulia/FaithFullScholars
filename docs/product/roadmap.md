@@ -66,7 +66,7 @@ Deliverables:
 - Persistent universal top application bar with integrated search typeahead and scope selectors.
 - Modern 3-column desktop layout for directory and discovery feeds (mini-profile & filters on left, main directory in center, recommendations & trust rail on right).
 - Canonical LinkedIn-style profile card hierarchy: cover banner, 120px overlapping avatar, credential headline, action bar, and modular cards for degrees, publications, syllabi, and doctrinal affirmations.
-- Search rate limiter: 15 req/min for anonymous callers and 120 req/min for signed-in users. The original `search_rate_limits` limiter was never called; ADR 0026 (PR #65) replaces it with the enforced `check_rate_limit` and `rate_limit_buckets`, pending the production migration `20261008090000`.
+- Search rate limiter: 15 req/min for anonymous callers and 120 req/min for signed-in users. The original `search_rate_limits` limiter was never called and is dropped by migration `20261010090000` (pending deploy); ADR 0026 (PR #65) replaces it with the enforced `check_rate_limit` and `rate_limit_buckets`, pending the production migration `20261008090000`.
 - 3-page anonymous discovery cap (max 18 results) with sign-in wall preventing automated candidate harvesting.
 - Search input sanitization and PII segregation.
 

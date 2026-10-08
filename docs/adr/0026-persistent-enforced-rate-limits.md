@@ -40,7 +40,7 @@ Research on `main` (2026-10-07) found that ADR 0008's limits were not enforced a
    - No counter table: the inquiries are the count, so direct PostgREST writes are covered. If the check cannot run the insert transaction fails, which is fail closed by construction.
    - The trigger is named `trg_guard_inquiry_rate`. Same-event triggers fire alphabetically and `trg_guard_inquiries` sorts first (`i` before `y`), so existing guard messages are unchanged and the cap only runs on otherwise-valid inserts.
    - `sendInquiry` drops the in-memory `Map` (deleted with `lib/inquiries/rate-limiter.ts`) and maps `FS429` to status 429 with the message "Your institution has reached its limit of 10 inquiries per hour" (the cap is shared by everyone at the institution). `POST /api/inquiries` returns that status with a `Retry-After` computed from the oldest counted inquiry, read with the caller's own client under RLS.
-7. **Legacy limiter (dropped 2026-10-08, migration `20261010090000`).** `check_search_rate_limit` is revoked from `PUBLIC`, `anon` and `authenticated` and granted to `service_role` only. It and `search_rate_limits` are no longer used; dropping them is a follow-up.
+7. **Legacy limiter (dropped 2026-10-08, migration `20261010090000`).** `check_search_rate_limit` is revoked from `PUBLIC`, `anon` and `authenticated` and granted to `service_role` only. It and `search_rate_limits` were unused and are dropped by that migration (no CASCADE).
 8. **ESLint allow-list.** `lib/rate-limit/limiter.ts` replaces `lib/search/rate-limiter.ts` in the service-role allow-list; the search module now goes through the limiter.
 
 ## Consequences
@@ -65,7 +65,7 @@ Research on `main` (2026-10-07) found that ADR 0008's limits were not enforced a
 
 ## Deploy
 
-Apply the migration first, because the new app needs the RPC. Until it exists, search fails open and inquiries keep working (the trigger is simply absent). Then merge and deploy. Verify that `check_rate_limit` and `check_search_rate_limit` are executable by `service_role` only, that `trg_guard_inquiry_rate` exists on `inquiries`, then smoke-test search.
+Apply the migration first, because the new app needs the RPC. Until it exists, search fails open and inquiries keep working (the trigger is simply absent). Then merge and deploy. Verify that `check_rate_limit` is executable by `service_role` only, that `trg_guard_inquiry_rate` exists on `inquiries`, then smoke-test search.
 
 ## Verification
 

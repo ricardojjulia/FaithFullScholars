@@ -342,6 +342,8 @@ describe('institution portal pages call their own guard before fetching', () => 
       expect(markup, institutionRole).toContain('value="Fixture-Free Seminary"');
       expect(markup, institutionRole).toMatch(/readOnly=""|readonly=""/i);
       expect(markup, institutionRole).toMatch(/<select[^>]*disabled/);
+      expect(markup, institutionRole).toContain('id="profile-read-only-notice"');
+      expect(markup, institutionRole).toMatch(/id="profile-name"[^>]*aria-describedby="profile-read-only-notice"|aria-describedby="profile-read-only-notice"[^>]*id="profile-name"/);
     }
   });
 

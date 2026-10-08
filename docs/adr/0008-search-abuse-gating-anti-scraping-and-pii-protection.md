@@ -1,6 +1,6 @@
 # ADR 0008: Search Abuse Gating, Anti-Scraping Defenses, and PII Protection
 
-- **Status:** Accepted
+- **Status:** Accepted. The database limiter described here (`check_search_rate_limit`, `search_rate_limits`) is superseded by ADR 0026 and was dropped in migration `20261010090000`.
 - **Date:** 2026-09-19
 - **Deciders:** Council (Data, Routes, UX, Feature Agents) & Core Engineering
 - **Consulted:** Information Security, Institutional Trust & Accreditation

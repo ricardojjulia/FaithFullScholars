@@ -9,7 +9,7 @@
 Restrict institution profile edits to owners and admins at the data layer, and drop the unused legacy search limiter.
 
 ## 3. Architecture, Security & RLS Impact
-- **Migration:** `20261010090000_db_followups.sql`, idempotent: ownerless-institution preflight, `private.is_institution_admin` plus public wrapper, `institutions` UPDATE policy replaced (USING and WITH CHECK), `DROP FUNCTION IF EXISTS check_search_rate_limit` and `DROP TABLE IF EXISTS search_rate_limits` without CASCADE.
+- **Migration:** `20261010090000_db_followups.sql`, idempotent: lockout preflight (aborts only if an institution has members but none is owner or admin; member-less institutions pass), `private.is_institution_admin` plus public wrapper, `institutions` UPDATE policy replaced (USING and WITH CHECK), `DROP FUNCTION IF EXISTS check_search_rate_limit` and `DROP TABLE IF EXISTS search_rate_limits` without CASCADE.
 - **App:** `institutionRoles` in the session context, 403 in `PATCH /api/institution/profile`, read-only profile form for recruiters and members.
 - **Scripts:** `verify-deployment.ts` and `verify-pilot-readiness.ts` check `rate_limit_buckets` / `check_rate_limit`.
 - **ADRs:** 0023 status note, 0026 note.
@@ -22,10 +22,10 @@ Proof of failure (in-suite): rollback probe restores the old policy and shows th
 Owner decision, 2026-10-08: the "hide the dean's email" follow-up is closed as not worth doing, because `institutions.contact_email` is already public.
 
 ## 6. Deploy
-Preflight (every institution has an owner), apply migration `20261010090000`, then merge.
+Preflight (aborts only on a lockout: members but no owner or admin), apply migration `20261010090000`, then merge.
 
 ## 7. Residual Risk
-Owners can still edit `contact_email` (public by design). A deployment with an ownerless institution fails the preflight and needs an owner assigned first.
+Owners can still edit `contact_email` (public by design). An institution with members but no owner or admin fails the preflight and needs a member promoted first. Institutions with no members stay editable by platform admins only. `verify:deploy` table check now derives from the expected-table list and the policy floor lives in `scripts/deploy-thresholds.ts`, checked in CI against a fully migrated database.
 
 ## 8. Follow-up
 None open from this slice. Next slice (owner order): the applications rebuild.

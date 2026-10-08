@@ -90,7 +90,7 @@ DATABASE_URL="postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supab
 | scholar_profile_revisions          | Enabled     | >= 3     | ✅ PASS |
 | scholar_traditions                 | Enabled     | >= 2     | ✅ PASS |
 | scholars                           | Enabled     | >= 3     | ✅ PASS |
-| search_rate_limits                 | Enabled     | >= 4     | ✅ PASS |
+| rate_limit_buckets                 | Enabled     | >= 4     | ✅ PASS |
 | traditions                         | Enabled     | >= 2     | ✅ PASS |
 ```
 

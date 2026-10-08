@@ -14,6 +14,7 @@ import { Client } from 'pg';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { MIN_PUBLIC_POLICIES } from './deploy-thresholds';
 
 // Load environment configurations
 dotenv.config({ path: '.env.local' });
@@ -168,7 +169,7 @@ async function verifyDeployment() {
       const missingTables = EXPECTED_APPLICATION_TABLES.filter((t) => !liveTableNames.has(t));
       const tablesWithoutRls = rlsRes.rows.filter((r) => !r.rls_enabled || !r.rls_forced);
 
-      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= 35) {
+      if (missingTables.length === 0 && tablesWithoutRls.length === 0 && rlsRes.rows.length >= EXPECTED_APPLICATION_TABLES.length) {
         record(
           'Security (RLS)',
           'Row Level Security Coverage',
@@ -187,7 +188,7 @@ async function verifyDeployment() {
         );
       }
 
-      // Check policy counts (baseline: 110+ granular policies)
+      // Check policy counts (floor: MIN_PUBLIC_POLICIES, verified against a fully migrated database in CI)
       const policyRes = await client.query(`
         SELECT count(*) as total_policies
         FROM pg_policy p
@@ -196,10 +197,10 @@ async function verifyDeployment() {
         WHERE n.nspname = 'public';
       `);
       const policyCount = parseInt(policyRes.rows[0].total_policies, 10);
-      if (policyCount >= 110) {
+      if (policyCount >= MIN_PUBLIC_POLICIES) {
         record('Security (RLS)', 'Active Security Policies', 'PASS', `${policyCount} granular policies active`);
       } else {
-        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum 110 required)`);
+        record('Security (RLS)', 'Active Security Policies', 'FAIL', `Only ${policyCount} policies found (minimum ${MIN_PUBLIC_POLICIES} required)`);
       }
 
       // --------------------------------------------------------------------------

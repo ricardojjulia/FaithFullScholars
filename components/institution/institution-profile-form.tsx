@@ -78,6 +78,9 @@ export function InstitutionProfileForm({
     }
   };
 
+  // Read-only users get the explanation announced with each field.
+  const describedBy = (id?: string) =>
+    [id, canEdit ? undefined : 'profile-read-only-notice'].filter(Boolean).join(' ') || undefined;
   const errorId = (field: keyof FieldErrors) => (fieldErrors[field] ? `profile-${field}-error` : undefined);
   const fieldError = (field: keyof FieldErrors) =>
     fieldErrors[field] ? (
@@ -99,6 +102,7 @@ export function InstitutionProfileForm({
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           {!canEdit && (
             <div
+              id="profile-read-only-notice"
               data-testid="profile-read-only"
               className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl"
             >
@@ -171,7 +175,7 @@ export function InstitutionProfileForm({
               maxLength={200}
               value={values.name}
               aria-invalid={!!fieldErrors.name}
-              aria-describedby={errorId('name')}
+              aria-describedby={describedBy(errorId('name'))}
               onChange={(e) => setValues({ ...values, name: e.target.value })}
               readOnly={!canEdit}
               className={INPUT_CLASS}
@@ -186,7 +190,7 @@ export function InstitutionProfileForm({
               disabled={!canEdit}
               value={values.institution_type}
               aria-invalid={!!fieldErrors.institution_type}
-              aria-describedby={errorId('institution_type')}
+              aria-describedby={describedBy(errorId('institution_type'))}
               onChange={(e) => setValues({ ...values, institution_type: e.target.value as InstitutionType })}
               className={INPUT_CLASS}
             >
@@ -208,10 +212,10 @@ export function InstitutionProfileForm({
                 maxLength={300}
                 value={values.website}
                 aria-invalid={!!fieldErrors.website}
-                aria-describedby={errorId('website')}
+                aria-describedby={describedBy(errorId('website'))}
                 onChange={(e) => setValues({ ...values, website: e.target.value })}
                 readOnly={!canEdit}
-              className={INPUT_CLASS}
+                className={INPUT_CLASS}
               />
               {fieldError('website')}
             </div>
@@ -224,10 +228,10 @@ export function InstitutionProfileForm({
                 maxLength={200}
                 value={values.location}
                 aria-invalid={!!fieldErrors.location}
-                aria-describedby={errorId('location')}
+                aria-describedby={describedBy(errorId('location'))}
                 onChange={(e) => setValues({ ...values, location: e.target.value })}
                 readOnly={!canEdit}
-              className={INPUT_CLASS}
+                className={INPUT_CLASS}
               />
               {fieldError('location')}
             </div>
@@ -242,7 +246,7 @@ export function InstitutionProfileForm({
               maxLength={254}
               value={values.contact_email}
               aria-invalid={!!fieldErrors.contact_email}
-              aria-describedby={errorId('contact_email') ?? 'profile-contact-email-hint'}
+              aria-describedby={describedBy(errorId('contact_email') ?? 'profile-contact-email-hint')}
               onChange={(e) => setValues({ ...values, contact_email: e.target.value })}
               readOnly={!canEdit}
               className={INPUT_CLASS}
@@ -254,15 +258,15 @@ export function InstitutionProfileForm({
           </div>
 
           {canEdit && (
-          <div className="flex justify-end pt-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white font-semibold text-xs rounded-xl shadow-xs transition disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Profile Settings'}
-            </button>
-          </div>
+            <div className="flex justify-end pt-3">
+              <button
+                type="submit"
+                disabled={saving}
+                className="px-6 py-2.5 bg-indigo-900 hover:bg-indigo-800 text-white font-semibold text-xs rounded-xl shadow-xs transition disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Profile Settings'}
+              </button>
+            </div>
           )}
         </form>
       </div>

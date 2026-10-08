@@ -436,7 +436,11 @@ export async function updateInstitutionProfile(
   }
   // RLS filters rows the caller may not update: zero rows means nothing was saved.
   if (!data || data.length === 0) {
-    return { success: false, error: 'Failed to update institutional profile.', status: 403 };
+    return {
+      success: false,
+      error: 'Only institution owners and admins can edit the institution profile.',
+      status: 403,
+    };
   }
 
   return { success: true };

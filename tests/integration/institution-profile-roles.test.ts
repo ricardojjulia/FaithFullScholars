@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Client } from 'pg';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
+import { readFileSync } from 'fs';
 
 /**
  * Institution profile edits are limited to owners and admins (ADR 0023,
@@ -133,5 +134,71 @@ describe('Institution profile edit roles — real database roles', () => {
         );
       }
     );
+  });
+
+  // Preflight (migration section 0): the test runs the exact text between the
+  // PREFLIGHT markers, so it cannot drift from what ships. Rolled back.
+  describe('migration preflight', () => {
+    const migrationSql = readFileSync(
+      path.resolve(process.cwd(), 'supabase/migrations/20261010090000_db_followups.sql'),
+      'utf8'
+    );
+    const preflightSql = /-- PREFLIGHT-BEGIN\n([\s\S]*?)\n-- PREFLIGHT-END/.exec(migrationSql)?.[1] ?? '';
+    const LOCKOUT_INST = 'e1000000-0000-0000-0000-0000000000a1';
+    const MEMBERLESS_INST = 'e1000000-0000-0000-0000-0000000000a2';
+
+    async function insertInstitution(id: string) {
+      await client.query(
+        `INSERT INTO public.institutions (id, name, slug, institution_type, contact_email)
+         VALUES ($1, $2, $3, 'seminary', 'preflight@example.edu')`,
+        [id, `Preflight ${id.slice(-2)}`, `preflight-${id.slice(-2)}`]
+      );
+    }
+    async function preflightError(): Promise<string | null> {
+      await client.query('SAVEPOINT pf');
+      try {
+        await client.query(preflightSql);
+        return null;
+      } catch (err) {
+        return err instanceof Error ? err.message : String(err);
+      } finally {
+        await client.query('ROLLBACK TO SAVEPOINT pf');
+      }
+    }
+
+    it('extracts a DO block from the migration', () => {
+      expect(preflightSql).toMatch(/^DO \$preflight\$/);
+      expect(preflightSql).toMatch(/\$preflight\$;$/);
+    });
+
+    it('passes for a member-less institution and raises when the only member is a recruiter', async () => {
+      await client.query('BEGIN');
+      try {
+        // Clean baseline: no existing institution may be a lockout.
+        await client.query(
+          `INSERT INTO public.institution_users (institution_id, account_id, role)
+           SELECT i.id, $1, 'owner' FROM public.institutions i
+           WHERE EXISTS (SELECT 1 FROM public.institution_users m WHERE m.institution_id = i.id)
+             AND NOT EXISTS (SELECT 1 FROM public.institution_users o WHERE o.institution_id = i.id AND o.role IN ('owner','admin'))
+           ON CONFLICT (account_id, institution_id) DO UPDATE SET role = 'owner'`,
+          [INST_USER_ACCOUNT]
+        );
+        await insertInstitution(MEMBERLESS_INST);
+        expect(await preflightError()).toBeNull();
+
+        await insertInstitution(LOCKOUT_INST);
+        await client.query(
+          `INSERT INTO public.institution_users (institution_id, account_id, role) VALUES ($1, $2, 'recruiter')`,
+          [LOCKOUT_INST, INST_USER_ACCOUNT]
+        );
+        expect(await preflightError()).toMatch(/Preflight failed: 1 institution/);
+
+        // An admin member resolves the lockout.
+        await client.query(`UPDATE public.institution_users SET role = 'admin' WHERE institution_id = $1`, [LOCKOUT_INST]);
+        expect(await preflightError()).toBeNull();
+      } finally {
+        await client.query('ROLLBACK');
+      }
+    });
   });
 });

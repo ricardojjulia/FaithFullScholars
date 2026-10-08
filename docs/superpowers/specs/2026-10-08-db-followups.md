@@ -21,11 +21,11 @@ As **the platform**, only an institution's owners and admins can change its publ
    - each guard is proven to fail when removed.
 
 ### Deploy
-One migration. Run the preflight first, to check that every institution has an owner.
+One migration. The preflight aborts only if an institution has members but no owner or admin (a real lockout); institutions with no members pass.
 
 ## Technical brief
 - **Migration** `20261010090000_db_followups.sql`, idempotent.
-  - **Preflight:** abort if any institution has no member with the `owner` role.
+  - **Preflight:** abort only on a real lockout: an institution that has members but none of them is `owner` or `admin`. Institutions with no members (e.g. seed institutions) are unaffected; only platform admins can edit them.
   - **New helper:** `private.is_institution_admin(uuid)`: SECURITY DEFINER, `search_path=''`, true when the caller's role is owner or admin, keyed on `auth.uid()`. It has a public SECURITY INVOKER wrapper. Grants follow the `20261004120000` pattern.
   - **Institutions UPDATE policy:** drop the existing policy and recreate it as `USING (public.is_institution_admin(id) OR public.is_admin()) WITH CHECK (same)`. A denied update then matches zero rows, and the existing `updateInstitutionProfile` already returns 403 in that case.
   - **Legacy limiter:** `DROP FUNCTION IF EXISTS public.check_search_rate_limit(TEXT, INT, BOOLEAN);` and `DROP TABLE IF EXISTS public.search_rate_limits;`. No CASCADE.
