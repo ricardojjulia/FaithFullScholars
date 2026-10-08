@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
+import { canEditInstitutionProfile, getSessionContext, resolveInstitutionAccess } from '@/lib/auth/session';
 import { updateInstitutionProfile } from '@/lib/inquiries/actions';
 import { validateInstitutionProfile } from '@/lib/inquiries/profile-validation';
 
 const MAX_BODY_BYTES = 8 * 1024;
 
 /**
- * Updates the signed-in member's own institution profile. The institution is
+ * Updates the signed-in owner/admin's own institution profile. The institution is
  * resolved from the session only: any institution id in the body is ignored.
  * Only validated identity fields are written; trust columns are not accepted.
  */
 export async function PATCH(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const access = resolveInstitutionAccess(await getSessionContext(supabase));
+    const session = await getSessionContext(supabase);
+    const access = resolveInstitutionAccess(session);
     if (!access.ok) {
       return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+    // Early, friendly refusal; the institutions UPDATE policy enforces the same rule (ADR 0023).
+    if (!canEditInstitutionProfile(session, access.institutionId)) {
+      return NextResponse.json(
+        { error: 'Only institution owners and admins can edit the institution profile.' },
+        { status: 403 }
+      );
     }
 
     const declared = Number(req.headers.get('content-length') ?? '0');

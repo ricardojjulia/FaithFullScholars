@@ -19,6 +19,8 @@ export interface SessionContext {
   role: UserRole | null;
   scholarId: string | null;
   institutionIds: string[];
+  /** The caller's `institution_users.role` per institution id (ADR 0023). */
+  institutionRoles: Record<string, string>;
   /**
    * True when the accounts / scholars / institution_users lookup itself failed.
    * In that case `role`, `scholarId` and `institutionIds` are NOT trustworthy as
@@ -63,7 +65,7 @@ export async function getSessionContext(
     supabase.from('scholars').select('id').eq('account_id', user.id).maybeSingle(),
     supabase
       .from('institution_users')
-      .select('institution_id')
+      .select('institution_id, role')
       .eq('account_id', user.id)
       // Deterministic: the earliest membership is the default institution.
       .order('created_at', { ascending: true }),
@@ -91,8 +93,29 @@ export async function getSessionContext(
     institutionIds: (membershipRes.data ?? []).map(
       (row: { institution_id: string }) => row.institution_id
     ),
+    institutionRoles: Object.fromEntries(
+      (membershipRes.data ?? []).map((row: { institution_id: string; role?: string }) => [
+        row.institution_id,
+        row.role ?? '',
+      ])
+    ),
     lookupFailed,
   };
+}
+
+/** Roles that may edit an institution's public profile (mirrors private.is_institution_admin). */
+export const INSTITUTION_PROFILE_EDIT_ROLES: readonly string[] = ['owner', 'admin'];
+
+/**
+ * UX/early-exit gate only: the database policy is the real boundary. Unknown or
+ * missing roles fail closed.
+ */
+export function canEditInstitutionProfile(
+  session: SessionContext | null,
+  institutionId: string
+): boolean {
+  const role = session?.institutionRoles?.[institutionId];
+  return !!role && INSTITUTION_PROFILE_EDIT_ROLES.includes(role);
 }
 
 /**

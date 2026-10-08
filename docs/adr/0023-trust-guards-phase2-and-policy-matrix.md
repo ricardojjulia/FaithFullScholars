@@ -55,3 +55,13 @@ Separately, `audit:rls` and `audit:security` **passed on a database with these h
   - Add a member-side "accept consortium invitation" flow.
   - `institution_subscriptions` has no member INSERT policy, so the guard's INSERT branch is defense in depth. `incrementInquiryUsage`'s fallback upsert for a missing subscription row fails silently. Provision subscription rows server-side.
   - Add billing.
+
+---
+
+## Status note (2026-10-08): institution profile role gate
+
+Migration `20261010090000_db_followups.sql` closes the "any institution member can edit the profile" gap. A new `private.is_institution_admin(uuid)` helper (SECURITY DEFINER, `search_path=''`, keyed on `auth.uid()`, true for role `owner` or `admin`) has a public SECURITY INVOKER wrapper, following the 20261004120000 pattern. The `institutions` UPDATE policy is replaced with `USING` and `WITH CHECK` of `is_institution_admin(id) OR is_admin()`. A recruiter's or member's update now matches zero rows, which `updateInstitutionProfile` already reports as 403. The trust-column trigger (`guard_institutions`) is unchanged and still applies to owners and admins.
+
+The app mirrors the rule for UX only: `getSessionContext` carries `institutionRoles`, `PATCH /api/institution/profile` returns 403 early, and the profile page is read-only for other roles. Unknown or missing roles fail closed. The database policy is the boundary.
+
+A preflight in the migration aborts if any institution has no owner, so no institution becomes uneditable. The policy matrix gains an `institutions` x `institution_recruiter` scenario (no column writable, `requireVisible`), and `tests/integration/institution-profile-roles.test.ts` proves the behaviour with real roles plus a rollback probe that restores the old policy.

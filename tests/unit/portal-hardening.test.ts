@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getSessionContext, resolveInstitutionAccess, SessionLookupError } from '@/lib/auth/session';
+import { canEditInstitutionProfile, getSessionContext, resolveInstitutionAccess, SessionLookupError } from '@/lib/auth/session';
 import {
   INQUIRY_TABS,
   countForTab,
@@ -56,6 +56,30 @@ describe('getSessionContext lookup failures', () => {
     expect(session).toMatchObject({ role: 'scholar', scholarId: 'sch-1', institutionIds: [], lookupFailed: false });
   });
 
+  it('carries the per-institution role and gates profile edits to owner/admin (fail closed)', async () => {
+    const session = await getSessionContext(
+      sessionClient({
+        accounts: { data: { role: 'institution_user' } },
+        institution_users: {
+          data: [
+            { institution_id: 'i-owner', role: 'owner' },
+            { institution_id: 'i-admin', role: 'admin' },
+            { institution_id: 'i-rec', role: 'recruiter' },
+            { institution_id: 'i-mem', role: 'member' },
+            { institution_id: 'i-norole' },
+          ],
+        },
+      })
+    );
+    expect(session?.institutionRoles).toMatchObject({ 'i-owner': 'owner', 'i-rec': 'recruiter' });
+    expect(canEditInstitutionProfile(session, 'i-owner')).toBe(true);
+    expect(canEditInstitutionProfile(session, 'i-admin')).toBe(true);
+    for (const id of ['i-rec', 'i-mem', 'i-norole', 'i-unknown']) {
+      expect(canEditInstitutionProfile(session, id), id).toBe(false);
+    }
+    expect(canEditInstitutionProfile(null, 'i-owner')).toBe(false);
+  });
+
   it.each(['accounts', 'scholars', 'institution_users'] as const)(
     'flags a failed %s lookup instead of looking like "no profile / no membership"',
     async (table) => {
@@ -77,6 +101,7 @@ describe('getSessionContext lookup failures', () => {
       role: null,
       scholarId: null,
       institutionIds: [],
+      institutionRoles: {},
       lookupFailed: true,
     };
     expect(resolveInstitutionAccess(session)).toMatchObject({ ok: false, status: 503 });

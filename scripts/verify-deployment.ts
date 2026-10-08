@@ -137,6 +137,7 @@ async function verifyDeployment() {
         'pilot_feedback_rate_limits',
         'profile_reviews',
         'publications',
+        'rate_limit_buckets',
         'reports',
         'saved_courses',
         'saved_scholars',
@@ -146,7 +147,6 @@ async function verifyDeployment() {
         'scholar_profile_revisions',
         'scholar_traditions',
         'scholars',
-        'search_rate_limits',
         'speaker_topics',
         'traditions',
       ];

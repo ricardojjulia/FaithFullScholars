@@ -40,7 +40,7 @@ Research on `main` (2026-10-07) found that ADR 0008's limits were not enforced a
    - No counter table: the inquiries are the count, so direct PostgREST writes are covered. If the check cannot run the insert transaction fails, which is fail closed by construction.
    - The trigger is named `trg_guard_inquiry_rate`. Same-event triggers fire alphabetically and `trg_guard_inquiries` sorts first (`i` before `y`), so existing guard messages are unchanged and the cap only runs on otherwise-valid inserts.
    - `sendInquiry` drops the in-memory `Map` (deleted with `lib/inquiries/rate-limiter.ts`) and maps `FS429` to status 429 with the message "Your institution has reached its limit of 10 inquiries per hour" (the cap is shared by everyone at the institution). `POST /api/inquiries` returns that status with a `Retry-After` computed from the oldest counted inquiry, read with the caller's own client under RLS.
-7. **Legacy limiter.** `check_search_rate_limit` is revoked from `PUBLIC`, `anon` and `authenticated` and granted to `service_role` only. It and `search_rate_limits` are no longer used; dropping them is a follow-up.
+7. **Legacy limiter (dropped 2026-10-08, migration `20261010090000`).** `check_search_rate_limit` is revoked from `PUBLIC`, `anon` and `authenticated` and granted to `service_role` only. It and `search_rate_limits` are no longer used; dropping them is a follow-up.
 8. **ESLint allow-list.** `lib/rate-limit/limiter.ts` replaces `lib/search/rate-limiter.ts` in the service-role allow-list; the search module now goes through the limiter.
 
 ## Consequences
@@ -57,7 +57,7 @@ Research on `main` (2026-10-07) found that ADR 0008's limits were not enforced a
 - Behind a proxy that does not set `x-forwarded-for`, all anonymous visitors share the `unknown` bucket. Vercel sets it.
 
 ### Residual risks and follow-ups
-- Drop `search_rate_limits` and `check_search_rate_limit` in a later migration.
+- ~~Drop `search_rate_limits` and `check_search_rate_limit` in a later migration.~~ Done in `20261010090000_db_followups.sql` (no CASCADE). `verify:deploy` and `verify:pilot` now check `rate_limit_buckets` and `check_rate_limit`.
 - `x-forwarded-for` is only trustworthy behind Vercel; a self-hosted deployment must overwrite it at the edge.
 - The inquiry cap is per institution, not per sender.
 - Test-only simulation: the integration suite simulates PostgREST as the `authenticated` role over a direct `pg` connection (`SET LOCAL ROLE` plus `request.jwt.claims`). It exercises the same grants, RLS and triggers, but not the PostgREST HTTP layer.

@@ -109,22 +109,20 @@ async function runPilotReadinessDiagnostic() {
       notes: `${totalInst} total institutions (${approvedInst} approved)`,
     });
 
-    // 6. Security & Rate Limiter Tables Check
+    // 6. Security & Rate Limiter Check (ADR 0026: persistent, enforced limiter)
     const rateLimitRes = await client.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        AND table_name = 'search_rate_limits'
-      ) as exists;
+      SELECT
+        to_regclass('public.rate_limit_buckets') IS NOT NULL AS table_exists,
+        to_regprocedure('public.check_rate_limit(text,integer,integer)') IS NOT NULL AS fn_exists;
     `);
-    const rateLimitExists = rateLimitRes.rows[0].exists;
+    const rateLimitExists = rateLimitRes.rows[0].table_exists && rateLimitRes.rows[0].fn_exists;
     results.push({
       category: 'Security',
-      item: 'Search Abuse Rate Limiter Table',
-      expected: 'search_rate_limits table exists',
+      item: 'Persistent Rate Limiter',
+      expected: 'rate_limit_buckets table and check_rate_limit() exist',
       actual: rateLimitExists ? 'Present' : 'Missing',
       status: rateLimitExists ? 'PASS' : 'FAIL',
-      notes: 'ADR 0008 token-bucket search protection table',
+      notes: 'ADR 0026 persistent fixed-window limiter (replaced the legacy search limiter)',
     });
 
     // 7. RLS Verification across all tables

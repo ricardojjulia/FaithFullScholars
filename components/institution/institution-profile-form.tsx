@@ -23,7 +23,14 @@ const LABEL_CLASS = 'block text-xs font-semibold uppercase tracking-wider text-s
 
 type FieldErrors = Partial<Record<'name' | 'website' | 'location' | 'contact_email' | 'institution_type', string>>;
 
-export function InstitutionProfileForm({ profile }: { profile: InstitutionEditableProfile }) {
+export function InstitutionProfileForm({
+  profile,
+  canEdit = false,
+}: {
+  profile: InstitutionEditableProfile;
+  /** Owners and admins only. Defaults to read-only (fail closed). */
+  canEdit?: boolean;
+}) {
   const [values, setValues] = useState({
     name: profile.name,
     institution_type: profile.institution_type,
@@ -40,6 +47,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!canEdit) return;
     setSaving(true);
     setMessage(null);
     setFieldErrors({});
@@ -89,6 +97,15 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs">
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+          {!canEdit && (
+            <div
+              data-testid="profile-read-only"
+              className="p-3 bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 rounded-xl"
+            >
+              You can view this profile, but only institution owners and admins can edit it. Ask an owner or admin to
+              make changes.
+            </div>
+          )}
           <div role="status" aria-live="polite">
             {message?.kind === 'success' && (
               <div
@@ -156,6 +173,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
               aria-invalid={!!fieldErrors.name}
               aria-describedby={errorId('name')}
               onChange={(e) => setValues({ ...values, name: e.target.value })}
+              readOnly={!canEdit}
               className={INPUT_CLASS}
             />
             {fieldError('name')}
@@ -165,6 +183,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
             <label htmlFor="profile-type" className={LABEL_CLASS}>Institution Type *</label>
             <select
               id="profile-type"
+              disabled={!canEdit}
               value={values.institution_type}
               aria-invalid={!!fieldErrors.institution_type}
               aria-describedby={errorId('institution_type')}
@@ -191,7 +210,8 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
                 aria-invalid={!!fieldErrors.website}
                 aria-describedby={errorId('website')}
                 onChange={(e) => setValues({ ...values, website: e.target.value })}
-                className={INPUT_CLASS}
+                readOnly={!canEdit}
+              className={INPUT_CLASS}
               />
               {fieldError('website')}
             </div>
@@ -206,7 +226,8 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
                 aria-invalid={!!fieldErrors.location}
                 aria-describedby={errorId('location')}
                 onChange={(e) => setValues({ ...values, location: e.target.value })}
-                className={INPUT_CLASS}
+                readOnly={!canEdit}
+              className={INPUT_CLASS}
               />
               {fieldError('location')}
             </div>
@@ -223,6 +244,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
               aria-invalid={!!fieldErrors.contact_email}
               aria-describedby={errorId('contact_email') ?? 'profile-contact-email-hint'}
               onChange={(e) => setValues({ ...values, contact_email: e.target.value })}
+              readOnly={!canEdit}
               className={INPUT_CLASS}
             />
             <p id="profile-contact-email-hint" className="text-xs text-slate-500 mt-1">
@@ -231,6 +253,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
             {fieldError('contact_email')}
           </div>
 
+          {canEdit && (
           <div className="flex justify-end pt-3">
             <button
               type="submit"
@@ -240,6 +263,7 @@ export function InstitutionProfileForm({ profile }: { profile: InstitutionEditab
               {saving ? 'Saving...' : 'Save Profile Settings'}
             </button>
           </div>
+          )}
         </form>
       </div>
     </div>
