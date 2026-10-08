@@ -4,9 +4,17 @@ import {
   evaluateConfessionalAlignment,
 } from '@/lib/search/confessional-matcher';
 import {
-  exportApplicantMatrixCsv,
-  PostingApplicantReport,
+  getPostingApplicantReport,
+  parseDossierSnapshot,
+  pickHighestCredential,
 } from '@/lib/postings/applicant-service';
+import { PortalQueryError } from '@/lib/inquiries/queries';
+import { covers } from '../support/covers';
+
+covers('page:/institution/postings/[id]/applicants');
+
+const POSTING = '11111111-1111-4111-8111-111111111111';
+const INST = '22222222-2222-4222-8222-222222222222';
 
 describe('Search Committee Applicant Matrix & Confessional Common App (ADR 0020)', () => {
   describe('ATS Standard 3 Terminal Degree Qualifications', () => {
@@ -66,78 +74,147 @@ describe('Search Committee Applicant Matrix & Confessional Common App (ADR 0020)
     });
   });
 
-  describe('RFC-4180 CSV Export Generation', () => {
-    const mockReport: PostingApplicantReport = {
-      postingId: 'p-1',
-      postingTitle: 'Adjunct Professor of New Testament Greek',
-      postingSlug: 'adjunct-greek-fall-2027',
-      opportunityType: 'adjunct',
-      term: 'Fall 2027',
-      requiredDegree: 'Ph.D. or Th.D. in New Testament',
-      confessionalRequirements: 'Westminster Standards or Three Forms of Unity',
-      totalApplicants: 2,
-      terminalDoctoratesCount: 2,
-      terminalDoctoratesRatio: 100,
-      fullConfessionalMatchCount: 2,
-      applicants: [
-        {
-          inquiryId: 'inq-1',
-          scholarId: 's-1',
-          scholarName: 'Dr. Sarah Edwards',
-          scholarSlug: 'sarah-edwards',
-          title: 'Associate Professor',
-          currentInstitution: 'Reformed Theological Seminary',
-          highestDegree: 'Ph.D. in New Testament',
-          degreeInstitution: 'University of Aberdeen',
-          isTerminalDoctorate: true,
-          confessions: ['Westminster Confession of Faith'],
-          alignmentLevel: 'full',
-          alignmentScorePercent: 95,
-          coverNote: 'Excited to apply for this modular intensive teaching role.',
-          status: 'pending',
-          appliedAt: '2026-09-29T12:00:00Z',
-        },
-        {
-          inquiryId: 'inq-2',
-          scholarId: 's-2',
-          scholarName: 'Dr. Calvin Edwards',
-          scholarSlug: 'calvin-edwards',
-          title: 'Professor of Theology',
-          currentInstitution: 'Covenant Theological Seminary',
-          highestDegree: 'Th.D. in Systematic Theology',
-          degreeInstitution: 'Harvard Divinity School',
-          isTerminalDoctorate: true,
-          confessions: ['Westminster Confession of Faith', 'Nicene Creed'],
-          alignmentLevel: 'full',
-          alignmentScorePercent: 92,
-          coverNote: 'Please review my attached dossier for the Greek seminar opening.',
-          status: 'accepted',
-          appliedAt: '2026-09-28T14:30:00Z',
-        },
+  describe('applicant report (real applications, member client, two queries)', () => {
+    const snapshot = {
+      snapshot_version: 1,
+      sealed_at: '2026-10-01T12:00:00Z',
+      scholar_slug: 'sarah-edwards',
+      full_name: 'Dr. Sarah Edwards',
+      title: 'Associate Professor',
+      current_institution: 'Reformed Theological Seminary',
+      doctrinal_statement_text: 'We affirm the Westminster Standards.',
+      credentials: [
+        { degree: 'M.Div.', field_of_study: 'Pastoral Studies', institution_name: 'RTS', year_awarded: 2010, is_terminal: false },
+        { degree: 'Ph.D.', field_of_study: 'New Testament', institution_name: 'University of Aberdeen', year_awarded: 2016, is_terminal: true },
       ],
+      confessions: [{ name: 'Westminster Confession of Faith', slug: 'westminster-confession', adherence_level: 'full_subscription', exception_notes: null }],
+      disciplines: [{ name: 'New Testament', slug: 'new-testament', is_primary: true }],
+      traditions: [{ name: 'Reformed', slug: 'reformed', is_primary: true }],
+      publications: [{ title: 'A Book', publication_type: 'book', year: 2018 }],
     };
 
-    it('generates UTF-8 BOM formatted CSV for Excel compatibility', () => {
-      const csv = exportApplicantMatrixCsv(mockReport);
-      expect(csv.charCodeAt(0)).toBe(0xfeff);
+    function fakeClient(opts: { posting?: unknown; postingError?: { code: string }; rows?: unknown[]; rowsError?: { code: string } }) {
+      const calls: { table: string; filters: [string, unknown][] }[] = [];
+      const client = {
+        from(table: string) {
+          const call = { table, filters: [] as [string, unknown][] };
+          calls.push(call);
+          const result =
+            table === 'institution_postings'
+              ? { data: opts.posting ?? null, error: opts.postingError ?? null }
+              : { data: opts.rows ?? [], error: opts.rowsError ?? null };
+          const builder: Record<string, unknown> = {};
+          for (const m of ['select', 'order']) builder[m] = () => builder;
+          for (const m of ['eq', 'in']) {
+            builder[m] = (column: string, value: unknown) => {
+              call.filters.push([`${m}:${column}`, value]);
+              return builder;
+            };
+          }
+          builder.maybeSingle = async () => result;
+          builder.then = (resolve: (v: unknown) => unknown) => Promise.resolve(result).then(resolve);
+          return builder;
+        },
+      };
+      return { client: client as never, calls };
+    }
+
+    const posting = {
+      id: POSTING,
+      institution_id: INST,
+      title: 'Adjunct NT',
+      slug: 'adjunct-nt',
+      opportunity_type: 'adjunct',
+      term: 'Fall 2027',
+      required_degree: 'Ph.D.',
+      confessional_requirements: null,
+      traditions: { name: 'Reformed' },
+    };
+
+    it('derives degree, alignment and notes from the frozen snapshot with exactly two queries', async () => {
+      const { client, calls } = fakeClient({
+        posting,
+        rows: [
+          {
+            id: 'app-1',
+            scholar_id: 's-1',
+            cover_note: 'Please consider me.',
+            dossier_snapshot: snapshot,
+            status: 'under_review',
+            status_changed_at: '2026-10-02T12:00:00Z',
+            created_at: '2026-10-01T12:00:00Z',
+            posting_application_notes: [{ body: 'Strong candidate' }],
+          },
+        ],
+      });
+
+      const report = await getPostingApplicantReport(client, POSTING, [INST]);
+
+      expect(calls.map((c) => c.table)).toEqual(['institution_postings', 'posting_applications']);
+      expect(calls[0].filters).toContainEqual(['in:institution_id', [INST]]);
+      expect(calls[1].filters).toContainEqual(['in:institution_id', [INST]]);
+      expect(calls[1].filters).toContainEqual(['eq:posting_id', POSTING]);
+      expect(report?.totalApplicants).toBe(1);
+      const a = report!.applicants[0];
+      expect(a.scholarName).toBe('Dr. Sarah Edwards');
+      expect(a.highestDegree).toBe('Ph.D. in New Testament');
+      expect(a.degreeInstitution).toBe('University of Aberdeen');
+      expect(a.isTerminalDoctorate).toBe(true);
+      expect(a.status).toBe('under_review');
+      expect(a.note).toBe('Strong candidate');
+      expect(a.confessions).toEqual(['Westminster Confession of Faith']);
+      expect(report!.terminalDoctoratesCount).toBe(1);
+      expect(report!.terminalDoctoratesRatio).toBe(100);
     });
 
-    it('includes required candidate evaluation headers', () => {
-      const csv = exportApplicantMatrixCsv(mockReport);
-      expect(csv).toContain('Candidate Name');
-      expect(csv).toContain('ATS Terminal Doctorate');
-      expect(csv).toContain('Confessional Alignment');
-      expect(csv).toContain('Application Status');
+    it('returns null without touching the database for an invalid id or no memberships', async () => {
+      const { client, calls } = fakeClient({ posting });
+      expect(await getPostingApplicantReport(client, 'not-a-uuid', [INST])).toBeNull();
+      expect(await getPostingApplicantReport(client, POSTING, [])).toBeNull();
+      expect(calls).toEqual([]);
     });
 
-    it('formats candidate rows accurately', () => {
-      const csv = exportApplicantMatrixCsv(mockReport);
-      expect(csv).toContain('"Dr. Sarah Edwards"');
-      expect(csv).toContain('"University of Aberdeen"');
-      expect(csv).toContain('"YES"');
-      expect(csv).toContain('"95%"');
-      expect(csv).toContain('"Dr. Calvin Edwards"');
-      expect(csv).toContain('"ACCEPTED"');
+    it('returns null when the posting is not one of the member institutions', async () => {
+      const { client, calls } = fakeClient({ posting: null });
+      expect(await getPostingApplicantReport(client, POSTING, [INST])).toBeNull();
+      expect(calls.map((c) => c.table)).toEqual(['institution_postings']);
+    });
+
+    it('throws (never reports "no applicants") when a query fails', async () => {
+      await expect(
+        getPostingApplicantReport(fakeClient({ posting, rowsError: { code: '57014' } }).client, POSTING, [INST])
+      ).rejects.toBeInstanceOf(PortalQueryError);
+      await expect(
+        getPostingApplicantReport(fakeClient({ postingError: { code: '57014' } }).client, POSTING, [INST])
+      ).rejects.toBeInstanceOf(PortalQueryError);
+    });
+
+    it('skips rows with an unknown status instead of guessing', async () => {
+      const { client } = fakeClient({
+        posting,
+        rows: [{ id: 'a', scholar_id: 's', cover_note: 'x', dossier_snapshot: snapshot, status: 'accepted', status_changed_at: 'x', created_at: '2026-10-01T00:00:00Z' }],
+      });
+      expect((await getPostingApplicantReport(client, POSTING, [INST]))?.totalApplicants).toBe(0);
+    });
+  });
+
+  describe('snapshot parsing', () => {
+    it('degrades unknown shapes to empty lists and never throws', () => {
+      for (const raw of [null, undefined, 'x', 5, [], { credentials: 'nope', confessions: [null, 3] }]) {
+        const view = parseDossierSnapshot(raw);
+        expect(view.credentials).toEqual([]);
+        expect(view.confessions).toEqual([]);
+        expect(view.publications).toEqual([]);
+      }
+    });
+
+    it('prefers a terminal doctorate, else the most recent credential', () => {
+      const mdiv = { degree: 'M.Div.', fieldOfStudy: null, institutionName: null, yearAwarded: 2010, isTerminal: false };
+      const thm = { degree: 'Th.M.', fieldOfStudy: null, institutionName: null, yearAwarded: 2014, isTerminal: false };
+      const phd = { degree: 'Ph.D.', fieldOfStudy: null, institutionName: null, yearAwarded: 2008, isTerminal: true };
+      expect(pickHighestCredential([mdiv, thm, phd])?.degree).toBe('Ph.D.');
+      expect(pickHighestCredential([mdiv, thm])?.degree).toBe('Th.M.');
+      expect(pickHighestCredential([])).toBeNull();
     });
   });
 });

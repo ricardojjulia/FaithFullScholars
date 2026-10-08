@@ -5,7 +5,9 @@ import { notFound } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { requireInstitutionMember } from '@/lib/auth/guards';
-import { getPostingApplicantReport } from '@/lib/postings/applicant-service';
+import { getPostingApplicantReport, type PostingApplicantReport } from '@/lib/postings/applicant-service';
+import { PortalQueryError } from '@/lib/inquiries/queries';
+import { DataErrorPanel } from '@/components/portal/data-error-panel';
 import { PostingApplicantMatrix } from '@/components/institution/posting-applicant-matrix';
 
 export const metadata: Metadata = {
@@ -22,11 +24,19 @@ export default async function PostingApplicantsPage({
 
   const supabase = await createClient();
   // Guard here, not only in the layout: layouts do not stop pages from rendering.
-  const { institutionId } = await requireInstitutionMember(supabase);
+  const { session } = await requireInstitutionMember(supabase);
 
-  const report = await getPostingApplicantReport(id, institutionId);
+  // Read with the member's own client under RLS: only their institutions' applications can come back.
+  let report: PostingApplicantReport | null = null;
+  let loadFailed = false;
+  try {
+    report = await getPostingApplicantReport(supabase, id, session.institutionIds);
+  } catch (err) {
+    loadFailed = true;
+    console.error('Applicant matrix failed to load (code):', err instanceof PortalQueryError ? err.code : 'unknown');
+  }
 
-  if (!report) {
+  if (!loadFailed && !report) {
     notFound();
   }
 
@@ -43,7 +53,7 @@ export default async function PostingApplicantsPage({
         </Link>
       </div>
 
-      <PostingApplicantMatrix report={report} />
+      {report ? <PostingApplicantMatrix report={report} /> : <DataErrorPanel what="the applicants" />}
     </div>
   );
 }

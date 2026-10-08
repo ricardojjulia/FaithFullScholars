@@ -44,6 +44,9 @@ const IDS = {
   $CHILD_DISC: 'c0000000-0000-0000-0000-0000000001f4',
   $CHILD_TRAD: 'c0000000-0000-0000-0000-0000000001f5',
   $CHILD_CONF: 'c0000000-0000-0000-0000-0000000001f6',
+  $APPLICATION: 'c0000000-0000-0000-0000-0000000001a3',
+  $NOTE: 'c0000000-0000-0000-0000-0000000001a4',
+  $POSTING: 'c0000000-0000-0000-0000-0000000001a5',
 } as const;
 
 type ColumnDecl = { skip: string } | { writable: boolean; value: string };
@@ -199,6 +202,30 @@ describe('Policy matrix — declared column-write contract', () => {
            (id, institution_id, scholar_id, relationship_type, department_or_field, endorsement_text, is_credential_verified)
          VALUES ($1, $2, $3, 'Current Faculty', 'New Testament', 'Matrix endorsement', false)`,
         [IDS.$ENDORSEMENT, IDS.$INST_A, dynamicIds.$SCHOLAR_A]
+      );
+    },
+    application: async () => {
+      // Its own posting, so the fixture does not depend on seeded postings. Inserted as the
+      // migration role: the guard restricts API callers only, and applications are otherwise
+      // created through submit_posting_application() (ADR 0027).
+      await client.query(
+        `INSERT INTO public.institution_postings (id, institution_id, title, slug, opportunity_type, term, description, status)
+         VALUES ($1, $2, 'Matrix application posting', 'matrix-application-posting', 'adjunct', 'Fall 2027', 'Policy matrix posting.', 'published')`,
+        [IDS.$POSTING, IDS.$INST_A]
+      );
+      await client.query(
+        `INSERT INTO public.posting_applications
+           (id, posting_id, institution_id, scholar_id, posting_title, institution_name, cover_note, dossier_snapshot)
+         VALUES ($1, $2, $3, $4, 'Matrix application posting', 'Westminster Theological Seminary', 'A cover note for the policy matrix.', '{"snapshot_version":1}'::jsonb)`,
+        [IDS.$APPLICATION, IDS.$POSTING, IDS.$INST_A, dynamicIds.$SCHOLAR_A]
+      );
+    },
+    application_with_note: async () => {
+      await fixtures.application();
+      await client.query(
+        `INSERT INTO public.posting_application_notes (id, application_id, institution_id, body)
+         VALUES ($1, $2, $3, 'Matrix committee note')`,
+        [IDS.$NOTE, IDS.$APPLICATION, IDS.$INST_A]
       );
     },
     consortium_invite: async () => {

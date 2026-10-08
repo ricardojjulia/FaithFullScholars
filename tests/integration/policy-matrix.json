@@ -1,5 +1,5 @@
 {
-  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Scenarios with requireVisible=true also assert the probed row is visible to the persona, so a denial cannot be an invisible-row artifact. Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A, $REVISION, $CHILD_CRED, $CHILD_PUB, $CHILD_DISC, $CHILD_TRAD, $CHILD_CONF. ADR 0025: scholars content columns, slug and file paths are review-gated (not writable); the five published child tables are not writable at all.",
+  "$comment": "Authorization contract for column writes (ADR 0023). For each scenario, EVERY column of the table must be declared: writable true/false with a probe SQL value that differs from the fixture, or skip with a reason. tests/integration/policy-matrix.test.ts fails CI on any undeclared or stale column, and on any probe whose outcome differs from the declaration. Probe values must differ from the fixture (the runner fails on no-op writes; note now() is constant within a transaction). Scenarios with requireVisible=true also assert the probed row is visible to the persona, so a denial cannot be an invisible-row artifact. Placeholders: $SCHOLAR_A, $OTHER_SCHOLAR, $INST_B, $ADMIN_ACCOUNT, $COURSE_A, $REVISION, $CHILD_CRED, $CHILD_PUB, $CHILD_DISC, $CHILD_TRAD, $CHILD_CONF. ADR 0025: scholars content columns, slug and file paths are review-gated (not writable); the five published child tables are not writable at all. ADR 0027: posting_applications are created only by submit_posting_application() and sealed after submission; the scholar may only withdraw, a member may only move forward through review, and the institution's private notes are writable by members (the author and edit time are forced by the guard). Extra placeholders: $APPLICATION, $POSTING, $NOTE.",
   "scenarios": [
     {
       "table": "accounts",
@@ -1134,6 +1134,215 @@
         "created_at": {
           "writable": false,
           "value": "now() - interval '1 day'"
+        }
+      }
+    },
+    {
+      "table": "posting_applications",
+      "persona": "scholar",
+      "fixture": "application",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$APPLICATION"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "posting_id": {
+          "writable": false,
+          "value": "'c0000000-0000-0000-0000-0000000001ff'"
+        },
+        "institution_id": {
+          "writable": false,
+          "value": "'$INST_B'"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "posting_title": {
+          "writable": false,
+          "value": "'Probe posting title'"
+        },
+        "institution_name": {
+          "writable": false,
+          "value": "'Probe institution name'"
+        },
+        "cover_note": {
+          "writable": false,
+          "value": "'Probe cover note text'"
+        },
+        "dossier_snapshot": {
+          "writable": false,
+          "value": "'{\"probe\":true}'::jsonb"
+        },
+        "status": {
+          "writable": true,
+          "value": "'withdrawn'"
+        },
+        "status_changed_at": {
+          "skip": "maintained by the guard (reset on a no-op, stamped on a real change)"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '40 days'"
+        },
+        "updated_at": {
+          "skip": "maintained by an updated_at trigger (overwritten on every update)"
+        }
+      }
+    },
+    {
+      "table": "posting_applications",
+      "persona": "institution_owner",
+      "fixture": "application",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$APPLICATION"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "posting_id": {
+          "writable": false,
+          "value": "'c0000000-0000-0000-0000-0000000001ff'"
+        },
+        "institution_id": {
+          "writable": false,
+          "value": "'$INST_B'"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "posting_title": {
+          "writable": false,
+          "value": "'Probe posting title'"
+        },
+        "institution_name": {
+          "writable": false,
+          "value": "'Probe institution name'"
+        },
+        "cover_note": {
+          "writable": false,
+          "value": "'Probe cover note text'"
+        },
+        "dossier_snapshot": {
+          "writable": false,
+          "value": "'{\"probe\":true}'::jsonb"
+        },
+        "status": {
+          "writable": true,
+          "value": "'under_review'"
+        },
+        "status_changed_at": {
+          "skip": "maintained by the guard (reset on a no-op, stamped on a real change)"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '40 days'"
+        },
+        "updated_at": {
+          "skip": "maintained by an updated_at trigger (overwritten on every update)"
+        }
+      }
+    },
+    {
+      "table": "posting_applications",
+      "persona": "institution_recruiter",
+      "fixture": "application",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$APPLICATION"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "posting_id": {
+          "writable": false,
+          "value": "'c0000000-0000-0000-0000-0000000001ff'"
+        },
+        "institution_id": {
+          "writable": false,
+          "value": "'$INST_B'"
+        },
+        "scholar_id": {
+          "writable": false,
+          "value": "'$OTHER_SCHOLAR'"
+        },
+        "posting_title": {
+          "writable": false,
+          "value": "'Probe posting title'"
+        },
+        "institution_name": {
+          "writable": false,
+          "value": "'Probe institution name'"
+        },
+        "cover_note": {
+          "writable": false,
+          "value": "'Probe cover note text'"
+        },
+        "dossier_snapshot": {
+          "writable": false,
+          "value": "'{\"probe\":true}'::jsonb"
+        },
+        "status": {
+          "writable": true,
+          "value": "'under_review'"
+        },
+        "status_changed_at": {
+          "skip": "maintained by the guard (reset on a no-op, stamped on a real change)"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '40 days'"
+        },
+        "updated_at": {
+          "skip": "maintained by an updated_at trigger (overwritten on every update)"
+        }
+      }
+    },
+    {
+      "table": "posting_application_notes",
+      "persona": "institution_owner",
+      "fixture": "application_with_note",
+      "requireVisible": true,
+      "row": {
+        "column": "id",
+        "value": "$NOTE"
+      },
+      "columns": {
+        "id": {
+          "writable": false,
+          "value": "'c0000000-0000-0000-0000-0000000001fe'"
+        },
+        "application_id": {
+          "writable": false,
+          "value": "'c0000000-0000-0000-0000-0000000001fd'"
+        },
+        "institution_id": {
+          "writable": false,
+          "value": "'$INST_B'"
+        },
+        "body": {
+          "writable": true,
+          "value": "'Probe note body'"
+        },
+        "updated_by": {
+          "skip": "forced to the caller by the guard on every write"
+        },
+        "created_at": {
+          "writable": false,
+          "value": "now() - interval '9 days'"
+        },
+        "updated_at": {
+          "skip": "forced to the real clock by the guard on every write"
         }
       }
     }
