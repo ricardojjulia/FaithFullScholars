@@ -291,6 +291,13 @@ Persistent, enforced rate limits (ADR 0026, PR #65; migration `20261008090000` b
 - The inquiry cap (10/hour per institution, shared by members) is a database trigger (`trg_guard_inquiry_rate`, FS429) that fails closed. `inquiries.created_at` is server-controlled so back-dating cannot evade it. The in-memory limiter is deleted.
 - Until the migration is applied, search is not limited and the inquiry cap is not database-enforced. Record: `docs/reviews/2026-10-08-council-review-15-synthesis.md`.
 
+Real data on portal screens (PR #66, branch `fix/real-portal-data`; no DB, RLS or migration change; pending merge):
+
+- `/institution`, `/institution/saved`, `/institution/inquiries`, `/institution/profile`, `/dashboard` and `/dashboard/inquiries` read the signed-in user's own rows through the RLS client. Saved-item removal is an explicit idempotent `DELETE` (fixes the toggle-add bug). `PATCH /api/institution/profile` is session-scoped and allow-listed and cannot write trust columns. The nav "Verified" badge reflects the real institution status. "Awaiting" means `pending` + `read` everywhere.
+- A session lookup failure is an outage (error panel or 503), never a fake empty state. Contact email is withheld from the scholar inbox until the inquiry is accepted.
+- `/dashboard/analytics` is labelled sample data; the conference hub is a staff-only preview; unused demo exports were deleted.
+- Still open: `/dashboard/courses` seeds `INITIAL_COURSES` fixtures; any institution member (including a recruiter) can edit the profile (existing RLS). Next slice (owner order): the applications rebuild. Record: `docs/reviews/2026-10-08-council-review-16-synthesis.md`.
+
 Known gaps (accepted residual risk, see ADR 0024 and ADR 0025):
 
 - ADR 0024 residual risks 1 and 2 are resolved in production (migration `20261007090000`, applied 2026-10-07).
@@ -960,7 +967,7 @@ Acceptance:
 2. [x] Implement `lib/conferences/conference-service.ts` for conference attendees queries, convention interview booking, slot collision defense, and confidential committee deliberation scoring.
 3. [x] Build search committee convention suite page (`app/(institution)/institution/conferences/page.tsx`) with conference switcher, candidate briefing, deliberation scoring, and print-optimized docket.
 4. [x] Add "Conferences" navigation link to institutional navigation (`components/institution/institution-nav.tsx`).
-5. [x] Build `<ConferencePresentationBadge />` and `<ConferenceInterviewModal />` with accessible ARIA semantics (`role="dialog"`, `aria-modal={true}`).
+5. [x] Build `<ConferenceInterviewModal />` (the `<ConferencePresentationBadge />` was deleted on 2026-10-08 with its invented data)  with accessible ARIA semantics (`role="dialog"`, `aria-modal={true}`).
 6. [x] Mount presentation badges on scholar profile dossier (`app/scholars/[slug]/page.tsx`).
 7. [x] Harden shell components with `print:hidden` (`PublicNav`, `PublicFooter`, `InstitutionNav`, `AdminNav`) to prevent navigation chrome from contaminating printed dossiers and ATS reports.
 8. [x] Add dynamic active route indication and `aria-current="page"` to `components/shell/public-nav.tsx`.
@@ -1049,7 +1056,7 @@ Agents must verify current official CLI documentation before using commands that
 - [x] **Doctoral Dissertation Supervision & External Committee Reader Exchange (ADR 0018)** (`<ScholarDoctoralSupervisionCard />`, `/scholars/[slug]`, ATS Standard 4/5 doctoral committee reader dispatch).
 - [x] **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019)** (`lib/accreditation/ats-matrix-generator.ts`, `<ATSComplianceMatrixTable />`, `/institution/saved/accreditation`, RFC-4180 UTF-8 BOM CSV export, root error boundaries `app/not-found.tsx` and `app/error.tsx`).
 - [x] **Confessional Common Application & Search Committee Applicant Matrix (ADR 0020)** (`lib/postings/applicant-service.ts`, `<PostingApplicantMatrix />`, `/institution/postings/[id]/applicants`, candidate triage workflow, ATS Standard 3 doctoral scoring, RFC-4180 candidate CSV export).
-- [x] **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021)** (`lib/conferences/`, `/institution/conferences`, `<ConferencePresentationBadge />`, `<ConferenceInterviewModal />`, convention floor docket with confidential committee deliberation rubrics).
+- [x] **Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (ADR 0021)** (`lib/conferences/`, `/institution/conferences`, `<ConferenceInterviewModal />`, convention floor docket with confidential committee deliberation rubrics).
 
 ## 22. Governing Decisions
 
