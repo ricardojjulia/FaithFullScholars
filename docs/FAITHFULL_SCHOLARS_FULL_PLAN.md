@@ -294,7 +294,7 @@ Persistent, enforced rate limits (ADR 0026, PR #65; migration `20261008090000` b
 Real data on portal screens (PR #66, branch `fix/real-portal-data`; no DB, RLS or migration change; pending merge):
 
 - `/institution`, `/institution/saved`, `/institution/inquiries`, `/institution/profile`, `/dashboard` and `/dashboard/inquiries` read the signed-in user's own rows through the RLS client. Saved-item removal is an explicit idempotent `DELETE` (fixes the toggle-add bug). `PATCH /api/institution/profile` is session-scoped and allow-listed and cannot write trust columns. The nav "Verified" badge reflects the real institution status. "Awaiting" means `pending` + `read` everywhere.
-- A session lookup failure is an outage (error panel or 503), never a fake empty state. Contact email is withheld from the scholar inbox until the inquiry is accepted.
+- A session lookup failure is an outage (error panel or 503), never a fake empty state. Contact email is withheld from the scholar inbox payload until the inquiry is accepted (app layer only; inquiry RLS is row-level, so a column-level control is a follow-up).
 - `/dashboard/analytics` is labelled sample data; the conference hub is a staff-only preview; unused demo exports were deleted.
 - Still open: `/dashboard/courses` seeds `INITIAL_COURSES` fixtures; any institution member (including a recruiter) can edit the profile (existing RLS). Next slice (owner order): the applications rebuild. Record: `docs/reviews/2026-10-08-council-review-16-synthesis.md`.
 

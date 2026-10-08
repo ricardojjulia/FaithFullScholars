@@ -11,12 +11,12 @@ Stop portal screens showing invented numbers and identities as real, fix the sho
 ## 3. Architecture, Security & RLS Impact
 - **Spec:** `docs/superpowers/specs/2026-10-08-real-portal-data.md`. No ADR, no migration, no RLS change.
 - Pages read through the user/RLS client after their own guard. New `PATCH /api/institution/profile` (session institution, allow-list, no trust columns; the ADR 0023 trigger backs it). `DELETE` on saved-scholars and saved-courses (UUID-validated, idempotent).
-- `getSessionContext` returns `lookupFailed`; guards throw, layouts render an outage panel, APIs answer 503. Contact email is withheld until acceptance. Logs carry codes only.
+- `getSessionContext` returns `lookupFailed`; guards throw, layouts render an outage panel, APIs answer 503. Contact email is withheld from the inbox payload until acceptance (app layer; row-level RLS still lets the recipient read the column; column-level control is a follow-up). Logs carry codes only.
 
 ## 4. Council and Review Gates
 - Synthesis: `docs/reviews/2026-10-08-council-review-16-synthesis.md`. Agents 1, 2+3 and 7 in one pass; Agents 4 and 5 omitted for a single slice. No Critical findings; Important findings fixed in `fbdcd73`.
 - implementation-validator: no Critical. pr-review: no Critical.
-- Re-review of fbdcd73: <pending>
+- Re-review of fbdcd73: no Critical. Important items handled: (1) the Vercel preview fails by design on every branch (no preview environment; production deploys from main succeed); (2) the contact-email wording now says it is app-layer minimisation, with a column-level control as a follow-up; (3) added `tests/unit/respond-to-inquiry.test.ts` (non-recipient accept/decline refused with no write; email released only on accept). Also fixed: the profile PATCH body cap now holds for chunked requests.
 
 ## 5. Verification Results
 | Check | Command | Status | Details |

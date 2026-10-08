@@ -24,9 +24,15 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Request body is too large.' }, { status: 413 });
     }
 
+    // Read as text so the size cap also holds for chunked requests without a
+    // Content-Length header.
+    const raw = await req.text();
+    if (Buffer.byteLength(raw, 'utf8') > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: 'Request body is too large.' }, { status: 413 });
+    }
     let body: unknown;
     try {
-      body = await req.json();
+      body = JSON.parse(raw);
     } catch {
       return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
     }

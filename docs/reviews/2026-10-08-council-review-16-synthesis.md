@@ -24,7 +24,7 @@
 - **Awaiting consistency:** pending plus read everywhere, through shared tabs and labels.
 - **Analytics card:** no longer reads as active.
 - **Conference modal false claims** and **false "Verified" claims:** removed; the fabricated "Unknown Seminary approved" fallback is gone.
-- **Data minimisation:** contact email is stripped until the inquiry is accepted.
+- **Data minimisation:** contact email is stripped from the inbox payload until the inquiry is accepted. This is app-layer only; inquiry RLS is row-level, so the recipient can still read the column directly. A column-level control is a follow-up.
 - **Accessibility:** tabs with full keyboard support, a focus-trapped dialog, a live region for removals.
 - **Tests:** inbox rollback extracted as pure functions with unit tests, plus an E2E that intercepts the PATCH. Exact head counts are used for the trend.
 
