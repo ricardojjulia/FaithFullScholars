@@ -100,12 +100,21 @@ export function CoursesManager({
     if (editing) titleRef.current?.focus();
   }, [editing]);
 
+  // Escape closes the dialog even when focus was lost (for example while the submit button is disabled).
+  const isOpen = editing !== null;
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditing(null);
+        openerRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
   function onDialogKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      closeDialog();
-      return;
-    }
     if (e.key !== 'Tab' || !dialogRef.current) return;
     const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
       'input, select, textarea, button:not([disabled])'
