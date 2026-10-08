@@ -12,6 +12,14 @@
  *                seed institution (Westminster, e1000000-…0001) with a
  *                two-scholar shortlist
  *
+ * Plus, for tests/e2e/posting-applications.spec.ts and applicant-matrix.spec.ts (ADR 0027):
+ *   applicant    accounts.role = 'scholar' + an APPROVED profile (e2e-applicant-scholar)
+ *                with one credential, one confession and one discipline, so the sealed
+ *                dossier has real content; and a dedicated, always-published posting
+ *                (f2000000-…00a1, e2e-applications-posting) at the approved seed institution.
+ *                Everything is idempotent; tests/e2e/support/reset-applications.ts clears the
+ *                applications between runs.
+ *
  * Plus, for tests/e2e/portal-real-data.spec.ts:
  *   - one idempotent inquiry from the institution to the scholar persona and an
  *     availability row for the scholar persona, so their screens show real data;
@@ -51,6 +59,16 @@ export const PERSONAS = {
   admin: { email: 'e2e-admin@test.faithfullscholars.dev', role: 'admin' },
   scholar: { email: 'e2e-scholar@test.faithfullscholars.dev', role: 'scholar' },
   institution: { email: 'e2e-institution@test.faithfullscholars.dev', role: 'institution_user' },
+  applicant: { email: 'e2e-applicant@test.faithfullscholars.dev', role: 'scholar' },
+};
+export const APPLICANT_SCHOLAR = {
+  slug: 'e2e-applicant-scholar',
+  fullName: 'E2E Applicant Scholar',
+};
+export const APPLICATIONS_POSTING = {
+  id: 'f2000000-0000-0000-0000-0000000000a1',
+  slug: 'e2e-applications-posting',
+  title: 'E2E Applications Posting: Adjunct in New Testament',
 };
 const APPROVED_INSTITUTION = 'e1000000-0000-0000-0000-000000000001';
 
@@ -87,6 +105,84 @@ for (const [name, persona] of Object.entries(PERSONAS)) {
       admin.from('scholars').upsert(
         { account_id: id, full_name: 'E2E Test Scholar', slug: 'e2e-test-scholar', profile_status: 'draft' },
         { onConflict: 'account_id' }
+      )
+    );
+  }
+  if (name === 'applicant') {
+    await must(
+      'applicant profile',
+      admin.from('scholars').upsert(
+        {
+          account_id: id,
+          full_name: APPLICANT_SCHOLAR.fullName,
+          slug: APPLICANT_SCHOLAR.slug,
+          title: 'Associate Professor of New Testament',
+          current_institution: 'E2E Seminary',
+          profile_status: 'approved',
+        },
+        { onConflict: 'account_id' }
+      )
+    );
+    const { data: applicantRow, error: applicantError } = await admin.from('scholars').select('id').eq('account_id', id).single();
+    if (applicantError || !applicantRow) {
+      console.error('applicant profile lookup failed:', applicantError?.message ?? 'not found');
+      process.exit(1);
+    }
+    // Published lists: written with the service role (the guards restrict API callers only).
+    const existingCredential = await admin.from('credentials').select('id').eq('scholar_id', applicantRow.id).limit(1);
+    if (existingCredential.error) {
+      console.error('applicant credential lookup failed:', existingCredential.error.message);
+      process.exit(1);
+    }
+    if ((existingCredential.data ?? []).length === 0) {
+      await must(
+        'applicant credential',
+        admin.from('credentials').insert({
+          scholar_id: applicantRow.id,
+          degree: 'Ph.D.',
+          field_of_study: 'New Testament',
+          institution_name: 'E2E University',
+          year_awarded: 2015,
+          is_terminal: true,
+          display_order: 1,
+        })
+      );
+    }
+    await must(
+      'applicant confession',
+      admin.from('scholar_confessions').upsert(
+        {
+          scholar_id: applicantRow.id,
+          confessional_standard_id: 'c1000000-0000-0000-0000-000000000004',
+          adherence_level: 'full_subscription',
+        },
+        { onConflict: 'scholar_id,confessional_standard_id' }
+      )
+    );
+    await must(
+      'applicant discipline',
+      admin.from('scholar_disciplines').upsert(
+        { scholar_id: applicantRow.id, discipline_id: 'd1000000-0000-0000-0000-000000000002', is_primary: true },
+        { onConflict: 'scholar_id,discipline_id' }
+      )
+    );
+    // The dedicated, always-published posting these specs apply to.
+    await must(
+      'applications posting',
+      admin.from('institution_postings').upsert(
+        {
+          id: APPLICATIONS_POSTING.id,
+          institution_id: APPROVED_INSTITUTION,
+          title: APPLICATIONS_POSTING.title,
+          slug: APPLICATIONS_POSTING.slug,
+          opportunity_type: 'adjunct',
+          required_degree: 'Ph.D. in New Testament',
+          delivery_mode: 'online_synchronous',
+          term: 'Fall 2027',
+          description: 'A dedicated posting for the end-to-end application journey. Applications to it are reset between runs.',
+          status: 'published',
+        },
+        { onConflict: 'id' }
       )
     );
   }

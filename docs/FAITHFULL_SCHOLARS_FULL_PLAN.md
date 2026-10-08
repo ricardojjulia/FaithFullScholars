@@ -947,18 +947,19 @@ Acceptance:
 
 ### Phase 17: Confessional Common Application & Search Committee Applicant Matrix (Completed)
 
-> **Status:** Built but not working end to end (Council Review 12 correction: `POST /api/postings/[id]/express-interest` always fails under RLS because scholars cannot insert `inquiries`, so the applicant matrix has no real applicants, and an application model is roadmap work. The "hardened API authorization" in this phase was rebuilt in ADR 0022; the earlier version accepted anonymous institution IDs outside production). Intended scope: 1-click Common Application interest expression linking verified scholar dossiers to faculty search opportunities, search committee candidate matrix at `/institution/postings/[id]/applicants`, candidate triage status workflow, ATS Standard 3 terminal doctorate and confessional fit scoring, RFC-4180 CSV export, candidate dossier modal, shell/API security hardening, bilingual i18n parity; 251 unit/integration tests across 49 suites, 41 Playwright E2E tests, 35/35 tables RLS enforced, 6/6 Splinter checks passing, 22 deployment pre-flight checks).
+> **Status:** Rebuilt by ADR 0027 (spec `docs/superpowers/specs/2026-10-08-posting-applications.md`, branch `feat/posting-applications`): built and gated in CI, live once migration `20261009090000` is applied to production. Before this, `POST /api/postings/[id]/express-interest` always failed under RLS (scholars cannot insert `inquiries`) and the matrix guessed applications from inquiries with the service role (Council Review 12). Scope now: real `posting_applications` with a SQL-sealed dossier, one insert path (`submit_posting_application`), a transition-table guard, private institution notes, an audit trail, contact released at interview, a 20-per-day database cap, the scholar's My applications page, and the applicant matrix on real data. Deferred: email notifications, interview scheduling (conference hub slice), messaging inside applications.
 
-1. [x] Implement `lib/postings/applicant-service.ts` compiling applicant reports, ATS Standard 3 doctorates, confessional fit, and CSV export.
+1. [x] Implement `lib/postings/applicant-service.ts` compiling applicant reports from the frozen snapshots (member client, two queries), ATS Standard 3 doctorates and confessional fit; CSV export in `lib/postings/applicants-csv.ts`.
 2. [x] Build search committee candidate matrix UI (`components/institution/posting-applicant-matrix.tsx`) with status filtering, CSV export, and print styles.
 3. [x] Mount applicant matrix page at `/institution/postings/[id]/applicants`.
 4. [x] Add "Applicant Matrix" navigation link from institutional postings list (`app/(institution)/institution/postings/page.tsx`).
-5. [x] Format applicant submission metadata in `app/api/postings/[id]/express-interest/route.ts`.
+5. [x] Submit applications through `submit_posting_application()` from `app/api/postings/[id]/express-interest/route.ts`; add withdraw, status, notes and contact routes (ADR 0027).
 6. [x] Harden API routes (`/api/institution/saved-scholars`, `/api/institution/saved-courses`, `/api/inquiries/[id]`) with user authentication, institutional tenancy, and sanitized error responses.
 7. [x] Implement dynamic scholar dashboard navigation (`components/scholar/scholar-dashboard-nav.tsx`), add print-hiding on institution layout, and improve universal search bar ARIA labeling.
 8. [x] Add unit tests (`tests/unit/posting-applicants.test.ts`) and Playwright E2E test (`tests/e2e/applicant-matrix.spec.ts`).
-9. [x] Seed candidate reference data in `scripts/seed-pilot-cohort.ts`.
-10. [x] Maintain 100% key parity in `lib/i18n/messages/en.json` and `es.json` under `applicant_matrix`.
+9. [x] Remove the fake `[Common App` inquiries from `scripts/seed-pilot-cohort.ts`; E2E arranges its own applications.
+10. [x] Maintain 100% key parity in `lib/i18n/messages/en.json` and `es.json` under `applicant_matrix` and `common_app`.
+11. [x] Real-role integration tests with a probe per rule (`tests/integration/posting-applications.test.ts`), policy-matrix scenarios, and a Playwright journey (apply, review, withdraw).
 
 ### Phase 18: Theological Guild Annual Conference (ETS/SBL/EPS) Mobile Interview & Presentation Hub (Completed)
 
