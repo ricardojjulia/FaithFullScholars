@@ -1,6 +1,6 @@
 # Spec: Posting Applications (Express Interest / Common Application)
 
-- **Status:** Story drafted 2026-10-08. Awaiting owner approval (feature-factory gate 3).
+- **Status:** Story approved by the owner on 2026-10-08 (gate 3), with the defaults confirmed. Technical brief pending (gate 5).
 - **Order:** slice 3 of the remaining known-broken fixes. Owner order: rate limits (done) → real portal data (done) → applications → conference hub.
 - **Supersedes/extends:** ADR 0020 (Confessional Common Application). A new ADR 0027 is written before the code.
 - **Branch:** `feat/posting-applications`
