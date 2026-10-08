@@ -383,19 +383,29 @@ CREATE TRIGGER trg_guard_posting_application_notes
 -- ------------------------------------------------------------------------------
 -- 4. posting_application_events — audit, append-only for API callers
 --    Written only by the DEFINER trigger below. Users can read, never write.
---    Members, the applicant and admins read. Contact reveals are logged here too.
+--    Members (not as the applicant) and admins read the table; the applicant reads a
+--    redacted timeline via get_application_events() (no actor id). Contact reveals are
+--    logged here too, once per actor per application per 24 hours.
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.posting_application_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID NOT NULL REFERENCES public.posting_applications(id) ON DELETE CASCADE,
   institution_id UUID NOT NULL,
-  -- 'status' = submission or a status change; 'contact_revealed' = a member read the applicant's email.
-  event_kind TEXT NOT NULL DEFAULT 'status' CHECK (event_kind IN ('status', 'contact_revealed')),
   from_status TEXT,
   to_status TEXT NOT NULL,
   actor_account_id UUID,
   created_at TIMESTAMPTZ NOT NULL DEFAULT clock_timestamp()
 );
+
+-- 'status' = submission or a status change; 'contact_revealed' = a member read the applicant's
+-- email. Added with IF NOT EXISTS so a database that applied the earlier (pre-rename) file
+-- is upgraded by re-applying this one.
+ALTER TABLE public.posting_application_events
+  ADD COLUMN IF NOT EXISTS event_kind TEXT NOT NULL DEFAULT 'status';
+ALTER TABLE public.posting_application_events
+  DROP CONSTRAINT IF EXISTS posting_application_events_kind_check;
+ALTER TABLE public.posting_application_events
+  ADD CONSTRAINT posting_application_events_kind_check CHECK (event_kind IN ('status', 'contact_revealed'));
 
 CREATE INDEX IF NOT EXISTS idx_posting_application_events_application
   ON public.posting_application_events (application_id, created_at);
@@ -414,10 +424,28 @@ CREATE POLICY "Members and admins read application events"
   FOR SELECT
   TO authenticated
   USING (
-    private.is_institution_user(institution_id)
-    OR private.is_application_applicant(application_id)
+    (private.is_institution_user(institution_id) AND NOT private.is_application_applicant(application_id))
     OR private.is_admin()
   );
+
+-- The applicant reads their own timeline through this function, never the table: the table
+-- carries actor_account_id (a reviewer's internal account id), which a scholar must not learn.
+CREATE OR REPLACE FUNCTION public.get_application_events(p_application_id UUID)
+RETURNS TABLE (event_kind TEXT, from_status TEXT, to_status TEXT, created_at TIMESTAMPTZ)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT e.event_kind, e.from_status, e.to_status, e.created_at
+  FROM public.posting_application_events e
+  WHERE e.application_id = p_application_id
+    AND private.is_application_applicant(p_application_id)
+  ORDER BY e.created_at, e.id;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_application_events(UUID) FROM PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_application_events(UUID) TO authenticated;
 
 CREATE OR REPLACE FUNCTION private.log_posting_application_event()
 RETURNS TRIGGER
@@ -603,7 +631,8 @@ GRANT EXECUTE ON FUNCTION public.submit_posting_application(UUID, TEXT) TO authe
 --    so the caller learns nothing about why. A successful release is logged as a
 --    'contact_revealed' event.
 -- ------------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.get_application_contact(p_application_id UUID)
+DROP FUNCTION IF EXISTS public.get_application_contact(UUID);
+CREATE FUNCTION public.get_application_contact(p_application_id UUID)
 RETURNS TEXT
 LANGUAGE plpgsql
 VOLATILE
@@ -624,7 +653,14 @@ BEGIN
     AND s.id IS DISTINCT FROM (SELECT private.get_current_scholar_id());
 
   -- Every release of the email is audited (VOLATILE: this function writes).
-  IF v_email IS NOT NULL THEN
+  -- One event per actor per application per 24 hours, so repeat calls cannot flood the log.
+  IF v_email IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.posting_application_events e
+    WHERE e.application_id = p_application_id
+      AND e.event_kind = 'contact_revealed'
+      AND e.actor_account_id IS NOT DISTINCT FROM (SELECT auth.uid())
+      AND e.created_at > clock_timestamp() - interval '24 hours'
+  ) THEN
     INSERT INTO public.posting_application_events (application_id, institution_id, event_kind, from_status, to_status, actor_account_id)
     VALUES (p_application_id, v_institution_id, 'contact_revealed', NULL, 'interview_scheduled', (SELECT auth.uid()));
   END IF;

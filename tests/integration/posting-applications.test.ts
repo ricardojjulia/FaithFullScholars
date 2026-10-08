@@ -272,7 +272,7 @@ describe('Posting applications — real database roles', () => {
     it('lets only authenticated execute the two public functions', async () => {
       const can = async (role: string, fn: string) =>
         (await client.query(`SELECT has_function_privilege($1, $2::regprocedure, 'EXECUTE') AS ok`, [role, fn])).rows[0].ok as boolean;
-      for (const fn of [SUBMIT, 'public.get_application_contact(uuid)']) {
+      for (const fn of [SUBMIT, 'public.get_application_contact(uuid)', 'public.get_application_events(uuid)']) {
         expect(await can('authenticated', fn), fn).toBe(true);
         expect(await can('anon', fn), fn).toBe(false);
         expect(await can('service_role', fn), fn).toBe(false);
@@ -286,6 +286,7 @@ describe('Posting applications — real database roles', () => {
         log_posting_application_event: { schema: 'private', definer: true },
         is_application_applicant: { schema: 'private', definer: true },
         submit_posting_application: { schema: 'public', definer: true },
+        get_application_events: { schema: 'public', definer: true },
         get_application_contact: { schema: 'public', definer: true },
       };
       const rows = (
@@ -1054,11 +1055,24 @@ describe('Posting applications — real database roles', () => {
       });
     });
 
-    it('is readable by members, the applicant and admins (not other scholars), and writable by no API caller', async () => {
+    it('is readable by members and admins (with actor ids), by the applicant only as a redacted timeline, and writable by no API caller', async () => {
       const setup = async () => { await memberOf(INST_A); await seedApplication(); await client.query(`UPDATE public.posting_applications SET status = 'under_review'`); };
-      await as(asMember, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
+      await as(asMember, setup, async () => { expect((await events()).length).toBeGreaterThan(0); expect((await client.query(`SELECT actor_account_id FROM public.posting_application_events`)).rowCount).toBeGreaterThan(0); });
       await as(asAdmin, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
-      await as(asScholarA, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
+      await as(asScholarA, setup, async () => {
+        // The applicant has no table access to events, so no actor_account_id.
+        expect(await events()).toEqual([]);
+        const timeline = (await client.query(`SELECT * FROM public.get_application_events((SELECT id FROM public.posting_applications))`)).rows;
+        expect(timeline.length).toBeGreaterThan(0);
+        for (const row of timeline) expect(Object.keys(row).sort()).toEqual(['created_at', 'event_kind', 'from_status', 'to_status']);
+        expect(JSON.stringify(timeline)).not.toContain(MEMBER_ACCOUNT);
+      });
+      await as(asScholarB, setup, async () => {
+        expect((await client.query(`SELECT * FROM public.get_application_events((SELECT id FROM public.posting_applications LIMIT 1))`)).rowCount).toBe(0);
+      });
+      await as(asAnon, nothing, async () => {
+        expect((await failure(`SELECT * FROM public.get_application_events($1)`, [uuid()])).code).toBe('42501');
+      });
       await as(asScholarB, setup, async () => { expect(await events()).toEqual([]); });
       await as(asMember, setup, async () => {
         for (const sql of [
@@ -1115,9 +1129,22 @@ describe('Posting applications — real database roles', () => {
         expect(await contact(id)).toBeNull();
         expect((await client.query(`SELECT count(*)::int AS n FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows[0].n).toBe(0);
       });
-      // The applicant can read the log of reveals, and nobody can forge or erase one.
-      await as(asScholarA, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'interview_scheduled' })).id; await client.query(`INSERT INTO public.posting_application_events (application_id, institution_id, event_kind, to_status) VALUES ($1, $2, 'contact_revealed', 'interview_scheduled')`, [id, INST_A]); }, async () => {
+      // Repeat calls by the same actor within 24 hours add no rows.
+      await as(asMember, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'interview_scheduled' })).id; }, async () => {
+        for (let i = 0; i < 5; i++) expect(await contact(id)).toBe(SCHOLAR_A_EMAIL);
         expect((await client.query(`SELECT count(*)::int AS n FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows[0].n).toBe(1);
+      });
+      // A reveal older than 24 hours is logged again.
+      await as(asMember, async () => {
+        await memberOf(INST_A);
+        id = (await seedApplication({ status: 'interview_scheduled' })).id;
+        await client.query(`INSERT INTO public.posting_application_events (application_id, institution_id, event_kind, to_status, actor_account_id, created_at) VALUES ($1, $2, 'contact_revealed', 'interview_scheduled', $3, now() - interval '30 hours')`, [id, INST_A, MEMBER_ACCOUNT]);
+      }, async () => {
+        await contact(id);
+        expect((await client.query(`SELECT count(*)::int AS n FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows[0].n).toBe(2);
+      });
+      // Nobody can forge or erase one through the API.
+      await as(asMember, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'interview_scheduled' })).id; }, async () => {
         expect((await failure(`DELETE FROM public.posting_application_events`)).code).toBe('42501');
       });
     });
