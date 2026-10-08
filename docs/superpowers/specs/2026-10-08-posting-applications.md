@@ -102,3 +102,63 @@ Proposed defaults, to be confirmed with the story:
 - private institution notes;
 - no email notifications in this slice;
 - new ADR 0027.
+
+## Technical brief (spec-writer, 2026-10-08), condensed
+
+**Migration `20261009090000_posting_applications.sql`** is idempotent and additive. Its preflight DO block requires the ADR 0022/0025 helpers and the `trg_guard_published_children` trigger.
+
+- **`posting_applications`.** Columns: posting, institution, scholar, frozen `posting_title` and `institution_name`, `cover_note` (5–4000 characters), and `dossier_snapshot` (a JSON object of at most 256 KB). Also status, `status_changed_at` and the timestamps.
+  - Constraints: UNIQUE(posting, scholar), FORCE RLS, and a posting FK of NO ACTION.
+  - Default Supabase grants are revoked. `authenticated` gets SELECT and UPDATE only. There is no INSERT or DELETE grant or policy.
+  - SELECT is allowed for the applicant, institution members and admins. UPDATE is allowed for the applicant and members, and admins get none.
+- **Guard** (INVOKER, fail-closed). It refuses any direct INSERT from `anon` or `authenticated`. On UPDATE it applies an allow-list: everything except status is frozen.
+  - The applicant may only withdraw from an open state.
+  - Members may move submitted → under_review → interview_scheduled, and from under_review or interview_scheduled → declined.
+  - There are no skips, no backward moves, and no exit from withdrawn or declined.
+  - Someone who is both applicant and member is treated as the applicant.
+- **`posting_application_notes`.** A separate table, because RLS works per row. Only members can see a row, and never when they are the applicant. The institution is derived by the guard.
+- **`posting_application_events`.** An append-only audit, written by a definer trigger on submit and on each status change. Users can only read it.
+- **`submit_posting_application(posting, cover_note)`.** SECURITY DEFINER, `search_path=''`, executable by `authenticated` only. It is the only insert path. In order, it checks:
+  1. the caller is signed in;
+  2. the scholar is approved;
+  3. the note is valid;
+  4. the posting is published and its institution is approved (P0002 otherwise, which hides whether the posting exists);
+  5. under an advisory lock per scholar: not a duplicate (23505), and fewer than 20 applications in 24 hours (FS429; withdrawn applications count).
+
+  It then seals the snapshot from the scholar's reviewed published rows. The snapshot holds scalars plus the five lists. It contains no email, contact or file paths.
+- **`get_application_contact(application)`.** A definer function that returns the scholar's account email only to members, only at `interview_scheduled`, and never to the applicant.
+
+**API** (user client only, 401, 503 on a lookup failure, UUID validation, generic errors):
+- express-interest calls the RPC. RPC errors map to HTTP as follows: 28000 → 401, 42501 → 403, P0002 → 404, 23505 → 409, FS429 → 429 with Retry-After, 22023 → 400.
+- New routes: `POST /api/applications/[id]/withdraw`, `PATCH /api/institution/applications/[id]/status`, `PUT …/notes`, `GET …/contact` (no-store).
+
+**Services and UI**
+- `applicant-service` is rewritten to read with the user client in two queries (no N+1). It is removed from the admin-client allow-list, and its wrong column names are fixed.
+- The matrix shows real statuses with only the valid next moves. Errors are surfaced. It shows the frozen dossier, notes, and a "Reveal contact" action at the interview stage.
+- One CSV module with formula-injection neutralisation.
+- A scholar "My applications" page and nav entry.
+- Posting page states: sign in, not eligible, apply, applied with withdraw.
+- A new `common_app` i18n namespace in en and es.
+- The fake applicants are removed from the pilot seed.
+
+**Tests**
+- Real-role integration tests:
+  - each check is proven by a rolled-back probe that deletes that single `-- check:` line;
+  - a concurrency test: 25 parallel requests yield exactly 20 accepted;
+  - snapshot immutability;
+  - grants and the hygiene of the definer functions.
+- A policy-matrix scenario per role.
+- Unit tests for route error mapping, the transition maps and the CSV.
+- E2E with a new approved applicant persona and a dedicated, resettable posting: apply, institution review, then withdraw.
+
+**Docs:** ADR 0027, which partially supersedes ADR 0020.
+
+**Deploy order:** preflight, apply the migration, verify, then merge and smoke-test.
+
+**Defaults:**
+- forward-only transitions, with decline allowed only after review;
+- no reapplying after withdrawal;
+- the deadline is not enforced;
+- every member can triage;
+- syllabi and CV are not sealed;
+- contact is the account login email.
