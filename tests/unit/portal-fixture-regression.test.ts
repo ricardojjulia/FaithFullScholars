@@ -11,7 +11,7 @@ import { covers } from '../support/covers';
  * the real query layer behind its own guard. They are per-file on purpose: a
  * tree-wide grep for seed names would flag legitimate placeholders and seed
  * scripts. Only the fixture UUID prefixes and the removed constants are banned
- * tree-wide.
+ * across app/ and components/ (tests and seed scripts may use them).
  */
 
 covers(
@@ -79,7 +79,7 @@ const NEGATIVE_AND_POSITIVE: {
     file: 'components/inquiries/scholar-inquiry-inbox.tsx',
     absent: ['DEFAULT_INQUIRIES', 'inq-sample-', 'Westminster Theological Seminary', 'wts.edu'],
     // A failed PATCH must roll back and tell the user (previously masked).
-    present: ['res.ok', 'role="alert"', 'previousStatus'],
+    present: ['sendInquiryDecision', 'settleDecision', 'snapshotOf', 'role="alert"'],
   },
   {
     file: 'app/dashboard/analytics/page.tsx',
@@ -119,13 +119,24 @@ const NEGATIVE_AND_POSITIVE: {
   },
   {
     file: 'components/institution/institution-nav.tsx',
-    absent: [],
-    present: ['showConferences'],
+    // The badge reflects the real institutions.status; a bare hard-coded "Verified" line is banned.
+    absent: [/^\s*Verified\s*$/m],
+    present: ['showConferences', 'institutionStatusBadge', 'verificationStatus'],
+  },
+  {
+    file: 'app/(institution)/institution/profile/page.tsx',
+    absent: ['DEFAULT_PROFILE', 'setTimeout', 'academic.dean@wts.edu', 'Westminster Theological Seminary', 'wts.edu', "'use client'"],
+    present: ['requireInstitutionMember', 'fetchInstitutionProfileForEdit', 'InstitutionProfileForm', 'DataErrorPanel'],
+  },
+  {
+    file: 'components/institution/institution-profile-form.tsx',
+    absent: ['DEFAULT_PROFILE', 'setTimeout', 'academic.dean@wts.edu', 'Westminster Theological Seminary', 'wts.edu'],
+    present: ["'/api/institution/profile'", "method: 'PATCH'", 'profile.status', 'profile-save-error'],
   },
   {
     file: 'app/(institution)/institution/layout.tsx',
     absent: [],
-    present: ["session.role === 'admin'"],
+    present: ["session.role === 'admin'", 'fetchInstitutionStatus', 'SessionLookupError'],
   },
 ];
 

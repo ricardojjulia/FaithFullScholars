@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Download, FileText, GraduationCap, BookOpen, Bookmark, X, ShieldCheck } from 'lucide-react';
 import { StructuredInquiryModal } from '@/components/inquiries/structured-inquiry-modal';
+import { Tabs, tabPanelProps } from '@/components/portal/tabs';
 import type { BookmarkedCourseItem, ShortlistedScholarItem } from '@/lib/inquiries/mappers';
 
 interface SavedListsProps {
@@ -18,12 +19,29 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
   const [selectedScholarForInquiry, setSelectedScholarForInquiry] = useState<ShortlistedScholarItem | null>(null);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  // Polite live-region message announced after a successful removal.
+  const [announcement, setAnnouncement] = useState('');
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
+
+  // After a removal the focused Remove button is gone: move focus to the list
+  // heading (rendered after the state update) so keyboard users keep their place.
+  useEffect(() => {
+    if (focusRequest > 0) headingRef.current?.focus();
+  }, [focusRequest]);
+
+  const changeTab = (tab: 'scholars' | 'courses') => {
+    setActiveTab(tab);
+    setRemoveError(null);
+    setAnnouncement('');
+  };
 
   // Pessimistic removal through an explicit DELETE (never the add/remove toggle):
   // the row leaves the list only after the server confirms it.
-  const removeItem = async (rowId: string, url: string, onRemoved: () => void) => {
+  const removeItem = async (rowId: string, url: string, announce: string, onRemoved: () => void) => {
     setRemovingId(rowId);
     setRemoveError(null);
+    setAnnouncement('');
     try {
       const res = await fetch(url, { method: 'DELETE' });
       if (!res.ok) {
@@ -31,6 +49,8 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
         return;
       }
       onRemoved();
+      setAnnouncement(announce);
+      setFocusRequest((n) => n + 1);
     } catch {
       setRemoveError('We could not remove that item. Please check your connection and try again.');
     } finally {
@@ -42,6 +62,7 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
     removeItem(
       item.id,
       `/api/institution/saved-scholars?scholarId=${encodeURIComponent(item.scholar_id)}`,
+      `Removed ${item.full_name ?? 'an unavailable scholar'} from the shortlist`,
       () => setScholars((prev) => prev.filter((s) => s.id !== item.id))
     );
 
@@ -49,6 +70,7 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
     removeItem(
       item.id,
       `/api/institution/saved-courses?courseId=${encodeURIComponent(item.course_id)}`,
+      `Removed ${item.title ?? 'an unavailable course'} from saved courses`,
       () => setCourses((prev) => prev.filter((c) => c.id !== item.id))
     );
 
@@ -105,44 +127,54 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
         </div>
       )}
 
-      {/* Tabs */}
-      <div role="tablist" aria-label="Saved items" className="flex border-b border-slate-200 dark:border-slate-800 space-x-6">
-        <button
-          role="tab"
-          aria-selected={activeTab === 'scholars'}
-          onClick={() => setActiveTab('scholars')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition flex items-center space-x-2 ${
-            activeTab === 'scholars'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-          }`}
-        >
-          <GraduationCap className="w-4 h-4" />
-          <span>Shortlisted Scholars</span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-            {scholars.length}
-          </span>
-        </button>
-
-        <button
-          role="tab"
-          aria-selected={activeTab === 'courses'}
-          onClick={() => setActiveTab('courses')}
-          className={`pb-3 text-sm font-semibold border-b-2 transition flex items-center space-x-2 ${
-            activeTab === 'courses'
-              ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
-              : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
-          }`}
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>Saved Courses</span>
-          <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-            {courses.length}
-          </span>
-        </button>
+      <div role="status" aria-live="polite" data-testid="saved-announcement" className="sr-only">
+        {announcement}
       </div>
 
+      {/* Tabs */}
+      <Tabs
+        idPrefix="saved"
+        label="Saved items"
+        variant="underline"
+        active={activeTab}
+        onChange={changeTab}
+        tabs={[
+          {
+            id: 'scholars' as const,
+            content: (
+              <>
+                <GraduationCap className="w-4 h-4" />
+                <span>Shortlisted Scholars</span>
+                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  {scholars.length}
+                </span>
+              </>
+            ),
+          },
+          {
+            id: 'courses' as const,
+            content: (
+              <>
+                <BookOpen className="w-4 h-4" />
+                <span>Saved Courses</span>
+                <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  {courses.length}
+                </span>
+              </>
+            ),
+          },
+        ]}
+      />
+
       {/* Tab Content */}
+      <div {...tabPanelProps('saved', activeTab)} className="space-y-4">
+      <h2
+        ref={headingRef}
+        tabIndex={-1}
+        className="text-sm font-semibold text-slate-700 dark:text-slate-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+      >
+        {activeTab === 'scholars' ? `Shortlisted scholars (${scholars.length})` : `Saved courses (${courses.length})`}
+      </h2>
       {activeTab === 'scholars' ? (
         scholars.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
@@ -329,6 +361,8 @@ export function SavedLists({ initialScholars, initialCourses }: SavedListsProps)
           ))}
         </div>
       )}
+
+      </div>
 
       {/* Inquiry Modal */}
       {selectedScholarForInquiry && (

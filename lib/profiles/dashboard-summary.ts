@@ -121,6 +121,11 @@ export function inquiryTrend(createdAts: readonly string[], now: Date): InquiryT
     if (ms > start30) last30++;
     else if (ms > start60) previous30++;
   }
+  return trendFromCounts(last30, previous30);
+}
+
+/** Builds the trend from two window counts (the loader uses exact `head` counts, so no row cap applies). */
+export function trendFromCounts(last30: number, previous30: number): InquiryTrend {
   const delta = last30 - previous30;
   const direction = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
   let label: string;
@@ -177,9 +182,14 @@ export async function fetchScholarDashboardSummary(
   scholarId: string,
   now: Date = new Date()
 ): Promise<ScholarDashboardSummary | null> {
-  const since = new Date(now.getTime() - 60 * DAY_MS).toISOString();
+  // Window edges match inquiryTrend: last 30 days is (now-30d, now], the previous is (now-60d, now-30d].
+  const nowIso = now.toISOString();
+  const start30 = new Date(now.getTime() - 30 * DAY_MS).toISOString();
+  const start60 = new Date(now.getTime() - 60 * DAY_MS).toISOString();
+  const countInquiries = () =>
+    supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('scholar_id', scholarId);
 
-  const [scholarRes, revisionsRes, totalRes, recentRes, availabilityRes, coursesRes] = await Promise.all([
+  const [scholarRes, revisionsRes, totalRes, last30Res, previous30Res, availabilityRes, coursesRes] = await Promise.all([
     supabase
       .from('scholars')
       .select('id, full_name, profile_status, published_revision_id')
@@ -191,8 +201,9 @@ export async function fetchScholarDashboardSummary(
       .eq('scholar_id', scholarId)
       .order('revision_number', { ascending: false })
       .limit(50),
-    supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('scholar_id', scholarId),
-    supabase.from('inquiries').select('created_at').eq('scholar_id', scholarId).gte('created_at', since),
+    countInquiries(),
+    countInquiries().gt('created_at', start30).lte('created_at', nowIso),
+    countInquiries().gt('created_at', start60).lte('created_at', start30),
     supabase
       .from('availability_profiles')
       .select('is_available_for_hire, opportunity_types, preferred_delivery_modes')
@@ -209,7 +220,8 @@ export async function fetchScholarDashboardSummary(
     ['scholar', scholarRes],
     ['revisions', revisionsRes],
     ['inquiry count', totalRes],
-    ['recent inquiries', recentRes],
+    ['inquiries (last 30 days)', last30Res],
+    ['inquiries (previous 30 days)', previous30Res],
     ['availability', availabilityRes],
     ['courses', coursesRes],
   ] as const) {
@@ -224,9 +236,20 @@ export async function fetchScholarDashboardSummary(
   if (!scholar) return null;
 
   const revisions = (revisionsRes.data ?? []) as unknown as RevisionSummaryRow[];
-  const published = scholar.published_revision_id
-    ? revisions.find((r) => r.id === scholar.published_revision_id)
-    : undefined;
+
+  // The live revision number is fetched directly, so it never depends on the
+  // recent-revisions page above containing it.
+  let publishedRevisionNumber: number | null = null;
+  if (scholar.published_revision_id) {
+    const publishedRes = await supabase
+      .from('scholar_profile_revisions')
+      .select('revision_number')
+      .eq('id', scholar.published_revision_id)
+      .eq('scholar_id', scholarId)
+      .maybeSingle();
+    if (publishedRes.error) throw new PortalQueryError('dashboard published revision', publishedRes.error.code);
+    publishedRevisionNumber = (publishedRes.data as { revision_number: number } | null)?.revision_number ?? null;
+  }
 
   return {
     fullName: scholar.full_name,
@@ -234,14 +257,11 @@ export async function fetchScholarDashboardSummary(
     profile: profileStatusLabel(scholar.profile_status),
     revisionText: revisionStatusText({
       hasPublished: !!scholar.published_revision_id,
-      publishedRevisionNumber: published?.revision_number ?? null,
+      publishedRevisionNumber,
       revisions,
     }),
     totalInquiries: totalRes.count ?? 0,
-    trend: inquiryTrend(
-      ((recentRes.data ?? []) as { created_at: string }[]).map((r) => r.created_at),
-      now
-    ),
+    trend: trendFromCounts(last30Res.count ?? 0, previous30Res.count ?? 0),
     publicCourseCount: coursesRes.count ?? 0,
     availability: summarizeAvailability(availabilityRes.data as AvailabilityRow | null),
   };

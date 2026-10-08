@@ -4,10 +4,8 @@ import {
   getUpcomingConferences,
   getConferenceBySlug,
   getConferenceAttendees,
-  getScholarConferenceAppearances,
   getInstitutionConferenceDocket,
   scheduleConferenceInterview,
-  recordCommitteeDeliberationNotes,
 } from '@/lib/conferences/conference-service';
 
 describe('Theological Guild Conference Service (ADR 0021)', () => {
@@ -38,15 +36,6 @@ describe('Theological Guild Conference Service (ADR 0021)', () => {
 
     const sblAttendees = getConferenceAttendees('sbl-2026');
     expect(sblAttendees.every((a) => a.conferenceSlug === 'sbl-2026')).toBe(true);
-  });
-
-  it('4. retrieves conference appearances for a specific scholar by slug', () => {
-    const cranmer = getScholarConferenceAppearances('thomas-cranmer-davies');
-    expect(cranmer.length).toBeGreaterThanOrEqual(1);
-    expect(cranmer[0].scholarName).toBe('Dr. Thomas Cranmer-Davies');
-    expect(cranmer[0].paperTitle).toContain('Psalms of Lament');
-    expect(cranmer[0].availableForInterviews).toBe(true);
-    expect(cranmer[0].openSlots.length).toBeGreaterThan(0);
   });
 
   it('5. returns institution conference docket with attendees and scheduled interviews', () => {
@@ -119,48 +108,5 @@ describe('Theological Guild Conference Service (ADR 0021)', () => {
 
     expect(result.success).toBe(false);
     expect(result.error).toBe('Missing required interview fields.');
-  });
-
-  it('9. records confidential search committee deliberation scoring and recommendation', async () => {
-    const institutionId = 'f2000000-0000-0000-0000-000000000004';
-    const booking = await scheduleConferenceInterview({
-      conferenceSlug: 'eps-2026',
-      scholarId: 'e0000000-0000-0000-0000-000000000002',
-      institutionId,
-      institutionName: 'Beeson Divinity School',
-      timeSlot: 'Thu Nov 19 9:00 AM',
-      locationLabel: 'Grand Hyatt Room 712',
-      candidateFocus: 'Christian Apologetics Screening',
-    });
-
-    expect(booking.success).toBe(true);
-    const interviewId = booking.interview!.id;
-
-    const notesResult = await recordCommitteeDeliberationNotes(interviewId, {
-      scholarshipScore: 5,
-      pedagogyScore: 4,
-      confessionalScore: 5,
-      recommendation: 'strong_hire',
-      evaluatorName: 'Dr. Academic Dean',
-      privateNotes: 'Superb defense of presuppositional epistemology. Strong collegial fit.',
-      updatedAt: new Date().toISOString(),
-    });
-
-    expect(notesResult.success).toBe(true);
-  });
-
-  it('10. returns error when attempting to record notes on non-existent interview', async () => {
-    const notesResult = await recordCommitteeDeliberationNotes('non-existent-interview-id', {
-      scholarshipScore: 3,
-      pedagogyScore: 3,
-      confessionalScore: 3,
-      recommendation: 'hold',
-      evaluatorName: 'Dean',
-      privateNotes: 'None',
-      updatedAt: new Date().toISOString(),
-    });
-
-    expect(notesResult.success).toBe(false);
-    expect(notesResult.error).toBe('Interview not found.');
   });
 });

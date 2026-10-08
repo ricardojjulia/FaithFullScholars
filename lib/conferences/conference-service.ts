@@ -2,7 +2,6 @@ import {
   GuildConference,
   ScholarConferenceAppearance,
   ConferenceInterview,
-  CommitteeDeliberationNotes,
   ScheduleInterviewInput,
 } from './conference-types';
 
@@ -172,14 +171,6 @@ export function getConferenceAttendees(
   );
 }
 
-export function getScholarConferenceAppearances(
-  scholarSlug: string
-): ScholarConferenceAppearance[] {
-  return REFERENCE_CONFERENCE_APPEARANCES.filter(
-    (app) => app.scholarSlug === scholarSlug
-  );
-}
-
 export function getInstitutionConferenceDocket(
   institutionId: string,
   conferenceSlug: 'ets-2026' | 'sbl-2026' | 'eps-2026' = 'ets-2026'
@@ -253,21 +244,4 @@ export async function scheduleConferenceInterview(
 
   scheduledInterviewsStore.push(newInterview);
   return { success: true, interview: newInterview };
-}
-
-export async function recordCommitteeDeliberationNotes(
-  interviewId: string,
-  notes: CommitteeDeliberationNotes
-): Promise<{ success: boolean; error?: string }> {
-  const interview = scheduledInterviewsStore.find((i) => i.id === interviewId);
-  if (!interview) {
-    return { success: false, error: 'Interview not found.' };
-  }
-
-  interview.deliberationNotes = {
-    ...notes,
-    updatedAt: new Date().toISOString(),
-  };
-
-  return { success: true };
 }

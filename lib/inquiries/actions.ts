@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/server';
-import { CreateInquiryInput, InquiryStatus, Institution } from '@/lib/domain/types';
+import { validateInstitutionProfile, type InstitutionProfileInput } from '@/lib/inquiries/profile-validation';
+import { CreateInquiryInput, InquiryStatus } from '@/lib/domain/types';
 import {
   notifyScholarOfNewInquiry,
   notifyInstitutionOfInquiryResponse,
@@ -199,7 +200,7 @@ export async function respondToInquiry(
   status: InquiryStatus,
   responseNotes: string | null | undefined,
   actingScholarId: string | null
-): Promise<ActionResult> {
+): Promise<ActionResult<{ contactEmail: string | null }>> {
   if (!INQUIRY_STATUSES.includes(status)) {
     return { success: false, error: 'Invalid inquiry status.' };
   }
@@ -256,7 +257,8 @@ export async function respondToInquiry(
     });
   }
 
-  return { success: true };
+  // The institution's contact email is released to the scholar only on acceptance.
+  return { success: true, data: { contactEmail: status === 'accepted' ? inquiry.contact_email : null } };
 }
 
 /**
@@ -401,31 +403,40 @@ export async function removeSavedCourse(
 }
 
 /**
- * Updates institutional profile settings.
+ * Updates institutional profile settings for the session's institution.
+ *
+ * Only the allow-listed, validated identity fields are written, with the
+ * caller's own (RLS) client. Trust columns (status, slug, accreditation_*) are
+ * never part of the update, and the ADR 0023 trigger rejects them regardless.
  */
 export async function updateInstitutionProfile(
   supabase: SupabaseClient,
   institutionId: string,
-  updates: Partial<Institution>
-): Promise<ActionResult> {
+  updates: InstitutionProfileInput
+): Promise<ActionResult<{ errors?: Record<string, string> }>> {
+  const validated = validateInstitutionProfile(updates);
+  if (!validated.ok) {
+    return {
+      success: false,
+      error: 'Please correct the highlighted fields.',
+      status: 400,
+      data: { errors: validated.errors as Record<string, string> },
+    };
+  }
 
-  const allowedUpdates: Record<string, unknown> = {};
-  if (updates.name !== undefined) allowedUpdates.name = updates.name.trim();
-  if (updates.website !== undefined) allowedUpdates.website = updates.website?.trim() || null;
-  if (updates.location !== undefined) allowedUpdates.location = updates.location?.trim() || null;
-  if (updates.contact_email !== undefined) allowedUpdates.contact_email = updates.contact_email.trim();
-  if (updates.institution_type !== undefined) allowedUpdates.institution_type = updates.institution_type;
-
-  allowedUpdates.updated_at = new Date().toISOString();
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('institutions')
-    .update(allowedUpdates)
-    .eq('id', institutionId);
+    .update({ ...validated.value, updated_at: new Date().toISOString() })
+    .eq('id', institutionId)
+    .select('id');
 
   if (error) {
     console.error('Error updating institution profile (code):', error.code);
-    return { success: false, error: 'Failed to update institutional profile.' };
+    return { success: false, error: 'Failed to update institutional profile.', status: 500 };
+  }
+  // RLS filters rows the caller may not update: zero rows means nothing was saved.
+  if (!data || data.length === 0) {
+    return { success: false, error: 'Failed to update institutional profile.', status: 403 };
   }
 
   return { success: true };

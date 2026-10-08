@@ -399,13 +399,6 @@
     "expires": "2026-12-02"
   },
   {
-    "surface": "page:/institution/profile",
-    "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
-    "owner": "ricardojjulia",
-    "added": "2026-10-05",
-    "expires": "2026-12-02"
-  },
-  {
     "surface": "page:/institution/saved/accreditation",
     "reason": "Baseline at gate adoption (2026-10-05): surface predates the test-surface gate and has no covers()-tagged test yet. Add a test (unit, integration, or e2e) and delete this entry.",
     "owner": "ricardojjulia",

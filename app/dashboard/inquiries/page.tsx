@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { requireSignedIn } from '@/lib/auth/guards';
@@ -34,7 +35,21 @@ export default async function ScholarInquiriesPage() {
     return (
       <div className="space-y-6">
         {header}
-        <ScholarInquiryInbox initialInquiries={[]} />
+        <div
+          data-testid="inquiries-onboarding-prompt"
+          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 space-y-3"
+        >
+          <p className="text-sm text-slate-700 dark:text-slate-300">
+            You don&rsquo;t have a scholar profile yet, so there are no inquiries to show. Create your profile to
+            appear in the directory and receive structured inquiries from institutions.
+          </p>
+          <Link
+            href="/dashboard/onboarding"
+            className="inline-flex px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+          >
+            Start your profile
+          </Link>
+        </div>
       </div>
     );
   }

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import {
   Calendar,
   Clock,
@@ -207,12 +206,9 @@ export function ConferenceHubPreview() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <Link
-                          href={`/scholars/${interview.scholarSlug}`}
-                          className="font-display font-bold text-base text-slate-900 dark:text-white hover:text-indigo-600 transition"
-                        >
+                        <span className="font-display font-bold text-base text-slate-900 dark:text-white">
                           {interview.scholarName}
-                        </Link>
+                        </span>
                         <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                           {interview.status.toUpperCase()}
                         </span>
@@ -234,19 +230,21 @@ export function ConferenceHubPreview() {
                     </div>
                   </div>
 
-                  {/* Confidential Committee Deliberation Scoring Rubric */}
+                  {/* Preview committee deliberation rubric (demo only) */}
                   <div className="bg-slate-50 dark:bg-slate-950/60 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                          Confidential Committee Deliberation Rubric
+                          Committee Deliberation Rubric (preview)
                         </h4>
                       </div>
-                      <span className="text-[11px] text-slate-400">
-                        Isolated to {interview.institutionName}
-                      </span>
+                      <span className="text-[11px] text-slate-400">Demo only, not saved</span>
                     </div>
+                    <p data-testid="conference-rubric-note" className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Note: this rubric, including &ldquo;Confessional Alignment&rdquo;, will be redesigned under a
+                      theological-integrity review before any real build (ADR 0021).
+                    </p>
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
@@ -392,12 +390,9 @@ export function ConferenceHubPreview() {
               <div className="space-y-2.5">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <Link
-                      href={`/scholars/${app.scholarSlug}`}
-                      className="font-display font-bold text-base text-slate-900 dark:text-white hover:text-indigo-600 transition"
-                    >
+                    <span className="font-display font-bold text-base text-slate-900 dark:text-white">
                       {app.scholarName}
-                    </Link>
+                    </span>
                     <p className="text-[11px] text-slate-500 line-clamp-1">
                       {app.terminalDegree}
                     </p>

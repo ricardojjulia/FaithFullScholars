@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, saved: result.data?.saved });
   } catch (err: unknown) {
-    console.error('POST /api/institution/saved-courses failed:', err);
+    console.error('POST /api/institution/saved-courses failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
     const courses = await fetchSavedCourses(supabase, access.institutionId);
     return NextResponse.json({ courses });
   } catch (err: unknown) {
-    console.error('GET /api/institution/saved-courses failed:', err);
+    console.error('GET /api/institution/saved-courses failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

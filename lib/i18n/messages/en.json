@@ -216,7 +216,7 @@
     "privacy_notice": "Inquiries are routed through structured platform communication. Scholar personal contact details are released upon inquiry acceptance.",
     "error_too_short": "Please provide a detailed inquiry message (at least 20 characters).",
     "stat_total": "Total Outreach Received",
-    "stat_pending": "Pending Review",
+    "stat_awaiting": "Awaiting response",
     "stat_accepted": "Accepted Opportunities",
     "empty_title": "No Inquiries Found",
     "empty_desc": "When accredited theological institutions send teaching or speaking inquiries, they will appear here.",

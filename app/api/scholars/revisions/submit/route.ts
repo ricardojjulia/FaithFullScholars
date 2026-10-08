@@ -23,6 +23,9 @@ export async function POST(req: Request) {
     if (!session) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
+    if (session.lookupFailed) {
+      return NextResponse.json({ error: 'Your access could not be verified right now. Please try again.' }, { status: 503 });
+    }
     if (!session.scholarId) {
       return NextResponse.json({ error: 'Scholar profile not found' }, { status: 404 });
     }

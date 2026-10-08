@@ -19,11 +19,26 @@ export interface SessionContext {
   role: UserRole | null;
   scholarId: string | null;
   institutionIds: string[];
+  /**
+   * True when the accounts / scholars / institution_users lookup itself failed.
+   * In that case `role`, `scholarId` and `institutionIds` are NOT trustworthy as
+   * "none": callers must treat it as an outage (fail closed, show an error
+   * panel), never as "no profile" or "not a member".
+   */
+  lookupFailed: boolean;
+}
+
+/** Thrown by the page guards when the session lookup failed (a database blip, not "no access"). */
+export class SessionLookupError extends Error {
+  constructor() {
+    super('Session lookup failed');
+    this.name = 'SessionLookupError';
+  }
 }
 
 export type InstitutionAccess =
   | { ok: true; institutionId: string }
-  | { ok: false; status: 401 | 403; error: string };
+  | { ok: false; status: 401 | 403 | 503; error: string };
 
 /**
  * Resolves the caller's session context, or null when not signed in.
@@ -55,13 +70,16 @@ export async function getSessionContext(
   ]);
 
   // A failed lookup must not silently look like "no role / no membership".
+  // Log the error code only: never the error object (it can carry query detail).
+  let lookupFailed = false;
   for (const [label, res] of [
     ['accounts', accountRes],
     ['scholars', scholarRes],
     ['institution_users', membershipRes],
   ] as const) {
     if (res.error) {
-      console.error(`getSessionContext: ${label} lookup failed:`, res.error);
+      lookupFailed = true;
+      console.error(`getSessionContext: ${label} lookup failed (code):`, res.error.code ?? 'unknown');
     }
   }
 
@@ -73,6 +91,7 @@ export async function getSessionContext(
     institutionIds: (membershipRes.data ?? []).map(
       (row: { institution_id: string }) => row.institution_id
     ),
+    lookupFailed,
   };
 }
 
@@ -87,6 +106,10 @@ export function resolveInstitutionAccess(
 ): InstitutionAccess {
   if (!session) {
     return { ok: false, status: 401, error: 'Authentication required.' };
+  }
+
+  if (session.lookupFailed) {
+    return { ok: false, status: 503, error: 'Your access could not be verified right now. Please try again.' };
   }
 
   if (requestedInstitutionId) {

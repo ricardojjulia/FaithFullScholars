@@ -3,16 +3,24 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Send, Target, Calendar, Radio, BookOpen, Check } from 'lucide-react';
-import type { InquiryStatus } from '@/lib/domain/types';
-import { OPPORTUNITY_LABELS } from '@/lib/inquiries/labels';
+import {
+  INQUIRY_TABS,
+  OPPORTUNITY_LABELS,
+  countForTab,
+  inquiryStatusLabel,
+  isAwaiting,
+  matchesInquiryTab,
+  type InquiryTab,
+} from '@/lib/inquiries/labels';
 import type { OutboxInquiryItem } from '@/lib/inquiries/mappers';
+import { Tabs, tabPanelProps } from '@/components/portal/tabs';
 
 export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
-  const [activeTab, setActiveTab] = useState<InquiryStatus | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<InquiryTab>('all');
   const [search, setSearch] = useState('');
 
   const filtered = inquiries.filter((inq) => {
-    if (activeTab !== 'all' && inq.status !== activeTab) return false;
+    if (!matchesInquiryTab(inq.status, activeTab)) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return (
@@ -24,8 +32,8 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
     return true;
   });
 
-  const pendingCount = inquiries.filter((i) => i.status === 'pending').length;
-  const acceptedCount = inquiries.filter((i) => i.status === 'accepted').length;
+  const awaitingCount = countForTab(inquiries, 'awaiting');
+  const acceptedCount = countForTab(inquiries, 'accepted');
 
   return (
     <div className="space-y-6">
@@ -49,33 +57,30 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
 
       {/* Filter Toolbar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
-        <div className="flex flex-wrap gap-1">
-          {(['all', 'pending', 'accepted', 'declined'] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              aria-pressed={activeTab === tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                activeTab === tab
-                  ? 'bg-indigo-900 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {tab === 'pending' && pendingCount > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px]">
-                  {pendingCount}
-                </span>
-              )}
-              {tab === 'accepted' && acceptedCount > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px]">
-                  {acceptedCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          idPrefix="outreach"
+          label="Filter outreach by status"
+          active={activeTab}
+          onChange={setActiveTab}
+          tabs={INQUIRY_TABS.map((tab) => ({
+            id: tab.id,
+            content: (
+              <>
+                {tab.label}
+                {tab.id === 'awaiting' && awaitingCount > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px]">
+                    {awaitingCount}
+                  </span>
+                )}
+                {tab.id === 'accepted' && acceptedCount > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[10px]">
+                    {acceptedCount}
+                  </span>
+                )}
+              </>
+            ),
+          }))}
+        />
 
         <div className="w-full sm:w-64">
           <input
@@ -90,6 +95,7 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
       </div>
 
       {/* Inquiries Outbox List */}
+      <div {...tabPanelProps('outreach', activeTab)}>
       {filtered.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
@@ -105,7 +111,7 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
       ) : (
         <div className="space-y-4">
           {filtered.map((inq) => {
-            const isPending = inq.status === 'pending';
+            const isPending = isAwaiting(inq.status);
             const isAccepted = inq.status === 'accepted';
             const isDeclined = inq.status === 'declined';
 
@@ -120,12 +126,16 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
                       {inq.scholar_name.charAt(0)}
                     </div>
                     <div>
-                      <Link
-                        href={`/scholars/${inq.scholar_slug}`}
-                        className="text-base font-bold text-slate-900 dark:text-white hover:text-indigo-600 transition"
-                      >
-                        {inq.scholar_name}
-                      </Link>
+                      {inq.scholar_slug ? (
+                        <Link
+                          href={`/scholars/${inq.scholar_slug}`}
+                          className="text-base font-bold text-slate-900 dark:text-white hover:text-indigo-600 transition"
+                        >
+                          {inq.scholar_name}
+                        </Link>
+                      ) : (
+                        <span className="text-base font-bold text-slate-700 dark:text-slate-300">{inq.scholar_name}</span>
+                      )}
                       <p className="text-xs text-slate-500">
                         Outreach initiated {new Date(inq.created_at).toLocaleDateString()}
                       </p>
@@ -143,7 +153,7 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
                         : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                     }`}
                   >
-                    {inq.status.toUpperCase()}
+                    {inquiryStatusLabel(inq.status)}
                   </span>
                 </div>
 
@@ -185,12 +195,14 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
                       </span>
                       <span> The scholar has agreed to connect regarding this opportunity.</span>
                     </div>
+                    {inq.scholar_slug && (
                     <Link
                       href={`/scholars/${inq.scholar_slug}`}
                       className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition"
                     >
                       View Profile
                     </Link>
+                    )}
                   </div>
                 )}
               </div>
@@ -198,6 +210,7 @@ export function OutreachLog({ inquiries }: { inquiries: OutboxInquiryItem[] }) {
           })}
         </div>
       )}
+      </div>
     </div>
   );
 }

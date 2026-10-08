@@ -237,7 +237,7 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
     const match = inquiries.find((i) => i.id === createdInquiryId);
     expect(match).toBeDefined();
     expect(match?.status).toBe('pending');
-    expect(match?.institution.name).toBe('Approved Test Seminary');
+    expect(match?.institution?.name).toBe('Approved Test Seminary');
     expect(match?.course?.title).toBe('Introduction to Reformed Dogmatics');
   });
 
@@ -247,7 +247,7 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
 
     const match = inquiries.find((i) => i.id === createdInquiryId);
     expect(match).toBeDefined();
-    expect(match?.scholar.full_name).toBe('Dr. Jonathan Inquiries');
+    expect(match?.scholar?.full_name).toBe('Dr. Jonathan Inquiries');
     expect(match?.opportunity_type).toBe('adjunct_teaching');
   });
 

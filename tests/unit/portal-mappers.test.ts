@@ -305,7 +305,7 @@ function fakeClient(resolve: (table: string, calls: Call[]) => { data?: unknown;
       const entry = { table, calls };
       seen.push(entry);
       const builder: Record<string, unknown> = {};
-      for (const m of ['select', 'eq', 'in', 'gte', 'order', 'limit', 'delete']) {
+      for (const m of ['select', 'eq', 'in', 'gt', 'gte', 'lte', 'order', 'limit', 'delete']) {
         builder[m] = (...args: unknown[]) => {
           calls.push({ method: m, args });
           return builder;
@@ -394,14 +394,21 @@ describe('fetchScholarDashboardSummary', () => {
         case 'scholars':
           return { data: scholarRow };
         case 'scholar_profile_revisions':
+          // The recent-revisions list is capped; the live revision number is read directly by id.
+          if (!calls.some((c) => c.method === 'limit')) return { data: { revision_number: 1 } };
           return {
             data: [
+              // deliberately NOT containing rev-1: the live number must not depend on this page
               { id: 'rev-2', revision_number: 2, status: 'submitted' },
-              { id: 'rev-1', revision_number: 1, status: 'approved' },
             ],
           };
-        case 'inquiries':
-          return head?.head ? { count: 9 } : { data: [{ created_at: ago(2) }, { created_at: ago(40) }] };
+        case 'inquiries': {
+          // 30-day trend windows are exact head counts, never row fetches (no 1000-row cap).
+          expect(head?.head).toBe(true);
+          const gt = calls.find((c) => c.method === 'gt')?.args[1];
+          if (gt === undefined) return { count: 9 };
+          return { count: gt === new Date(NOW.getTime() - 30 * DAY).toISOString() ? 4 : 2 };
+        }
         case 'availability_profiles':
           return { data: { is_available_for_hire: true, opportunity_types: ['adjunct_teaching'] } };
         case 'courses':
@@ -419,7 +426,7 @@ describe('fetchScholarDashboardSummary', () => {
       publicCourseCount: 3,
       availability: { badge: 'Available', detail: 'Adjunct Teaching' },
     });
-    expect(summary?.trend).toMatchObject({ last30: 1, previous30: 1 });
+    expect(summary?.trend).toMatchObject({ last30: 4, previous30: 2, delta: 2 });
     // every read is explicitly scoped to the session scholar
     for (const { table, calls } of seen) {
       const key = table === 'scholars' ? 'id' : 'scholar_id';

@@ -13,6 +13,9 @@ export async function PATCH(
     if (!session) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
+    if (session.lookupFailed) {
+      return NextResponse.json({ error: 'Your access could not be verified right now. Please try again.' }, { status: 503 });
+    }
 
     const { id } = await params;
     const body = await req.json();
@@ -35,9 +38,9 @@ export async function PATCH(
       return NextResponse.json({ error: result.error }, { status });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, contactEmail: result.data?.contactEmail ?? null });
   } catch (err: unknown) {
-    console.error('PATCH /api/inquiries/[id] failed:', err);
+    console.error('PATCH /api/inquiries/[id] failed:', err instanceof Error ? err.name : 'unknown');
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }

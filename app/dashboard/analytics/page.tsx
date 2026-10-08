@@ -200,8 +200,8 @@ export default function ScholarAnalyticsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Structured Inquiries
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
-              Active
+            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              Sample
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">

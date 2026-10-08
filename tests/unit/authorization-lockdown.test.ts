@@ -18,10 +18,17 @@ let identity: FakeIdentity = { user: null };
 // Rows the fake `saved_*` DELETE ... RETURNING reports as removed (empty = nothing matched).
 let deletedRows: { id: string }[] = [];
 const deleteCalls: { table: string; filters: [string, unknown][] }[] = [];
+// UPDATEs issued by the fake client, and the rows an UPDATE ... RETURNING reports (empty = RLS matched nothing).
+const updateCalls: { table: string; values: Record<string, unknown>; filters: [string, unknown][] }[] = [];
+let updatedRows: { id: string }[] = [{ id: 'row-1' }];
+let failTable: string | null = null;
 const adminClientSpy = vi.fn();
 
 function resultFor(table: string) {
+  if (failTable === table) return { data: null, error: { code: '57014', message: 'timeout detail' } };
   switch (table) {
+    case 'institutions':
+      return { data: updatedRows, error: null };
     case 'accounts':
       return { data: identity.accountRole ? { role: identity.accountRole } : null, error: null };
     case 'scholars':
@@ -57,6 +64,10 @@ function fakeQuery(table: string) {
   };
   builder.delete = () => {
     deleteCalls.push({ table, filters });
+    return builder;
+  };
+  builder.update = (values: Record<string, unknown>) => {
+    updateCalls.push({ table, values, filters });
     return builder;
   };
   builder.maybeSingle = async () => result;
@@ -102,6 +113,7 @@ import {
   DELETE as deleteSavedScholar,
 } from '@/app/api/institution/saved-scholars/route';
 import { GET as getSavedCourses, DELETE as deleteSavedCourse } from '@/app/api/institution/saved-courses/route';
+import { PATCH as patchInstitutionProfile } from '@/app/api/institution/profile/route';
 import { GET as exportShortlist } from '@/app/api/institution/saved-scholars/export/route';
 import { POST as createPosting } from '@/app/api/postings/route';
 import { POST as issueEndorsement } from '@/app/api/institution/endorsements/route';
@@ -119,6 +131,7 @@ covers(
   'api:DELETE /api/institution/saved-scholars',
   'api:DELETE /api/institution/saved-courses',
   'api:GET /api/institution/saved-scholars/export',
+  'api:PATCH /api/institution/profile',
   'api:POST /api/postings',
   'api:POST /api/institution/endorsements',
   'api:POST /api/postings/[id]/express-interest',
@@ -156,6 +169,9 @@ describe('Authorization lockdown', () => {
     adminClientSpy.mockClear();
     deletedRows = [];
     deleteCalls.length = 0;
+    updateCalls.length = 0;
+    updatedRows = [{ id: 'row-1' }];
+    failTable = null;
     vi.mocked(inquiryQueries.fetchScholarInquiries).mockClear();
     vi.mocked(inquiryQueries.fetchInstitutionInquiries).mockClear();
     process.env = { ...originalEnv };
@@ -171,10 +187,17 @@ describe('Authorization lockdown', () => {
       role: 'institution_user',
       scholarId: null,
       institutionIds: [INST_A],
+      lookupFailed: false,
     };
 
     it('rejects anonymous callers with 401', () => {
       expect(resolveInstitutionAccess(null, INST_A)).toMatchObject({ ok: false, status: 401 });
+    });
+
+    it('answers 503 (not 403) when the membership lookup itself failed', () => {
+      expect(
+        resolveInstitutionAccess({ ...session, institutionIds: [], lookupFailed: true }, INST_A)
+      ).toMatchObject({ ok: false, status: 503 });
     });
 
     it('rejects a requested institution the caller does not belong to', () => {
@@ -353,6 +376,86 @@ describe('Authorization lockdown', () => {
         await call(`${param}=${id}`);
         expect(adminClientSpy).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('institution profile (PATCH)', () => {
+    const patch = (body: unknown) =>
+      patchInstitutionProfile(req('/api/institution/profile', { method: 'PATCH', body }));
+
+    it('returns 401 when signed out and 403 for non-members, updating nothing', async () => {
+      expect((await patch({ name: 'X' })).status).toBe(401);
+      identity = scholarA();
+      expect((await patch({ name: 'X' })).status).toBe(403);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('returns 503 (not 403/404) when the membership lookup itself fails', async () => {
+      identity = institutionAUser();
+      failTable = 'institution_users';
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      expect((await patch({ name: 'X' })).status).toBe(503);
+      expect(updateCalls).toHaveLength(0);
+      expect(JSON.stringify(spy.mock.calls)).not.toContain('timeout detail');
+      spy.mockRestore();
+    });
+
+    it('updates only the session institution and ignores a client-supplied institution id', async () => {
+      identity = institutionAUser();
+      const res = await patch({ name: ' Renamed Seminary ', website: 'https://example.edu', institutionId: INST_B, id: INST_B });
+      expect(res.status).toBe(200);
+      expect(updateCalls).toHaveLength(1);
+      expect(updateCalls[0].table).toBe('institutions');
+      expect(updateCalls[0].filters).toEqual([['id', INST_A]]);
+      expect(updateCalls[0].values).toMatchObject({ name: 'Renamed Seminary', website: 'https://example.edu' });
+      expect(adminClientSpy).not.toHaveBeenCalled();
+    });
+
+    it('never writes trust columns even when the client sends them', async () => {
+      identity = institutionAUser();
+      await patch({
+        name: 'Renamed',
+        status: 'approved',
+        slug: 'taken-slug',
+        accreditation_body: 'ATS',
+        accreditation_status: 'accredited',
+        accreditation_verified_at: '2026-10-01T00:00:00Z',
+      });
+      const written = Object.keys(updateCalls[0].values).sort();
+      expect(written).toEqual(['name', 'updated_at']);
+    });
+
+    it('rejects a body with only trust columns / unknown keys with 400 and writes nothing', async () => {
+      identity = institutionAUser();
+      const res = await patch({ status: 'approved', slug: 'x', institutionId: INST_B });
+      expect(res.status).toBe(400);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('rejects invalid input with 400 and field errors, updating nothing', async () => {
+      identity = institutionAUser();
+      const res = await patch({ name: '', website: 'javascript:alert(1)', contact_email: 'nope', institution_type: 'x' });
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(Object.keys(body.errors).sort()).toEqual(['contact_email', 'institution_type', 'name', 'website']);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it('reports failure, not success, when RLS matched no row', async () => {
+      identity = institutionAUser();
+      updatedRows = [];
+      expect((await patch({ name: 'Renamed' })).status).toBe(403);
+    });
+
+    it('does not leak database detail when the update errors', async () => {
+      identity = institutionAUser();
+      failTable = 'institutions';
+      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const res = await patch({ name: 'Renamed' });
+      expect(res.status).toBe(500);
+      expect(JSON.stringify(await res.json())).not.toContain('timeout detail');
+      expect(JSON.stringify(spy.mock.calls)).not.toContain('timeout detail');
+      spy.mockRestore();
     });
   });
 

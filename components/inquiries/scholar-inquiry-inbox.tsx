@@ -1,18 +1,129 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Mail, Building2, Target, Calendar, Radio, BookOpen } from 'lucide-react';
 import type { InquiryStatus } from '@/lib/domain/types';
-import { OPPORTUNITY_LABELS, isAwaiting } from '@/lib/inquiries/labels';
+import {
+  INQUIRY_TABS,
+  OPPORTUNITY_LABELS,
+  countForTab,
+  inquiryStatusLabel,
+  isAwaiting,
+  matchesInquiryTab,
+  type InquiryTab,
+} from '@/lib/inquiries/labels';
 import type { InboxInquiryItem } from '@/lib/inquiries/mappers';
+import {
+  applyOptimisticStatus,
+  sendInquiryDecision,
+  settleDecision,
+  snapshotOf,
+} from '@/lib/inquiries/inbox-state';
+import { Tabs, tabPanelProps } from '@/components/portal/tabs';
+import { useDialogFocus } from '@/components/portal/use-dialog-focus';
 import { useTranslation } from '@/lib/i18n/i18n-context';
 
 export type { InboxInquiryItem };
 
+function DecisionDialog({
+  inquiry,
+  actionType,
+  responseNotes,
+  setResponseNotes,
+  submitting,
+  actionError,
+  onCancel,
+  onConfirm,
+}: {
+  inquiry: InboxInquiryItem;
+  actionType: 'accept' | 'decline';
+  responseNotes: string;
+  setResponseNotes: (value: string) => void;
+  submitting: boolean;
+  actionError: string | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, onCancel, 'textarea');
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="inquiry-decision-title"
+        aria-describedby="inquiry-decision-desc"
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4"
+      >
+        <h3 id="inquiry-decision-title" className="text-lg font-bold text-slate-900 dark:text-white">
+          {actionType === 'accept'
+            ? `Accept Inquiry from ${inquiry.institution_name}`
+            : `Decline Inquiry from ${inquiry.institution_name}`}
+        </h3>
+
+        <p id="inquiry-decision-desc" className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+          {actionType === 'accept'
+            ? 'Accepting this opportunity will inform the institution and establish a direct email channel. The institution’s contact email is shown to you after you accept.'
+            : 'Declining will send a polite notification to the institution letting them know of your current unavailability.'}
+        </p>
+
+        <div>
+          <label
+            htmlFor="inquiry-decision-notes"
+            className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5"
+          >
+            {actionType === 'accept' ? 'Note to Dean (Optional)' : 'Reason / Note (Optional)'}
+          </label>
+          <textarea
+            id="inquiry-decision-notes"
+            rows={3}
+            value={responseNotes}
+            onChange={(e) => setResponseNotes(e.target.value)}
+            placeholder={
+              actionType === 'accept'
+                ? 'e.g. I look forward to connecting and discussing course scheduling.'
+                : 'e.g. Thank you for the invitation, but I am at full teaching capacity this academic term.'
+            }
+            className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+        </div>
+
+        {actionError && (
+          <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
+            {actionError}
+          </p>
+        )}
+
+        <div className="flex justify-end space-x-2 pt-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={submitting}
+            onClick={onConfirm}
+            className={`px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
+              actionType === 'accept' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'
+            }`}
+          >
+            {submitting ? 'Updating...' : actionType === 'accept' ? 'Confirm Acceptance' : 'Confirm Decline'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: InboxInquiryItem[] }) {
   const { t } = useTranslation();
   const [inquiries, setInquiries] = useState<InboxInquiryItem[]>(initialInquiries);
-  const [activeTab, setActiveTab] = useState<InquiryStatus | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<InquiryTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInquiry, setSelectedInquiry] = useState<InboxInquiryItem | null>(null);
   const [actionType, setActionType] = useState<'accept' | 'decline' | null>(null);
@@ -21,7 +132,7 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
   const [actionError, setActionError] = useState<string | null>(null);
 
   const filteredInquiries = inquiries.filter((inq) => {
-    if (activeTab !== 'all' && inq.status !== activeTab) return false;
+    if (!matchesInquiryTab(inq.status, activeTab)) return false;
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       return (
@@ -33,44 +144,36 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
     return true;
   });
 
-  const pendingCount = inquiries.filter((i) => i.status === 'pending').length;
-  const acceptedCount = inquiries.filter((i) => i.status === 'accepted').length;
+  const awaitingCount = countForTab(inquiries, 'awaiting');
+  const acceptedCount = countForTab(inquiries, 'accepted');
+
+  const closeDialog = () => {
+    setSelectedInquiry(null);
+    setActionType(null);
+    setActionError(null);
+  };
 
   const handleStatusUpdate = async (status: InquiryStatus) => {
     if (!selectedInquiry) return;
     const target = selectedInquiry;
-    const previousStatus = target.status;
+    const previous = snapshotOf(target);
     setSubmitting(true);
     setActionError(null);
 
-    const setStatus = (next: InquiryStatus) =>
-      setInquiries((prev) => prev.map((item) => (item.id === target.id ? { ...item, status: next } : item)));
-
     // Optimistic update, rolled back if the server does not confirm it.
-    setStatus(status);
+    setInquiries((prev) => applyOptimisticStatus(prev, target.id, status));
 
-    try {
-      const res = await fetch(`/api/inquiries/${target.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status,
-          response_notes: responseNotes.trim() || null,
-        }),
-      });
-      if (!res.ok) {
-        throw new Error('update rejected');
-      }
+    const result = await sendInquiryDecision(fetch, target.id, status, responseNotes.trim() || null);
+    setInquiries((prev) => settleDecision(prev, target.id, status, previous, result));
 
+    if (result.ok) {
       setActionType(null);
       setSelectedInquiry(null);
       setResponseNotes('');
-    } catch {
-      setStatus(previousStatus);
+    } else {
       setActionError('We could not update this inquiry. Nothing was changed; please try again.');
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   };
 
   return (
@@ -86,9 +189,9 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
           <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-            {t('inquiry.stat_pending') || 'Pending Review'}
+            {t('inquiry.stat_awaiting') || 'Awaiting response'}
           </span>
-          <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mt-1">{pendingCount}</p>
+          <p data-testid="inbox-awaiting-count" className="text-2xl font-bold text-indigo-700 dark:text-indigo-300 mt-1">{awaitingCount}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
@@ -101,30 +204,30 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
 
       {/* Tabs & Search */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-3 shadow-xs">
-        <div className="flex flex-wrap gap-1">
-          {(['all', 'pending', 'accepted', 'declined'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
-                activeTab === tab
-                  ? 'bg-indigo-900 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-              {tab === 'pending' && pendingCount > 0 && (
-                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px]">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        <Tabs
+          idPrefix="inbox"
+          label="Filter inquiries by status"
+          active={activeTab}
+          onChange={setActiveTab}
+          tabs={INQUIRY_TABS.map((tab) => ({
+            id: tab.id,
+            content: (
+              <>
+                {tab.label}
+                {tab.id === 'awaiting' && awaitingCount > 0 && (
+                  <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-indigo-500 text-white text-[10px]">
+                    {awaitingCount}
+                  </span>
+                )}
+              </>
+            ),
+          }))}
+        />
 
         <div className="w-full sm:w-64">
           <input
             type="text"
+            aria-label="Filter inquiries by institution or topic"
             placeholder={t('inquiry.search_placeholder') || 'Filter by seminary or topic...'}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,6 +237,7 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
       </div>
 
       {/* Inquiry List */}
+      <div {...tabPanelProps('inbox', activeTab)}>
       {filteredInquiries.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
           <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mx-auto mb-3">
@@ -150,7 +254,7 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
       ) : (
         <div className="space-y-4">
           {filteredInquiries.map((inq) => {
-            const isPending = inq.status === 'pending';
+            const isPending = isAwaiting(inq.status);
             const canRespond = isAwaiting(inq.status);
             const isAccepted = inq.status === 'accepted';
             const isDeclined = inq.status === 'declined';
@@ -158,6 +262,8 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
             return (
               <div
                 key={inq.id}
+                data-testid="inquiry-card"
+                data-status={inq.status}
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-indigo-300 dark:hover:border-indigo-800 transition"
               >
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -170,8 +276,12 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
                         {inq.institution_name}
                       </h4>
                       <p className="text-xs text-slate-500">
-                        {inq.institution_location || 'Accredited Seminary'} • Received{' '}
-                        {new Date(inq.created_at).toLocaleDateString()}
+                        {inq.institution_available
+                          ? inq.institution_location
+                            ? `${inq.institution_location} • `
+                            : ''
+                          : 'Details unavailable • '}
+                        Received {new Date(inq.created_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
@@ -189,7 +299,7 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
                           : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                       }`}
                     >
-                      {inq.status.toUpperCase()}
+                      {inquiryStatusLabel(inq.status)}
                     </span>
                   </div>
                 </div>
@@ -226,10 +336,10 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
                 </div>
 
                 {/* Direct Contact Info (Visible if Accepted) */}
-                {isAccepted && (
+                {isAccepted && inq.contact_email && (
                   <div className="mt-3 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 flex items-center justify-between">
                     <div>
-                      <span className="font-bold">Contact Dean: </span>
+                      <span className="font-bold">Institution contact: </span>
                       <a href={`mailto:${inq.contact_email}`} className="underline font-semibold">
                         {inq.contact_email}
                       </a>
@@ -271,78 +381,20 @@ export function ScholarInquiryInbox({ initialInquiries }: { initialInquiries: In
         </div>
       )}
 
+      </div>
+
       {/* Decision Modal */}
       {selectedInquiry && actionType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div role="dialog" aria-modal="true" aria-label="Respond to inquiry" className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-              {actionType === 'accept'
-                ? `Accept Inquiry from ${selectedInquiry.institution_name}`
-                : `Decline Inquiry from ${selectedInquiry.institution_name}`}
-            </h3>
-
-            {actionType === 'accept' ? (
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Accepting this opportunity will inform the institutional contact ({selectedInquiry.contact_email})
-                and establish a direct email communication channel.
-              </p>
-            ) : (
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Declining will send a polite notification to the institution letting them know of your current
-                unavailability.
-              </p>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
-                {actionType === 'accept' ? 'Note to Dean (Optional)' : 'Reason / Note (Optional)'}
-              </label>
-              <textarea
-                rows={3}
-                value={responseNotes}
-                onChange={(e) => setResponseNotes(e.target.value)}
-                placeholder={
-                  actionType === 'accept'
-                    ? 'e.g. I look forward to connecting and discussing course scheduling.'
-                    : 'e.g. Thank you for the invitation, but I am at full teaching capacity this academic term.'
-                }
-                className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 p-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
-
-            {actionError && (
-              <p role="alert" className="text-xs font-semibold text-rose-700 dark:text-rose-300">
-                {actionError}
-              </p>
-            )}
-
-            <div className="flex justify-end space-x-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedInquiry(null);
-                  setActionType(null);
-                  setActionError(null);
-                }}
-                className="px-3 py-1.5 border border-slate-300 dark:border-slate-700 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => handleStatusUpdate(actionType === 'accept' ? 'accepted' : 'declined')}
-                className={`px-4 py-1.5 rounded-lg text-xs font-semibold text-white transition ${
-                  actionType === 'accept'
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-rose-600 hover:bg-rose-700'
-                }`}
-              >
-                {submitting ? 'Updating...' : actionType === 'accept' ? 'Confirm Acceptance' : 'Confirm Decline'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DecisionDialog
+          inquiry={selectedInquiry}
+          actionType={actionType}
+          responseNotes={responseNotes}
+          setResponseNotes={setResponseNotes}
+          submitting={submitting}
+          actionError={actionError}
+          onCancel={closeDialog}
+          onConfirm={() => handleStatusUpdate(actionType === 'accept' ? 'accepted' : 'declined')}
+        />
       )}
     </div>
   );

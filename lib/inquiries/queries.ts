@@ -10,6 +10,7 @@ import {
 } from '@/lib/domain/types';
 
 export interface DetailedScholarInquiry extends InstitutionInquiry {
+  /** Null when the institution row is not visible: never invent a name, type or status for it. */
   institution: {
     id: string;
     name: string;
@@ -18,7 +19,7 @@ export interface DetailedScholarInquiry extends InstitutionInquiry {
     institution_type: string;
     status: string;
     website?: string | null;
-  };
+  } | null;
   course?: {
     id: string;
     title: string;
@@ -28,13 +29,14 @@ export interface DetailedScholarInquiry extends InstitutionInquiry {
 }
 
 export interface DetailedInstitutionInquiry extends InstitutionInquiry {
+  /** Null when the scholar profile is not visible (for example unpublished). */
   scholar: {
     id: string;
     full_name: string;
     slug: string;
     avatar_url?: string | null;
     primary_institution?: string | null;
-  };
+  } | null;
   course?: {
     id: string;
     title: string;
@@ -57,7 +59,7 @@ interface ScholarInquiryRow {
   status: InquiryStatus;
   created_at: string;
   updated_at: string;
-  institutions?: DetailedScholarInquiry['institution'] | null;
+  institutions?: DetailedScholarInquiry['institution'];
   courses?: DetailedScholarInquiry['course'] | null;
 }
 
@@ -213,15 +215,7 @@ export async function fetchScholarInquiriesOrThrow(
     status: row.status as InquiryStatus,
     created_at: row.created_at,
     updated_at: row.updated_at,
-    institution: row.institutions || {
-      id: row.institution_id,
-      name: 'Unknown Seminary',
-      slug: 'unknown',
-      location: null,
-      institution_type: 'seminary',
-      status: 'approved',
-      website: null,
-    },
+    institution: row.institutions ?? null,
     course: row.courses || null,
   }));
 }
@@ -309,13 +303,7 @@ export async function fetchInstitutionInquiriesOrThrow(
           avatar_url: row.scholars.profile_photo_path,
           primary_institution: row.scholars.current_institution,
         }
-      : {
-          id: row.scholar_id,
-          full_name: 'Unknown Scholar',
-          slug: 'unknown',
-          avatar_url: null,
-          primary_institution: null,
-        },
+      : null,
     course: row.courses || null,
   }));
 }
@@ -499,6 +487,55 @@ export async function fetchInstitutionProfile(
   institutionId: string
 ): Promise<InstitutionHomeProfile | null> {
   return orFallback('institution profile', () => fetchInstitutionProfileOrThrow(supabase, institutionId), null);
+}
+
+/**
+ * Just the institution's verification status (for the portal nav badge).
+ * Null when the row is not visible or the read fails: the badge then says the
+ * status is unavailable instead of claiming "Verified".
+ */
+export async function fetchInstitutionStatus(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<string | null> {
+  return orFallback(
+    'institution status',
+    async () => {
+      const { data, error } = await supabase
+        .from('institutions')
+        .select('status')
+        .eq('id', institutionId)
+        .maybeSingle();
+      if (error) throw new PortalQueryError('institution status', error.code);
+      return (data as { status: string } | null)?.status ?? null;
+    },
+    null
+  );
+}
+
+/** Columns the profile editor needs: identity fields plus the read-only trust fields. */
+const INSTITUTION_EDIT_COLUMNS =
+  'id, name, slug, location, institution_type, status, website, contact_email, accreditation_body, accreditation_status';
+
+export type InstitutionEditableProfile = InstitutionHomeProfile & {
+  website: string | null;
+  contact_email: string;
+};
+
+/** Narrowed read for the profile editor. Throws PortalQueryError when the read fails; null when not visible. */
+export async function fetchInstitutionProfileForEdit(
+  supabase: SupabaseClient,
+  institutionId: string
+): Promise<InstitutionEditableProfile | null> {
+  const { data, error } = await supabase
+    .from('institutions')
+    .select(INSTITUTION_EDIT_COLUMNS)
+    .eq('id', institutionId)
+    .maybeSingle();
+  if (error) {
+    throw new PortalQueryError('institution profile', error.code);
+  }
+  return (data as InstitutionEditableProfile | null) ?? null;
 }
 
 export type InstitutionHomeProfile = Pick<
