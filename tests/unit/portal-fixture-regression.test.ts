@@ -18,7 +18,8 @@ covers(
   'page:/dashboard/analytics',
   'page:/scholars/[slug]',
   'page:/institution/conferences',
-  'page:/institution/inquiries'
+  'page:/institution/inquiries',
+  'page:/dashboard/courses'
 );
 
 const ROOT = process.cwd();
@@ -134,6 +135,17 @@ const NEGATIVE_AND_POSITIVE: {
     present: ["'/api/institution/profile'", "method: 'PATCH'", 'profile.status', 'profile-save-error'],
   },
   {
+    file: 'app/dashboard/courses/page.tsx',
+    // INITIAL_COURSES (spec 2026-10-08-scholar-courses) must never come back.
+    absent: ['INITIAL_COURSES', 'Exegesis of Romans & Galatians', 'Intermediate Biblical Greek Syntax', "'use client'", 'createAdminClient'],
+    present: ['requireSignedIn', 'fetchOwnCoursesOrThrow', 'fetchDisciplineOptionsOrThrow', 'CoursesManager', 'DataErrorPanel'],
+  },
+  {
+    file: 'components/scholar/courses-manager.tsx',
+    absent: ['INITIAL_COURSES', 'Exegesis of Romans & Galatians', 'Date.now()', 'scholar_id'],
+    present: ["'/api/scholars/courses'", "method: 'PATCH'", "method: 'DELETE'", 'Confirm delete', 'role="dialog"', 'courses-empty'],
+  },
+  {
     file: 'app/(institution)/institution/layout.tsx',
     absent: [],
     present: ["session.role === 'admin'", 'fetchInstitutionStatus', 'SessionLookupError'],
@@ -165,7 +177,7 @@ describe('portal fixture regression', () => {
   });
 
   it('the removed fixture constants and "Live Feed" badge are gone from app/ and components/', () => {
-    const banned = ['DEFAULT_SAVED_SCHOLARS', 'DEFAULT_SAVED_COURSES', 'DEFAULT_INQUIRIES', 'DEFAULT_OUTBOX', 'Live Feed', 'inq-sample-'];
+    const banned = ['INITIAL_COURSES', 'DEFAULT_SAVED_SCHOLARS', 'DEFAULT_SAVED_COURSES', 'DEFAULT_INQUIRIES', 'DEFAULT_OUTBOX', 'Live Feed', 'inq-sample-'];
     const offenders: string[] = [];
     for (const file of [...walk('app'), ...walk('components')]) {
       const source = read(file);
@@ -182,6 +194,10 @@ describe('portal fixture regression', () => {
       'app/(institution)/institution/inquiries/page.tsx',
       'app/dashboard/page.tsx',
       'app/dashboard/inquiries/page.tsx',
+      'app/dashboard/courses/page.tsx',
+      'lib/courses/course-service.ts',
+      'app/api/scholars/courses/route.ts',
+      'app/api/scholars/courses/[id]/route.ts',
       'lib/profiles/dashboard-summary.ts',
     ]) {
       expect(read(file), file).not.toContain('createAdminClient');
