@@ -498,6 +498,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Staff triage workspace (`/admin/triage`) with queue filtering, detail drawer, and optimistic updates.
 
 ### Changed
+- **Release workflow can apply production migrations safely.**
+  - Manual runs have a `dry_run` input, on by default, which only lists the migrations `supabase db push` would apply.
+  - The production job now FAILS if `SUPABASE_ACCESS_TOKEN` or `SUPABASE_PROJECT_REF` is missing. It used to print a notice and pass while doing nothing.
+  - An optional `SUPABASE_DB_PASSWORD` secret is passed through when set.
+  - Runs are serialised with a concurrency group.
+  - The production job still requires the `production` environment approval.
 - **Hygiene (Council Review 12, Prompt C).**
   - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.
   - **AI faculty matcher:** fictional `SEED_CANDIDATES` are used only under local `next dev`. Deployed builds no longer present invented scholars as real matches.

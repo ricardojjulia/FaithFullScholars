@@ -2,9 +2,19 @@ name: Release
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Only list the migrations that would be applied (no changes)'
+        type: boolean
+        default: true
   push:
     tags:
       - 'v*'
+
+# Never run two migration pushes at once.
+concurrency:
+  group: release-production
+  cancel-in-progress: false
 
 jobs:
   deploy-staging:
@@ -42,18 +52,39 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Push migrations to production
+      - name: Check production configuration
+        # Fail loudly instead of "skipping": a migration run that silently did
+        # nothing would look like success (AGENTS.md: checks must fail on bad state).
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ]; then
-            echo "::notice title=Supabase Production Skipped::SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF secret is not configured. Skipping production migration push."
-            exit 0
+            echo "::error title=Supabase production not configured::SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF must be set on the production environment."
+            exit 1
           fi
-          supabase db push --project-ref "$SUPABASE_PROJECT_REF"
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      - name: Plan (dry run) — migrations that would be applied
+        run: |
+          PW_ARGS=()
+          if [ -n "$SUPABASE_DB_PASSWORD" ]; then PW_ARGS=(--password "$SUPABASE_DB_PASSWORD"); fi
+          supabase db push --project-ref "$SUPABASE_PROJECT_REF" --dry-run "${PW_ARGS[@]}"
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      - name: Push migrations to production
+        # Tag pushes always apply; manual runs apply only when dry_run is unticked.
+        if: github.event_name == 'push' || inputs.dry_run == false
+        run: |
+          PW_ARGS=()
+          if [ -n "$SUPABASE_DB_PASSWORD" ]; then PW_ARGS=(--password "$SUPABASE_DB_PASSWORD"); fi
+          supabase db push --project-ref "$SUPABASE_PROJECT_REF" "${PW_ARGS[@]}"
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       - name: Notify deployment
-        if: success()
+        if: success() && (github.event_name == 'push' || inputs.dry_run == false)
         env:
           WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
         run: |
