@@ -530,6 +530,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Assisted CV onboarding with automated PDF extraction in Phase 3.
 
 ### Security
+- **Post-login redirect hardening.** `safeNextPath` now rejects control characters (tab, CR, LF and others) and backslashes anywhere in the path, and requires the path to resolve to the same origin. Browsers strip tab and newline, so `/\t/evil.com` would have become `//evil.com`. The `/auth/callback` route was already protected by its own origin check, so nothing was exploitable in production. The fix closes the gap before PR #69 adds a login `next` redirect that relies on `safeNextPath` alone. The new tests fail against the old code.
 - **`sharp` 0.35.4 → 0.35.5** (lockfile only, within Next's `^0.35.4` range). Fixes the high-severity librsvg vulnerability in the bundled libvips (GHSA-wq5f-xc86-pv6w / CVE-2026-96889). `npm audit --omit=dev` is now clean. `source-map-js` 1.2.2 (CVE-2026-93749) landed in #55.
 - **CAPTCHA bypass closed.** `verifyCaptchaToken` accepted the literal client placeholder `mock-turnstile-token` even when a Turnstile secret was configured, so anyone could skip sign-up bot protection by sending that string.
   - With a secret configured, every token is now verified by Cloudflare and a missing token is refused. Provider error codes are no longer echoed to the client.

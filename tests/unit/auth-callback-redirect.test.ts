@@ -23,11 +23,18 @@ describe('auth callback post-login redirect', () => {
     ['evil.com', '/dashboard'],
     [null, '/dashboard'],
     ['/institution/saved?tab=courses', '/institution/saved?tab=courses'],
+    // Browsers and the WHATWG URL parser strip tab/CR/LF, turning these into //evil.com.
+    ['/\t/evil.com', '/dashboard'],
+    ['/\n/evil.com', '/dashboard'],
+    ['/\r/evil.com', '/dashboard'],
+    ['/\u0000/evil.com', '/dashboard'],
+    ['/x\\evil.com', '/dashboard'],
+    ['/%2Fevil.com', '/%2Fevil.com'],
   ])('safeNextPath(%s) → %s', (input, expected) => {
     expect(safeNextPath(input)).toBe(expected);
   });
 
-  it.each(['https://evil.com', '//evil.com', '/\\evil.com'])(
+  it.each(['https://evil.com', '//evil.com', '/\\evil.com', '/\t/evil.com', '/\n/evil.com', '\t//evil.com'])(
     'never redirects off-site for next=%s',
     async (next) => {
       const res = await GET(
