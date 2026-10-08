@@ -120,7 +120,7 @@ test.describe('institution persona', () => {
         : route.continue()
     );
     await removeButton.click();
-    await expect(page.getByRole('alert')).toContainText('could not remove');
+    await expect(page.getByRole('alert').filter({ hasText: 'could not remove' })).toBeVisible();
     await expect(removeButton).toBeVisible();
     expect(await count('saved_scholars', { institution_id: APPROVED_INSTITUTION, scholar_id: removalScholar.id })).toBe(1);
 
