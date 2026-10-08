@@ -130,7 +130,7 @@ Deliverables:
 - Candidate shortlisting and course bookmarking systems (`saved_scholars`, `saved_courses`) with persistence.
 - Scholar Inquiry Inbox (`/dashboard/inquiries`) with status transitions (pending, accepted, declined, archived) and decision feedback.
 - Institution Portal workspace (`/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`).
-- Real data on portal screens (PR #66, pending merge): the institution home, shortlist, outreach log and profile and the scholar dashboard and inbox read the signed-in user's own rows; analytics is labelled sample data; the conference hub is a staff-only preview. `/dashboard/courses` is now a real My Courses manager (create, publish, edit, delete; private by default). Next slice: the applications rebuild.
+- Real data on portal screens (PR #66, merged): the institution home, shortlist, outreach log and profile and the scholar dashboard and inbox read the signed-in user's own rows; analytics is labelled sample data; the conference hub is a staff-only preview. `/dashboard/courses` is now a real My Courses manager (PR #68: create, publish, edit, delete; private by default). The applications rebuild is built (PR #69, ADR 0027); next slice: the conference hub.
 - Anti-spam rate limiting (10 inquiries/hr per institution) and input validation. Now a database trigger (ADR 0026, PR #65), pending the production migration `20261008090000`.
 - Transactional email notification service abstraction (`email-service.ts`) with event logging.
 - Unit and database integration tests verifying end-to-end communication workflows.
