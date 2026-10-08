@@ -11,6 +11,7 @@ import {
   TEXT_MAX,
   TITLE_MAX,
   VISIBILITY_LABELS,
+  splitDeliveryModes,
 } from '@/lib/courses/course-validation';
 import type { DisciplineOption, ScholarCourse } from '@/lib/courses/course-service';
 
@@ -37,6 +38,27 @@ const EMPTY_FORM: FormState = {
 const inputClass =
   'w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500';
 
+const KNOWN_FIELDS = [
+  'title',
+  'description',
+  'reading_list',
+  'level',
+  'primary_discipline_id',
+  'discipline_ids',
+  'delivery_modes',
+  'visibility',
+];
+const PUBLISH_NOTE = 'Published courses appear publicly right away. They are not reviewed by an administrator.';
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="mt-1 text-xs text-red-700 dark:text-red-400">
+      {message}
+    </p>
+  );
+}
+
 function toForm(course: ScholarCourse): FormState {
   return {
     title: course.title,
@@ -44,7 +66,7 @@ function toForm(course: ScholarCourse): FormState {
     reading_list: course.reading_list ?? '',
     level: course.level,
     primary_discipline_id: course.primary_discipline_id ?? '',
-    delivery_modes: course.delivery_modes ?? [],
+    delivery_modes: splitDeliveryModes(course.delivery_modes).valid,
     visibility: course.visibility,
   };
 }
@@ -61,9 +83,11 @@ async function readError(res: Response): Promise<{ message: string; fields: Reco
 export function CoursesManager({
   initialCourses,
   disciplines,
+  profileStatus,
 }: {
   initialCourses: ScholarCourse[];
   disciplines: DisciplineOption[];
+  profileStatus: string;
 }) {
   const uid = useId();
   const [courses, setCourses] = useState<ScholarCourse[]>(initialCourses);
@@ -71,6 +95,7 @@ export function CoursesManager({
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  const [removedModes, setRemovedModes] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -87,6 +112,7 @@ export function CoursesManager({
     openerRef.current = document.activeElement as HTMLElement | null;
     setEditing(target);
     setForm(target === 'new' ? EMPTY_FORM : toForm(target));
+    setRemovedModes(target === 'new' ? [] : splitDeliveryModes(target.delivery_modes).removed);
     setFieldErrors({});
     setFormError(null);
   }
@@ -310,7 +336,10 @@ export function CoursesManager({
                   </button>
                   {confirming ? (
                     <span className="inline-flex items-center gap-2" role="group" aria-label={`Confirm deleting ${course.title}`}>
-                      <span className="text-xs text-slate-700 dark:text-slate-300">Delete this course?</span>
+                      <span className="text-xs text-slate-700 dark:text-slate-300 max-w-md">
+                        Delete this course? Institutions that saved it lose it from their shortlists. Inquiries and
+                        media links are kept but no longer linked to it.
+                      </span>
                       <button
                         type="button"
                         disabled={busyId === course.id}
@@ -344,6 +373,18 @@ export function CoursesManager({
                     </button>
                   )}
                 </div>
+
+                <p className="mt-3 text-xs text-slate-600 dark:text-slate-400" data-testid="publish-note">
+                  {PUBLISH_NOTE}
+                </p>
+                {isPublic && profileStatus !== 'approved' && (
+                  <p
+                    data-testid="course-hidden-note"
+                    className="mt-1 text-xs font-semibold text-amber-800 dark:text-amber-300"
+                  >
+                    Hidden from the public until your profile is approved.
+                  </p>
+                )}
 
                 {rowError?.id === course.id && (
                   <p role="alert" className="mt-3 text-xs text-red-700 dark:text-red-400">
@@ -414,8 +455,11 @@ export function CoursesManager({
                   maxLength={TEXT_MAX}
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  aria-invalid={!!fieldErrors.description}
+                  aria-describedby={fieldErrors.description ? `${uid}-e-description` : undefined}
                   className={inputClass}
                 />
+                <FieldError id={`${uid}-e-description`} message={fieldErrors.description} />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -427,6 +471,8 @@ export function CoursesManager({
                     id={`${uid}-f-level`}
                     value={form.level}
                     onChange={(e) => setForm({ ...form, level: e.target.value as CourseLevel })}
+                    aria-invalid={!!fieldErrors.level}
+                    aria-describedby={fieldErrors.level ? `${uid}-e-level` : undefined}
                     className={inputClass}
                   >
                     {COURSE_LEVELS.map((l) => (
@@ -435,6 +481,7 @@ export function CoursesManager({
                       </option>
                     ))}
                   </select>
+                  <FieldError id={`${uid}-e-level`} message={fieldErrors.level} />
                 </div>
                 <div>
                   <label htmlFor={`${uid}-f-disc`} className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
@@ -444,6 +491,10 @@ export function CoursesManager({
                     id={`${uid}-f-disc`}
                     value={form.primary_discipline_id}
                     onChange={(e) => setForm({ ...form, primary_discipline_id: e.target.value })}
+                    aria-invalid={!!(fieldErrors.primary_discipline_id || fieldErrors.discipline_ids)}
+                    aria-describedby={
+                      fieldErrors.primary_discipline_id || fieldErrors.discipline_ids ? `${uid}-e-disc` : undefined
+                    }
                     className={inputClass}
                   >
                     <option value="">Not specified</option>
@@ -453,10 +504,14 @@ export function CoursesManager({
                       </option>
                     ))}
                   </select>
+                  <FieldError
+                    id={`${uid}-e-disc`}
+                    message={fieldErrors.primary_discipline_id ?? fieldErrors.discipline_ids}
+                  />
                 </div>
               </div>
 
-              <fieldset>
+              <fieldset aria-describedby={fieldErrors.delivery_modes ? `${uid}-e-modes` : undefined}>
                 <legend className="text-sm font-semibold text-slate-800 dark:text-slate-200">Delivery modes</legend>
                 <div className="mt-2 grid gap-2 sm:grid-cols-2">
                   {DELIVERY_MODES.map((mode) => (
@@ -471,6 +526,14 @@ export function CoursesManager({
                     </label>
                   ))}
                 </div>
+                {removedModes.length > 0 && (
+                  <p className="mt-2 text-xs text-amber-800 dark:text-amber-300" data-testid="legacy-modes-note">
+                    {removedModes.length === 1 ? 'One delivery mode' : `${removedModes.length} delivery modes`} from an
+                    older version of this course ({removedModes.join(', ')}) {removedModes.length === 1 ? 'is' : 'are'} no
+                    longer supported and will be removed when you save.
+                  </p>
+                )}
+                <FieldError id={`${uid}-e-modes`} message={fieldErrors.delivery_modes} />
               </fieldset>
 
               <div>
@@ -483,8 +546,11 @@ export function CoursesManager({
                   maxLength={TEXT_MAX}
                   value={form.reading_list}
                   onChange={(e) => setForm({ ...form, reading_list: e.target.value })}
+                  aria-invalid={!!fieldErrors.reading_list}
+                  aria-describedby={fieldErrors.reading_list ? `${uid}-e-reading` : undefined}
                   className={inputClass}
                 />
+                <FieldError id={`${uid}-e-reading`} message={fieldErrors.reading_list} />
               </div>
 
               {editing !== 'new' && (
@@ -496,13 +562,31 @@ export function CoursesManager({
                     id={`${uid}-f-vis`}
                     value={form.visibility}
                     onChange={(e) => setForm({ ...form, visibility: e.target.value as CourseVisibility })}
+                    aria-invalid={!!fieldErrors.visibility}
+                    aria-describedby={`${uid}-visibility-note${fieldErrors.visibility ? ` ${uid}-e-vis` : ''}`}
                     className={inputClass}
                   >
                     <option value="private">Private (only you)</option>
-                    <option value="unlisted">Unlisted</option>
-                    <option value="public">Public (course catalogue)</option>
+                    {editing.visibility === 'unlisted' && (
+                      <option value="unlisted">Unlisted (not shown publicly)</option>
+                    )}
+                    <option value="public">Public (catalogue, your profile and discipline pages)</option>
                   </select>
+                  <p id={`${uid}-visibility-note`} className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+                    {PUBLISH_NOTE}
+                  </p>
+                  <FieldError id={`${uid}-e-vis`} message={fieldErrors.visibility} />
                 </div>
+              )}
+
+              {Object.keys(fieldErrors).some((k) => !KNOWN_FIELDS.includes(k)) && (
+                <ul className="text-xs text-red-700 dark:text-red-400 list-disc pl-5">
+                  {Object.entries(fieldErrors)
+                    .filter(([k]) => !KNOWN_FIELDS.includes(k))
+                    .map(([k, v]) => (
+                      <li key={k}>{v}</li>
+                    ))}
+                </ul>
               )}
 
               {formError && (

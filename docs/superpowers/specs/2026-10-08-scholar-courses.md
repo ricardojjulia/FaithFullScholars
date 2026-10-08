@@ -43,8 +43,16 @@ As a **scholar**, I create, edit, publish or unpublish, and delete my courses on
 - The sample-video field.
 - The AI syllabus tagger.
 
+## Review amendments (2026-10-08, after pr-review and the Council)
+Corrections to the approved goals, not scope changes:
+- Migration `20261011090000_course_integrity.sql`: globally unique slugs (public pages look courses up by slug alone) and a database trigger that blocks deleting a course with licensing agreements, so the guard no longer lives only in the app.
+- "Unlisted" is not offered for new choices (it behaves like private); existing rows display as "Unlisted (not shown publicly)" and the API still accepts the value.
+- Publishing copy says courses appear right away and are not admin-reviewed; public courses of an unapproved profile say they are hidden.
+- Edits never drop tags unless `discipline_ids` is sent; validation happens before any write.
+- E2E deviation (reviewed): the scholar persona is a draft profile, so the E2E asserts its public course is absent from `/courses`. Public visibility for an approved scholar is proved at page level by the anonymous `getPublicCourseBySlug` integration test.
+
 ## Technical brief
-- **No migration needed.** The `courses` RLS policy "Scholars manage own courses" (FOR ALL, owner or admin; WITH CHECK implied) and the `course_disciplines` owner policies already cover create, read, update and delete.
+- **Migration:** only the amendment above (`20261011090000_course_integrity.sql`); no RLS policy change was needed. The `courses` RLS policy "Scholars manage own courses" (FOR ALL, owner or admin; WITH CHECK implied) and the `course_disciplines` owner policies already cover create, read, update and delete.
 - **`lib/courses/course-validation.ts`** (pure functions):
   - title: 1–200 characters;
   - description and reading list: up to 5000 characters each;

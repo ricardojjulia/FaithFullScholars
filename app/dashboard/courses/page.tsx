@@ -5,6 +5,7 @@ import { requireSignedIn } from '@/lib/auth/guards';
 import {
   fetchDisciplineOptionsOrThrow,
   fetchOwnCoursesOrThrow,
+  fetchProfileStatusOrThrow,
   type DisciplineOption,
   type ScholarCourse,
 } from '@/lib/courses/course-service';
@@ -48,13 +49,14 @@ export default async function ScholarCoursesPage() {
     );
   }
 
-  let loaded: { courses: ScholarCourse[]; disciplines: DisciplineOption[] } | null = null;
+  let loaded: { courses: ScholarCourse[]; disciplines: DisciplineOption[]; profileStatus: string } | null = null;
   try {
-    const [courses, disciplines] = await Promise.all([
+    const [courses, disciplines, profileStatus] = await Promise.all([
       fetchOwnCoursesOrThrow(supabase, session.scholarId),
       fetchDisciplineOptionsOrThrow(supabase),
+      fetchProfileStatusOrThrow(supabase, session.scholarId),
     ]);
-    loaded = { courses, disciplines };
+    loaded = { courses, disciplines, profileStatus };
   } catch {
     loaded = null;
   }
@@ -63,7 +65,9 @@ export default async function ScholarCoursesPage() {
     <div className="space-y-6">
       {header}
       {loaded ? (
-        <CoursesManager initialCourses={loaded.courses} disciplines={loaded.disciplines} />
+        <CoursesManager initialCourses={loaded.courses} disciplines={loaded.disciplines}
+          profileStatus={loaded.profileStatus}
+        />
       ) : (
         <DataErrorPanel what="your courses" />
       )}

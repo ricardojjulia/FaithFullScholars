@@ -143,7 +143,7 @@ const NEGATIVE_AND_POSITIVE: {
   {
     file: 'components/scholar/courses-manager.tsx',
     absent: ['INITIAL_COURSES', 'Exegesis of Romans & Galatians', 'Date.now()', 'scholar_id'],
-    present: ["'/api/scholars/courses'", "method: 'PATCH'", "method: 'DELETE'", 'Confirm delete', 'role="dialog"', 'courses-empty'],
+    present: ["'/api/scholars/courses'", "method: 'PATCH'", "method: 'DELETE'", 'Confirm delete', 'role="dialog"', 'courses-empty', 'They are not reviewed by an administrator.'],
   },
   {
     file: 'app/(institution)/institution/layout.tsx',

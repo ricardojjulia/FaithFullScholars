@@ -88,6 +88,9 @@ test('create is private, publish saves public, edit persists, delete removes', a
   // Publish
   await page.getByRole('button', { name: `Publish ${title}` }).click();
   await expect(row.getByTestId('course-visibility')).toHaveText('Public');
+  // Honest publishing: the scholar is told it is unreviewed, and that a draft profile hides it.
+  await expect(row.getByTestId('publish-note')).toContainText('not reviewed by an administrator');
+  await expect(row.getByTestId('course-hidden-note')).toContainText('until your profile is approved');
   [saved] = await rowsFor(title);
   expect(saved.visibility).toBe('public');
 

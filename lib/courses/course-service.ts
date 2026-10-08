@@ -56,19 +56,49 @@ export function isDbCode(error: unknown, code: string): boolean {
   return !!error && typeof error === 'object' && (error as { code?: string }).code === code;
 }
 
-/** Replaces the course's discipline tags. Returns the database error, if any. */
-export async function replaceCourseDisciplines(
+/** 'missing' when any id is not a real discipline (checked before any write). */
+export async function checkDisciplinesExist(
+  supabase: SupabaseClient,
+  ids: string[]
+): Promise<'ok' | 'missing' | 'error'> {
+  if (ids.length === 0) return 'ok';
+  const { data, error } = await supabase.from('disciplines').select('id').in('id', ids);
+  if (error) {
+    logCode('checkDisciplinesExist', error);
+    return 'error';
+  }
+  return new Set((data ?? []).map((r: { id: string }) => r.id)).size === new Set(ids).size ? 'ok' : 'missing';
+}
+
+/**
+ * Adds the given disciplines to the course (upsert, so existing tags stay). When
+ * `exact` is true the set is then made exact by deleting tags not in it. Nothing is
+ * deleted before the new rows are in, so a failure never leaves the course untagged.
+ * Returns the database error, if any.
+ */
+export async function syncCourseDisciplines(
   supabase: SupabaseClient,
   courseId: string,
-  disciplineIds: string[]
+  disciplineIds: string[],
+  exact: boolean
 ): Promise<unknown | null> {
-  const removed = await supabase.from('course_disciplines').delete().eq('course_id', courseId);
-  if (removed.error) return removed.error;
-  if (disciplineIds.length === 0) return null;
-  const added = await supabase
-    .from('course_disciplines')
-    .insert(disciplineIds.map((discipline_id) => ({ course_id: courseId, discipline_id })));
-  return added.error ?? null;
+  if (disciplineIds.length > 0) {
+    const added = await supabase
+      .from('course_disciplines')
+      .upsert(
+        disciplineIds.map((discipline_id) => ({ course_id: courseId, discipline_id })),
+        { onConflict: 'course_id,discipline_id', ignoreDuplicates: true }
+      );
+    if (added.error) return added.error;
+  }
+  if (!exact) return null;
+  let removal = supabase.from('course_disciplines').delete().eq('course_id', courseId);
+  if (disciplineIds.length > 0) {
+    // Ids are validated UUIDs, safe to inline.
+    removal = removal.not('discipline_id', 'in', `(${disciplineIds.join(',')})`);
+  }
+  const removed = await removal;
+  return removed.error ?? null;
 }
 
 /** The signed-in scholar's own courses, newest first. Throws on a database error. */
@@ -97,4 +127,14 @@ export async function fetchDisciplineOptionsOrThrow(supabase: SupabaseClient): P
     throw new Error('disciplines_unavailable');
   }
   return (data ?? []) as DisciplineOption[];
+}
+
+/** The scholar's own profile_status (public courses are hidden until it is "approved"). */
+export async function fetchProfileStatusOrThrow(supabase: SupabaseClient, scholarId: string): Promise<string> {
+  const { data, error } = await supabase.from('scholars').select('profile_status').eq('id', scholarId).maybeSingle();
+  if (error || !data) {
+    logCode('fetchProfileStatusOrThrow', error);
+    throw new Error('profile_status_unavailable');
+  }
+  return (data as { profile_status: string }).profile_status;
 }

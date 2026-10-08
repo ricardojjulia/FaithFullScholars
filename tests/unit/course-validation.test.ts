@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   DELIVERY_MODES,
+  VISIBILITY_LABELS,
+  splitDeliveryModes,
   MAX_DISCIPLINES,
   TEXT_MAX,
   TITLE_MAX,
@@ -17,7 +19,7 @@ const valid = { title: ' Exegesis of Romans ', level: 'graduate' };
 describe('validateCourseInput', () => {
   it('accepts a minimal create body and trims', () => {
     const r = validateCourseInput(valid, { partial: false });
-    expect(r).toEqual({ ok: true, value: { title: 'Exegesis of Romans', level: 'graduate' } });
+    expect(r).toEqual({ ok: true, value: { title: 'Exegesis of Romans', level: 'graduate', discipline_ids: [] } });
   });
 
   it('requires title and level on create but not on partial update', () => {
@@ -76,13 +78,42 @@ describe('validateCourseInput', () => {
       { ...valid, scholar_id: 'someone-else', slug: 'hijack', id: 'x', created_at: 'y' },
       { partial: false }
     );
-    expect(r.ok && Object.keys(r.value).sort()).toEqual(['level', 'title']);
+    expect(r.ok && Object.keys(r.value).sort()).toEqual(['discipline_ids', 'level', 'title']);
   });
 
   it('rejects non-objects', () => {
     for (const body of [null, 'x', 4, [valid]]) {
       expect(validateCourseInput(body, { partial: false }).ok).toBe(false);
     }
+  });
+});
+
+describe('partial updates and tags', () => {
+  it('a primary alone does not produce discipline_ids (tags are left alone)', () => {
+    const r = validateCourseInput({ primary_discipline_id: D1 }, { partial: true });
+    expect(r).toEqual({ ok: true, value: { primary_discipline_id: D1 } });
+  });
+
+  it('explicit discipline_ids produce the full tag set, including the primary', () => {
+    const r = validateCourseInput({ primary_discipline_id: D1, discipline_ids: [D2] }, { partial: true });
+    expect(r.ok && r.value.discipline_ids).toEqual([D1, D2]);
+    const none = validateCourseInput({ discipline_ids: [] }, { partial: true });
+    expect(none.ok && none.value.discipline_ids).toEqual([]);
+  });
+
+  it('still accepts unlisted for backwards compatibility and labels it honestly', () => {
+    expect(validateCourseInput({ visibility: 'unlisted' }, { partial: true }).ok).toBe(true);
+    expect(VISIBILITY_LABELS.unlisted).toBe('Unlisted (not shown publicly)');
+  });
+});
+
+describe('splitDeliveryModes (legacy values when editing)', () => {
+  it('keeps allow-listed modes and reports the rest as removed', () => {
+    expect(splitDeliveryModes(['online_async', 'in_person', 'modular_intensive', 'online_async'])).toEqual({
+      valid: ['online_async'],
+      removed: ['in_person', 'modular_intensive'],
+    });
+    expect(splitDeliveryModes(null)).toEqual({ valid: [], removed: [] });
   });
 });
 

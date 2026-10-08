@@ -1,9 +1,23 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+import { NextRequest } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+// The routes and the public loader call createClient(); in this suite it returns whichever REAL
+// signed-in (or anonymous) client the test selects, so the handlers run against the real database.
+const state = vi.hoisted(() => ({ current: null as unknown }));
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: async () => state.current,
+  createAdminClient: () => {
+    throw new Error('Service-role client must not be used here');
+  },
+}));
+
 import { fetchOwnCoursesOrThrow } from '@/lib/courses/course-service';
+import { POST as createCourse } from '@/app/api/scholars/courses/route';
+import { PATCH as patchCourse, DELETE as deleteCourse } from '@/app/api/scholars/courses/[id]/route';
+import { getPublicCourseBySlug } from '@/lib/domain/queries';
 import { covers } from '../support/covers';
 
 /**
@@ -234,6 +248,22 @@ describe('scholar courses under RLS (real signed-in users)', () => {
         expect(countA.error).toBeNull();
         expect(countA.count).toBe(1);
 
+        // A direct PostgREST DELETE (bypassing the app) is refused by the database trigger.
+        const direct = await a.client.from('courses').delete().eq('id', unlistedA).select('id');
+        expect(direct.error?.code).toBe('42501');
+        expect(direct.error?.message).toMatch(/licensing agreements/);
+        const stillThere = await admin.from('course_licensing_agreements').select('id').eq('id', agreement.data.id);
+        expect(stillThere.data).toHaveLength(1);
+
+        // The route answers the same way (409).
+        state.current = a.client;
+        const viaRoute = await deleteCourse(
+          new NextRequest(`http://localhost:3845/api/scholars/courses/${unlistedA}`, { method: 'DELETE' }),
+          { params: Promise.resolve({ id: unlistedA }) }
+        );
+        expect(viaRoute.status).toBe(409);
+        expect((await admin.from('courses').select('id').eq('id', unlistedA)).data).toHaveLength(1);
+
         // B cannot see it, so B's own delete path could never be tricked by or leak it.
         const countB = await b.client
           .from('course_licensing_agreements')
@@ -243,6 +273,91 @@ describe('scholar courses under RLS (real signed-in users)', () => {
       } finally {
         await admin.from('institutions').delete().eq('id', institution);
       }
+    });
+  });
+  describe('slugs through the routes and the public loader', () => {
+    let scholarC: string;
+    let c: Actor;
+    const createdIds: string[] = [];
+
+    const post = async (client: SupabaseClient, title: string) => {
+      state.current = client;
+      return createCourse(
+        new NextRequest('http://localhost:3845/api/scholars/courses', {
+          method: 'POST',
+          body: JSON.stringify({ title, level: 'graduate' }),
+        })
+      );
+    };
+    const publish = async (client: SupabaseClient, id: string) => {
+      state.current = client;
+      return patchCourse(
+        new NextRequest(`http://localhost:3845/api/scholars/courses/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ visibility: 'public' }),
+        }),
+        { params: Promise.resolve({ id }) }
+      );
+    };
+
+    beforeAll(async () => {
+      c = await createActor('c');
+      scholarC = await insertOne('scholars', {
+        account_id: c.userId,
+        slug: `courses-rls-c-${run}`,
+        full_name: `Dr. Courses C ${run}`,
+        profile_status: 'approved',
+      });
+    }, 60_000);
+
+    afterAll(async () => {
+      if (scholarC) await admin.from('scholars').delete().eq('id', scholarC);
+    });
+
+    it('two approved scholars with the same title both get working, distinct public pages', async () => {
+      const title = `Shared Title ${run}`;
+      const [resA, resC] = [await post(a.client, title), await post(c.client, title)];
+      expect(resA.status).toBe(201);
+      expect(resC.status).toBe(201);
+      const courseA = (await resA.json()).course as { id: string; slug: string; visibility: string };
+      const courseC = (await resC.json()).course as { id: string; slug: string; visibility: string };
+      createdIds.push(courseA.id, courseC.id);
+      expect(courseA.visibility).toBe('private');
+      expect(courseA.slug).not.toBe(courseC.slug);
+
+      expect((await publish(a.client, courseA.id)).status).toBe(200);
+      expect((await publish(c.client, courseC.id)).status).toBe(200);
+
+      // Page-level public proof: the anonymous loader resolves each slug to its own course.
+      state.current = createClient(url, anonKey, noSession);
+      const pageA = await getPublicCourseBySlug(courseA.slug);
+      const pageC = await getPublicCourseBySlug(courseC.slug);
+      expect(pageA?.id).toBe(courseA.id);
+      expect(pageA?.scholar.id).toBe(scholarA);
+      expect(pageC?.id).toBe(courseC.id);
+      expect(pageC?.scholar.id).toBe(scholarC);
+    });
+
+    it('anonymous visitors cannot load a private course or a draft scholar\'s public course by slug', async () => {
+      const { data: priv } = await admin.from('courses').select('slug').eq('id', privateA).single();
+      const { data: draft } = await admin.from('courses').select('slug').eq('id', publicB).single();
+      state.current = createClient(url, anonKey, noSession);
+      expect(await getPublicCourseBySlug(priv!.slug)).toBeNull();
+      expect(await getPublicCourseBySlug(draft!.slug)).toBeNull();
+      const { data: pub } = await admin.from('courses').select('slug').eq('id', publicA).single();
+      expect((await getPublicCourseBySlug(pub!.slug))?.id).toBe(publicA);
+    });
+
+    it('the database refuses a second course with an existing slug, whoever owns it', async () => {
+      const { data: existing } = await admin.from('courses').select('slug').eq('id', privateA).single();
+      const clash = await c.client.from('courses').insert({
+        scholar_id: scholarC,
+        title: 'clash',
+        slug: existing!.slug,
+        level: 'graduate',
+        visibility: 'private',
+      });
+      expect(clash.error?.code).toBe('23505');
     });
   });
 });

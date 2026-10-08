@@ -20,6 +20,7 @@ const state = vi.hoisted(() => ({
 const loaders = vi.hoisted(() => ({
   fetchOwnCoursesOrThrow: vi.fn(),
   fetchDisciplineOptionsOrThrow: vi.fn(),
+  fetchProfileStatusOrThrow: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({ createClient: async () => ({ marker: 'user-client' }) }));
@@ -59,6 +60,8 @@ beforeEach(() => {
   state.session = { userId: 'u1', role: 'scholar', scholarId: 'sch-1', institutionIds: [], lookupFailed: false };
   loaders.fetchOwnCoursesOrThrow.mockReset();
   loaders.fetchDisciplineOptionsOrThrow.mockReset();
+  loaders.fetchProfileStatusOrThrow.mockReset();
+  loaders.fetchProfileStatusOrThrow.mockResolvedValue('approved');
   loaders.fetchDisciplineOptionsOrThrow.mockResolvedValue([{ id: 'd-1', name: 'Systematic Theology' }]);
 });
 
@@ -77,6 +80,21 @@ describe('/dashboard/courses page', () => {
     expect(html).toContain('My Real Course');
     expect(html).toContain('Systematic Theology');
     expect(html).toContain('Private');
+  });
+
+  it('tells the scholar a public course is hidden until the profile is approved', async () => {
+    loaders.fetchOwnCoursesOrThrow.mockResolvedValue([course({ visibility: 'public' })]);
+    loaders.fetchProfileStatusOrThrow.mockResolvedValue('draft');
+    expect(await render()).toContain('course-hidden-note');
+    loaders.fetchProfileStatusOrThrow.mockResolvedValue('approved');
+    const html = await render();
+    expect(html).not.toContain('course-hidden-note');
+    expect(html).toContain('They are not reviewed by an administrator.');
+  });
+
+  it('labels an existing unlisted course honestly', async () => {
+    loaders.fetchOwnCoursesOrThrow.mockResolvedValue([course({ visibility: 'unlisted' })]);
+    expect(await render()).toContain('Unlisted (not shown publicly)');
   });
 
   it('shows an empty state for a scholar with no courses', async () => {

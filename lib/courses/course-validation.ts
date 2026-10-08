@@ -41,9 +41,28 @@ export const DELIVERY_MODE_LABELS: Record<DeliveryMode, string> = {
 };
 export const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
   public: 'Public',
-  unlisted: 'Unlisted',
+  // 'unlisted' behaves exactly like private (no page lists or links it), so it is not offered
+  // for new choices. The API still accepts it for backwards compatibility with existing rows.
+  unlisted: 'Unlisted (not shown publicly)',
   private: 'Private',
 };
+
+/** Delivery modes that are not in the allow-list (legacy rows) are dropped when editing. */
+export function splitDeliveryModes(modes: readonly string[] | null | undefined): {
+  valid: DeliveryMode[];
+  removed: string[];
+} {
+  const valid: DeliveryMode[] = [];
+  const removed: string[] = [];
+  for (const mode of modes ?? []) {
+    if ((DELIVERY_MODES as readonly string[]).includes(mode)) {
+      if (!valid.includes(mode as DeliveryMode)) valid.push(mode as DeliveryMode);
+    } else {
+      removed.push(mode);
+    }
+  }
+  return { valid, removed };
+}
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = (value: unknown): value is string => typeof value === 'string' && UUID_RE.test(value);
@@ -160,7 +179,10 @@ export function validateCourseInput(raw: unknown, opts: { partial: boolean }): C
       ids = Array.from(new Set(list));
     }
   }
-  if (ids || primary !== undefined) {
+  // Tags are only (re)written when the client explicitly sends discipline_ids, or on create.
+  // A partial update that sends only primary_discipline_id never removes other tags: the
+  // route ensures the primary is tagged without touching the rest.
+  if (ids !== undefined || !opts.partial) {
     const merged = Array.from(new Set([...(primary ? [primary] : []), ...(ids ?? [])]));
     if (merged.length > MAX_DISCIPLINES) {
       errors.discipline_ids = `Choose at most ${MAX_DISCIPLINES} disciplines.`;
