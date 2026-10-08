@@ -1,6 +1,6 @@
 # Spec: Real Data on Portal Screens (and Honest Labels for Demo Features)
 
-- **Status:** Story approved by the owner on 2026-10-08. Technical brief pending (gate 5).
+- **Status:** Story and technical brief approved by the owner on 2026-10-08 (gates 3 and 5).
 - **Order:** slice 2 of the remaining known-broken fixes. The owner set the order on 2026-10-07: rate limits (done, ADR 0026) → real portal data → applications → conference hub.
 - **Branch:** `fix/real-portal-data`
 
@@ -195,3 +195,8 @@ README, CHANGELOG, the feature-catalog known-broken box, the plan, `test-surface
 - **Q5:** should "awaiting response" include `read`?
 
 The brief also documents, without asking: multiple memberships use the earliest institution (no switcher), and the integration tests sign in real users through supabase-js.
+
+### Owner decisions on the brief (2026-10-08)
+- **Q1:** INCLUDE the Outreach Log (`/institution/inquiries`). Replace `DEFAULT_OUTBOX` with `fetchInstitutionInquiries` for the session institution, under RLS. Its fixture UUIDs are then no longer allow-listed in the regression test.
+- **Q2:** leave the institution layout unchanged. Only staff who are also institution members see the conference preview.
+- **Q5:** "Awaiting scholar response" = `pending` + `read`.
