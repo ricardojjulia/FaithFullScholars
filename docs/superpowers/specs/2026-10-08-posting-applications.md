@@ -171,3 +171,30 @@ Proposed defaults, to be confirmed with the story:
   - all institution members can triage.
 - The syllabi and CV are not sealed. Contact is the account login email.
 - The fake `[Common App` inquiries are removed from the pilot seed. Live pilot DB rows are left as harmless inquiries.
+
+## Build record (2026-10-08, branch `feat/posting-applications`, PR #69)
+
+**Intent.** Implement the approved story and brief exactly: a separate `posting_applications` table, one insert path, a transition-table guard, private notes, an audit trail, late contact release, and the matrix on real data. ADR 0027 was written first.
+
+**Architecture impact.** One additive migration (`20261009090000_posting_applications.sql`); `lib/postings/applicant-service.ts` leaves the service-role allow-list in `eslint.config.mjs`; `express-interest` now calls `submit_posting_application`; four new API routes; `/dashboard/applications`; `common_app` i18n namespace.
+
+**Decisions taken where the brief left room.**
+- Events are readable by members who are not the applicant, and by admins, not by the applicant (the actor id is internal).
+- The guard decides applicant/member from the existing row (`OLD`), so changing `scholar_id` or `institution_id` in the same UPDATE hits the "sealed" rule, not a confusing "not a party" error.
+- Non-restricted sessions (service role, admins, direct sessions) are not blocked by the guard, but it still stamps `status_changed_at` on a real status change.
+- The note, duplicate and `signed_in` rules each have a second wall (table CHECK, unique constraint, no identity). Their probes drop the second wall first (note, duplicate) or show the refusal moves on to the next rule (`signed_in`: with no identity nothing can succeed).
+- A notes refusal (RLS or guard) is reported as 404, so existence is not revealed.
+- The posting page shows "closed" rather than an apply button for an unpublished posting, and shows the real status for a scholar who already applied even after the posting closed.
+
+**Verification.**
+- Local: `npm run lint`, `tsc --noEmit`, `vitest --project unit` (673 tests), `npm run test:surface`, `npm run version:check`, `next build --webpack` (Turbopack cannot write its cache on this network volume).
+- There was no local database. The integration suite, the policy matrix and nine mutation probes were additionally run against an in-process PGlite Postgres built from the real migrations and `supabase/seed.sql`. This found two defects before CI: an array-append bug in the preflight block and leftover JWT claims making the migration role look like an API caller in a test helper. PGlite is a sanity harness only; CI on `supabase start` is the authority (and ran the committed concurrency tests, which PGlite cannot).
+- Mutation probes (each broke exactly the intended tests, then was reverted): removing the `frozen` rule, the `member_forward_only` rule, the `rate` rule; granting INSERT to `authenticated`; removing the "not the applicant" clause from the notes policy; removing the interview-stage condition from `get_application_contact`; adding the email to the snapshot; leaving `anon` granted; dropping `search_path` from the submit function.
+- CI: see the PR. The final head SHA's runs are listed in the hand-off.
+
+**Residual risk.**
+- Contact release uses the account login email, which may differ from the scholar's preferred address.
+- All institution members can triage and read notes (owner decision).
+- Pre-existing pilot rows from the fake seed remain as harmless inquiries.
+
+**Follow-up.** Email notifications for new applications and status changes; interview scheduling (conference hub slice); a per-member triage permission if institutions ask for it; apply migration `20261009090000` to production before merging, then smoke-test one application end to end.
