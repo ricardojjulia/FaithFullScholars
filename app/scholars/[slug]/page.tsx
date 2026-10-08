@@ -16,8 +16,6 @@ import { getApprovedEndorsements } from '@/lib/endorsements/endorsement-service'
 import { getInstitutionalEndorsementsForScholar } from '@/lib/endorsements/institutional-endorsement-service';
 import { getSpeakerTopicsByScholarId } from '@/lib/speakers/speaker-service';
 import { ConfessionalAlignmentMatrix } from '@/components/scholars/confessional-alignment-matrix';
-import { ConferencePresentationBadge } from '@/components/conferences/conference-presentation-badge';
-import { getScholarConferenceAppearances } from '@/lib/conferences/conference-service';
 
 interface ScholarProfilePageProps {
   params: Promise<{
@@ -63,7 +61,6 @@ export default async function ScholarProfilePage({
   const endorsements = await getApprovedEndorsements(scholar.id);
   const institutionalEndorsements = await getInstitutionalEndorsementsForScholar(scholar.id);
   const speakerTopics = await getSpeakerTopicsByScholarId(scholar.id);
-  const conferenceAppearances = getScholarConferenceAppearances(scholar.slug);
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50/60 dark:bg-slate-950">
@@ -324,22 +321,6 @@ export default async function ScholarProfilePage({
               initialEndorsements={endorsements}
               initialInstitutionalEndorsements={institutionalEndorsements}
             />
-
-            {/* Theological Guild Annual Conference Presentations (ADR 0021) */}
-            {conferenceAppearances.length > 0 && (
-              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xs space-y-4">
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-amber-600 dark:text-amber-400 stroke-[1.75]" />
-                  <h3 className="font-display font-bold text-lg text-slate-900 dark:text-white">
-                    Annual Guild Conference Presentations (ETS / SBL / EPS)
-                  </h3>
-                </div>
-                <p className="text-xs text-slate-500">
-                  Scheduled monograph presentations and candidate availability for convention screening interviews.
-                </p>
-                <ConferencePresentationBadge appearances={conferenceAppearances} />
-              </section>
-            )}
           </div>
 
           {/* Sidebar Column (4 of 12): Doctrinal Stance & Teaching Terms */}

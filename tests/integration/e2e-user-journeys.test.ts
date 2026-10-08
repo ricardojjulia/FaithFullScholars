@@ -413,7 +413,7 @@ describe('End-to-End User Journeys Integration (Phase 6 MVP Hardening)', () => {
       const target = inbox.find((i) => i.id === createdInquiryId);
       expect(target).toBeDefined();
       expect(target?.status).toBe('pending');
-      expect(target?.institution.name).toBe('Reformed Theological Academy');
+      expect(target?.institution?.name).toBe('Reformed Theological Academy');
 
       // Scholar accepts inquiry
       const acceptResult = await respondToInquiry(

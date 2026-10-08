@@ -12,7 +12,7 @@
 
 import { notFound, redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { getSessionContext, type SessionContext } from '@/lib/auth/session';
+import { getSessionContext, SessionLookupError, type SessionContext } from '@/lib/auth/session';
 import { verifyStaffUser } from '@/lib/feedback/auth';
 
 /** Admin pages: anyone who is not platform staff gets a 404 (no admin surface is revealed). */
@@ -31,6 +31,10 @@ export async function requireInstitutionMember(
   if (!session) {
     redirect('/login');
   }
+  // A failed lookup is an outage, not "not a member": never 404 on it.
+  if (session.lookupFailed) {
+    throw new SessionLookupError();
+  }
   const [institutionId] = session.institutionIds;
   if (!institutionId) {
     notFound();
@@ -43,6 +47,10 @@ export async function requireSignedIn(client?: SupabaseClient): Promise<SessionC
   const session = await getSessionContext(client);
   if (!session) {
     redirect('/login');
+  }
+  // scholarId may be unresolved: never let pages read that as "no profile".
+  if (session.lookupFailed) {
+    throw new SessionLookupError();
   }
   return session;
 }

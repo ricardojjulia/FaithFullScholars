@@ -1,14 +1,48 @@
 import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
-import { Building2, Check, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
+import { Building2, Check, Clock, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { requireInstitutionMember } from '@/lib/auth/guards';
+import {
+  fetchInstitutionProfileOrThrow,
+  fetchInstitutionStats,
+  PortalQueryError,
+  type InstitutionHomeProfile,
+  type InstitutionStats,
+} from '@/lib/inquiries/queries';
+import { accreditationLabel, verificationLabel } from '@/lib/inquiries/labels';
+import { DataErrorPanel } from '@/components/portal/data-error-panel';
+
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Institution Dashboard | Faculty Recruitment & Outreach',
   description: 'Manage seminary faculty recruitment, structured teaching inquiries, and scholar shortlists.',
 };
 
-export default function InstitutionOverviewPage() {
+export default async function InstitutionOverviewPage() {
+  const supabase = await createClient();
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  // The institution is resolved from the session, never from the request.
+  const { institutionId } = await requireInstitutionMember(supabase);
+
+  let profile: InstitutionHomeProfile | null = null;
+  let stats: InstitutionStats | null = null;
+  let loadFailed = false;
+  try {
+    [profile, stats] = await Promise.all([
+      fetchInstitutionProfileOrThrow(supabase, institutionId),
+      fetchInstitutionStats(supabase, institutionId),
+    ]);
+  } catch (err) {
+    console.error('Institution home failed to load (code):', err instanceof PortalQueryError ? err.code : 'unknown');
+    loadFailed = true;
+  }
+
+  const accreditation = accreditationLabel(profile?.accreditation_body, profile?.accreditation_status);
+  const verified = profile?.status === 'approved';
+
   return (
     <div className="space-y-8">
       {/* Header Banner */}
@@ -21,18 +55,35 @@ export default function InstitutionOverviewPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  Westminster Theological Seminary
+                  {profile?.name ?? 'Institution Dashboard'}
                 </h1>
-                <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  <span>Glenside, PA</span>
-                  <span>•</span>
-                  <span>ATS & MSCHE Accredited</span>
-                  <span>•</span>
-                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Verified Academic Partner</span>
-                  </span>
-                </div>
+                {profile && (
+                  <div className="flex flex-wrap items-center gap-x-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    {profile.location && (
+                      <>
+                        <span>{profile.location}</span>
+                        <span aria-hidden="true">•</span>
+                      </>
+                    )}
+                    {accreditation && (
+                      <>
+                        <span>{accreditation}</span>
+                        <span aria-hidden="true">•</span>
+                      </>
+                    )}
+                    {verified ? (
+                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1">
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{verificationLabel(profile.status)}</span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 dark:text-amber-400 font-semibold inline-flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>{verificationLabel(profile.status)}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-300 max-w-2xl pt-2">
@@ -59,39 +110,51 @@ export default function InstitutionOverviewPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Total Inquiries Sent
-          </span>
-          <p className="text-3xl font-bold text-slate-900 dark:text-white mt-1.5">3</p>
-          <span className="text-xs text-slate-400 mt-1 block">Across adjunct & guest lectures</span>
-        </div>
+      {loadFailed || !stats ? (
+        <DataErrorPanel what="your institution's figures" />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Total Inquiries Sent
+            </span>
+            <p data-testid="stat-total-inquiries" className="text-3xl font-bold text-slate-900 dark:text-white mt-1.5">
+              {stats.totalInquiries}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 block">Across all opportunity types</span>
+          </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-          <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
-            Awaiting Scholar Response
-          </span>
-          <p className="text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1.5">2</p>
-          <span className="text-xs text-slate-400 mt-1 block">Average response time: 48h</span>
-        </div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+              Awaiting Scholar Response
+            </span>
+            <p data-testid="stat-awaiting-inquiries" className="text-3xl font-bold text-amber-700 dark:text-amber-300 mt-1.5">
+              {stats.awaitingInquiries}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 block">Pending or read, not yet answered</span>
+          </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-          <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-            Accepted Opportunities
-          </span>
-          <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300 mt-1.5">1</p>
-          <span className="text-xs text-slate-400 mt-1 block">Direct channel established</span>
-        </div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              Accepted Opportunities
+            </span>
+            <p data-testid="stat-accepted-inquiries" className="text-3xl font-bold text-emerald-700 dark:text-emerald-300 mt-1.5">
+              {stats.acceptedInquiries}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 block">Direct channel established</span>
+          </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-            Shortlisted Candidates
-          </span>
-          <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mt-1.5">4</p>
-          <span className="text-xs text-slate-400 mt-1 block">Prospective faculty queue</span>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+              Shortlisted Candidates
+            </span>
+            <p data-testid="stat-shortlisted" className="text-3xl font-bold text-indigo-700 dark:text-indigo-300 mt-1.5">
+              {stats.savedScholarsCount}
+            </p>
+            <span className="text-xs text-slate-400 mt-1 block">Prospective faculty queue</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Recruitment Guidance & Quick Start */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

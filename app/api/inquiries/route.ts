@@ -46,6 +46,9 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }
+    if (session.lookupFailed) {
+      return NextResponse.json({ error: 'Your access could not be verified right now. Please try again.' }, { status: 503 });
+    }
 
     const { searchParams } = new URL(req.url);
     const scholarId = searchParams.get('scholarId');

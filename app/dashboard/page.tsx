@@ -1,26 +1,110 @@
 import Link from 'next/link';
 import { UploadCloud, Eye, FileEdit, BookOpen, Briefcase, Video } from 'lucide-react';
+import { createClient } from '@/lib/supabase/server';
+import { requireSignedIn } from '@/lib/auth/guards';
+import { PortalQueryError } from '@/lib/inquiries/queries';
+import {
+  fetchScholarDashboardSummary,
+  type ScholarDashboardSummary,
+  type StatusTone,
+} from '@/lib/profiles/dashboard-summary';
+import { DataErrorPanel } from '@/components/portal/data-error-panel';
 
-export default function DashboardOverviewPage() {
+export const dynamic = 'force-dynamic';
+
+const TONE_CLASSES: Record<StatusTone, string> = {
+  neutral: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  info: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300',
+  success: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300',
+  warning: 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300',
+};
+
+export default async function DashboardOverviewPage() {
+  const supabase = await createClient();
+  // Guard here, not only in the layout: layouts do not stop pages from rendering.
+  const session = await requireSignedIn(supabase);
+
+  // A signed-in user without a scholar profile has nothing to summarise yet.
+  if (!session.scholarId) {
+    return (
+      <div className="space-y-4" data-testid="dashboard-onboarding-prompt">
+        <h1 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
+          Faculty Workspace
+        </h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          You don&rsquo;t have a scholar profile yet. Create one to appear in the directory and receive inquiries.
+        </p>
+        <Link
+          href="/dashboard/onboarding"
+          className="inline-flex px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+        >
+          Start your profile
+        </Link>
+      </div>
+    );
+  }
+
+  let summary: ScholarDashboardSummary | null = null;
+  let loadFailed = false;
+  try {
+    summary = await fetchScholarDashboardSummary(supabase, session.scholarId, new Date());
+  } catch (err) {
+    console.error('Scholar dashboard failed to load (code):', err instanceof PortalQueryError ? err.code : 'unknown');
+    loadFailed = true;
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
+          Faculty Workspace
+        </h1>
+        <DataErrorPanel what="your dashboard" />
+      </div>
+    );
+  }
+
+  if (!summary) {
+    return (
+      <div className="space-y-4" data-testid="dashboard-onboarding-prompt">
+        <h1 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
+          Faculty Workspace
+        </h1>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          We couldn&rsquo;t find your scholar profile. Continue onboarding to set it up.
+        </p>
+        <Link
+          href="/dashboard/onboarding"
+          className="inline-flex px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+        >
+          Continue onboarding
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Top Banner: Profile Status & Staging Status */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm card-crisp flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-indigo-950 text-amber-300 font-display font-bold text-2xl flex items-center justify-center border-2 border-indigo-900 shadow-sm shrink-0">
-            SC
+            {summary.initials}
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
-                Faculty Workspace
+                {summary.fullName}
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                Approved & Active
+              <span
+                data-testid="dashboard-profile-status"
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${TONE_CLASSES[summary.profile.tone]}`}
+              >
+                {summary.profile.label}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Live Revision #1 active on Directory • Draft Revision #2 ready for editing
+            <p data-testid="dashboard-revision-text" className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {summary.revisionText}
             </p>
           </div>
         </div>
@@ -45,7 +129,7 @@ export default function DashboardOverviewPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link
           href="/dashboard/inquiries"
           className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
@@ -54,33 +138,25 @@ export default function DashboardOverviewPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Profile Inquiries
             </span>
-            <span className="text-xs text-emerald-600 font-semibold">+2 this month</span>
+            <span
+              data-testid="dashboard-inquiry-trend"
+              className={`text-xs font-semibold ${
+                summary.trend.direction === 'up'
+                  ? 'text-emerald-600'
+                  : summary.trend.direction === 'down'
+                    ? 'text-amber-600'
+                    : 'text-slate-500'
+              }`}
+            >
+              {summary.trend.label}
+            </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">4</span>
+            <span data-testid="dashboard-inquiry-count" className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">{summary.totalInquiries}</span>
             <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">View →</span>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
             Structured seminary contacts
-          </span>
-        </Link>
-
-        <Link
-          href="/dashboard/analytics"
-          className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp hover:border-indigo-300 dark:hover:border-indigo-700 transition-all block group"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Public Directory Views
-            </span>
-            <span className="text-xs text-emerald-600 font-semibold">+18%</span>
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">182</span>
-            <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Analytics →</span>
-          </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            Deans & academic searchers
           </span>
         </Link>
 
@@ -90,16 +166,15 @@ export default function DashboardOverviewPage() {
         >
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              Course Syllabi Live
+              Public Courses
             </span>
-            <span className="text-xs text-indigo-600 font-medium">Showcased</span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">3</span>
+            <span data-testid="dashboard-course-count" className="text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">{summary.publicCourseCount}</span>
             <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Manage →</span>
           </div>
           <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            Sample lecture embeds enabled
+            Courses visible on your public profile
           </span>
         </Link>
 
@@ -111,19 +186,23 @@ export default function DashboardOverviewPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Teaching Availability
             </span>
-            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md">
-              Available
+            <span
+              data-testid="dashboard-availability-badge"
+              className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                summary.availability.state === 'available'
+                  ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60'
+                  : 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800'
+              }`}
+            >
+              {summary.availability.badge}
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
-              Adjunct & modular
+            <span data-testid="dashboard-availability-detail" className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+              {summary.availability.detail}
             </span>
             <span className="text-xs text-indigo-600 dark:text-indigo-400 group-hover:underline">Edit →</span>
           </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            Adjunct & modular intensives
-          </span>
         </Link>
       </div>
 

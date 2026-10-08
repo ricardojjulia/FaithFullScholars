@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/server';
-import { CreateInquiryInput, InquiryStatus, Institution } from '@/lib/domain/types';
+import { validateInstitutionProfile, type InstitutionProfileInput } from '@/lib/inquiries/profile-validation';
+import { CreateInquiryInput, InquiryStatus } from '@/lib/domain/types';
 import {
   notifyScholarOfNewInquiry,
   notifyInstitutionOfInquiryResponse,
@@ -199,7 +200,7 @@ export async function respondToInquiry(
   status: InquiryStatus,
   responseNotes: string | null | undefined,
   actingScholarId: string | null
-): Promise<ActionResult> {
+): Promise<ActionResult<{ contactEmail: string | null }>> {
   if (!INQUIRY_STATUSES.includes(status)) {
     return { success: false, error: 'Invalid inquiry status.' };
   }
@@ -256,7 +257,8 @@ export async function respondToInquiry(
     });
   }
 
-  return { success: true };
+  // The institution's contact email is released to the scholar only on acceptance.
+  return { success: true, data: { contactEmail: status === 'accepted' ? inquiry.contact_email : null } };
 }
 
 /**
@@ -354,31 +356,87 @@ export async function toggleSaveCourse(
 }
 
 /**
- * Updates institutional profile settings.
+ * Removes a scholar from an institution's shortlist. Unlike the toggle, this can
+ * never add a row. Idempotent: removing an absent entry succeeds with
+ * `removed: false`. `supabase` is the caller's user client (RLS applies) and
+ * `institutionId` must come from the verified session.
+ */
+export async function removeSavedScholar(
+  supabase: SupabaseClient,
+  institutionId: string,
+  scholarId: string
+): Promise<ActionResult<{ removed: boolean }>> {
+  const { data, error } = await supabase
+    .from('saved_scholars')
+    .delete()
+    .eq('institution_id', institutionId)
+    .eq('scholar_id', scholarId)
+    .select('id');
+
+  if (error) {
+    console.error('Error removing scholar from shortlist (code):', error.code);
+    return { success: false, error: 'Failed to remove scholar from shortlist.' };
+  }
+  return { success: true, data: { removed: (data?.length ?? 0) > 0 } };
+}
+
+/**
+ * Removes a course bookmark. Never adds; idempotent (see removeSavedScholar).
+ */
+export async function removeSavedCourse(
+  supabase: SupabaseClient,
+  institutionId: string,
+  courseId: string
+): Promise<ActionResult<{ removed: boolean }>> {
+  const { data, error } = await supabase
+    .from('saved_courses')
+    .delete()
+    .eq('institution_id', institutionId)
+    .eq('course_id', courseId)
+    .select('id');
+
+  if (error) {
+    console.error('Error removing course from saved list (code):', error.code);
+    return { success: false, error: 'Failed to remove course from saved list.' };
+  }
+  return { success: true, data: { removed: (data?.length ?? 0) > 0 } };
+}
+
+/**
+ * Updates institutional profile settings for the session's institution.
+ *
+ * Only the allow-listed, validated identity fields are written, with the
+ * caller's own (RLS) client. Trust columns (status, slug, accreditation_*) are
+ * never part of the update, and the ADR 0023 trigger rejects them regardless.
  */
 export async function updateInstitutionProfile(
   supabase: SupabaseClient,
   institutionId: string,
-  updates: Partial<Institution>
-): Promise<ActionResult> {
+  updates: InstitutionProfileInput
+): Promise<ActionResult<{ errors?: Record<string, string> }>> {
+  const validated = validateInstitutionProfile(updates);
+  if (!validated.ok) {
+    return {
+      success: false,
+      error: 'Please correct the highlighted fields.',
+      status: 400,
+      data: { errors: validated.errors as Record<string, string> },
+    };
+  }
 
-  const allowedUpdates: Record<string, unknown> = {};
-  if (updates.name !== undefined) allowedUpdates.name = updates.name.trim();
-  if (updates.website !== undefined) allowedUpdates.website = updates.website?.trim() || null;
-  if (updates.location !== undefined) allowedUpdates.location = updates.location?.trim() || null;
-  if (updates.contact_email !== undefined) allowedUpdates.contact_email = updates.contact_email.trim();
-  if (updates.institution_type !== undefined) allowedUpdates.institution_type = updates.institution_type;
-
-  allowedUpdates.updated_at = new Date().toISOString();
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('institutions')
-    .update(allowedUpdates)
-    .eq('id', institutionId);
+    .update({ ...validated.value, updated_at: new Date().toISOString() })
+    .eq('id', institutionId)
+    .select('id');
 
   if (error) {
     console.error('Error updating institution profile (code):', error.code);
-    return { success: false, error: 'Failed to update institutional profile.' };
+    return { success: false, error: 'Failed to update institutional profile.', status: 500 };
+  }
+  // RLS filters rows the caller may not update: zero rows means nothing was saved.
+  if (!data || data.length === 0) {
+    return { success: false, error: 'Failed to update institutional profile.', status: 403 };
   }
 
   return { success: true };

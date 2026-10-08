@@ -62,9 +62,6 @@ export default function ScholarAnalyticsPage() {
             <h1 className="text-2xl font-display font-bold tracking-tight text-slate-900 dark:text-white">
               Profile & Discovery Analytics
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
-              Live Feed
-            </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Track provost, dean, and search committee engagement with your research and course offerings.
@@ -103,6 +100,20 @@ export default function ScholarAnalyticsPage() {
         </div>
       </div>
 
+      {/* Honest labelling: no visitor or impression data is collected yet. */}
+      <div
+        role="note"
+        data-testid="analytics-sample-banner"
+        className="rounded-2xl border-2 border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 p-5"
+      >
+        <h2 className="text-base font-display font-bold tracking-tight text-amber-900 dark:text-amber-200">
+          Sample data — analytics are coming soon
+        </h2>
+        <p className="text-sm text-amber-900/90 dark:text-amber-200/90 mt-1">
+          The numbers, charts and keywords below are illustrative. They are not measurements of your profile or your visitors.
+        </p>
+      </div>
+
       {/* 4 KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Search Impressions */}
@@ -118,8 +129,8 @@ export default function ScholarAnalyticsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Search Impressions
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              +{overview.searchImpressionsTrend}%
+            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              Sample
             </span>
           </div>
           <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
@@ -143,8 +154,8 @@ export default function ScholarAnalyticsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Profile Views
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              +{overview.profileViewsTrend}%
+            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              Sample
             </span>
           </div>
           <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
@@ -168,8 +179,8 @@ export default function ScholarAnalyticsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Syllabus Previews
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-              +{overview.syllabusDownloadsTrend}%
+            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              Sample
             </span>
           </div>
           <div className="mt-2 text-2xl font-bold font-display tracking-tight text-slate-900 dark:text-white">
@@ -189,8 +200,8 @@ export default function ScholarAnalyticsPage() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
               Structured Inquiries
             </span>
-            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
-              Active
+            <span className="text-xs px-2 py-0.5 rounded-md font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              Sample
             </span>
           </div>
           <div className="mt-2 flex items-baseline gap-2">
@@ -213,7 +224,7 @@ export default function ScholarAnalyticsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
-              8-Week Institutional Discovery Velocity
+              8-Week Institutional Discovery Velocity (sample)
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Weekly search impressions vs. direct profile inspections
@@ -327,7 +338,7 @@ export default function ScholarAnalyticsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
-                Institutional Search Keywords
+                Institutional Search Keywords (sample)
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Exact terms provosts & search committees queried to find your profile
@@ -376,7 +387,7 @@ export default function ScholarAnalyticsPage() {
         <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
           <div>
             <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
-              Institutional Tradition Affinity
+              Institutional Tradition Affinity (sample)
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Theological traditions of seminaries and universities inspecting your CV
@@ -430,7 +441,7 @@ export default function ScholarAnalyticsPage() {
       <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm card-crisp space-y-4">
         <div>
           <h2 className="text-base font-display font-bold tracking-tight text-slate-900 dark:text-white">
-            Algorithmic Visibility Recommendations
+            Algorithmic Visibility Recommendations (sample)
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Optimize your scholar listing to increase institutional match rates and inquiry velocity

@@ -1,49 +1,43 @@
 import { test, expect } from '@playwright/test';
 import { storageStatePath } from './personas';
+import { covers } from '../support/covers';
 
-// Signed in through the real login flow (tests/e2e/auth.setup.ts); anonymous demo access was removed in ADR 0022.
-test.use({ storageState: storageStatePath('institution') });
+covers('page:/institution/conferences', 'page:/scholars/[slug]');
 
-test.describe('Theological Guild Conference Suite (ADR 0021)', () => {
-  test('renders search committee conference floor docket and deliberation rubric', async ({
-    page,
-  }) => {
-    await page.goto('/institution/conferences');
-    await page.waitForLoadState('domcontentloaded');
+/**
+ * The conference hub (ADR 0021) runs on in-memory demo data, so it is a
+ * staff-only preview. Institution users must not see it in navigation, must get
+ * a "coming soon" notice when they open it directly, and public scholar profiles
+ * no longer show invented conference appearances.
+ */
+test.describe('conference hub for an institution user', () => {
+  test.use({ storageState: storageStatePath('institution') });
 
-    // Verify main page title and badge
-    await expect(page.locator('h1')).toContainText('Search Committee Conference Suite');
-    await expect(page.locator('text=Annual Guild Conventions')).toBeVisible();
-
-    // Verify conference tabs
-    await expect(page.getByRole('button', { name: /ETS 2026/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /SBL \/ AAR 2026/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /EPS 2026/i })).toBeVisible();
-
-    // Verify interview floor docket and deliberation rubric
-    await expect(page.locator('text=Committee Interview Floor Docket')).toBeVisible();
-    await expect(page.locator('text=Confidential Committee Deliberation Rubric')).toBeVisible();
-
-    // Verify presenting faculty roster
-    await expect(page.locator('text=Presenting Faculty & Monograph Sessions')).toBeVisible();
-    await expect(page.locator('text=Dr. Thomas Cranmer-Davies').first()).toBeVisible();
-    await expect(page.locator('text=Acoustic Parallelism and Phonological Structures').first()).toBeVisible();
-
-    // Verify print button
-    await expect(page.getByRole('button', { name: /Print Floor Docket/i })).toBeVisible();
+  test('is hidden from the institution navigation', async ({ page }) => {
+    await page.goto('/institution');
+    // the institution nav rendered (so the missing link is not a loading artefact) ...
+    await expect(page.getByRole('link', { name: 'Overview', exact: true }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Course Licensing', exact: true })).toBeVisible();
+    // ... and it has no Conferences entry
+    await expect(page.getByRole('link', { name: 'Conferences', exact: true })).toHaveCount(0);
   });
 
-  test('displays conference presentation card on scholar profile', async ({ page }) => {
-    await page.goto('/scholars/thomas-cranmer-davies');
-    await page.waitForLoadState('domcontentloaded');
+  test('shows a coming-soon notice, not the hub, when opened directly', async ({ page }) => {
+    const res = await page.goto('/institution/conferences');
+    expect(res?.status()).toBe(200);
+    await expect(page.getByTestId('conferences-coming-soon')).toBeVisible();
+    await expect(page.getByRole('heading', { name: /coming soon/i })).toBeVisible();
+    await expect(page.getByTestId('conference-preview-banner')).toHaveCount(0);
+    await expect(page.getByText('Committee Interview Floor Docket')).toHaveCount(0);
+    await expect(page.getByText('Saved to Committee Docket')).toHaveCount(0);
+  });
+});
 
-    // Verify guild conference presentations section
-    await expect(
-      page.locator('text=Annual Guild Conference Presentations (ETS / SBL / EPS)')
-    ).toBeVisible();
-    await expect(
-      page.locator('text=Acoustic Parallelism and Phonological Structures')
-    ).toBeVisible();
-    await expect(page.locator('text=ETS 2026').first()).toBeVisible();
+test.describe('public scholar profile', () => {
+  test('has no invented conference appearances', async ({ page }) => {
+    await page.goto('/scholars/thomas-cranmer-davies');
+    await expect(page.locator('h1')).toContainText('Thomas Cranmer-Davies');
+    await expect(page.getByText('Annual Guild Conference Presentations')).toHaveCount(0);
+    await expect(page.getByText('Acoustic Parallelism and Phonological Structures')).toHaveCount(0);
   });
 });

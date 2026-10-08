@@ -216,7 +216,7 @@
     "privacy_notice": "Las consultas se canalizan mediante comunicación estructurada de la plataforma. Los datos de contacto personal se revelan tras la aceptación.",
     "error_too_short": "Por favor proporcione un mensaje detallado (al menos 20 caracteres).",
     "stat_total": "Total de Consultas Recibidas",
-    "stat_pending": "Pendientes de Revisión",
+    "stat_awaiting": "Esperando respuesta",
     "stat_accepted": "Oportunidades Aceptadas",
     "empty_title": "No se encontraron consultas",
     "empty_desc": "Cuando instituciones teológicas acreditadas envíen solicitudes de docencia o conferencias, aparecerán aquí.",

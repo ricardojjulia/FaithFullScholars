@@ -370,6 +370,7 @@ export interface SavedCourse {
     course_number?: string | null;
     delivery_mode?: string | null;
     scholar_id?: string;
+    scholar_name?: string | null;
   } | null;
 }
 

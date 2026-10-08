@@ -2,9 +2,17 @@ import {
   GuildConference,
   ScholarConferenceAppearance,
   ConferenceInterview,
-  CommitteeDeliberationNotes,
   ScheduleInterviewInput,
 } from './conference-types';
+
+/**
+ * The conference hub is a staff-only preview with in-memory demo data
+ * (ADR 0021). It deliberately has no link to any real institution row.
+ */
+export const CONFERENCE_PREVIEW_INSTITUTION = {
+  id: 'conference-preview-institution',
+  name: 'Preview Institution (demo)',
+} as const;
 
 export const GUILD_CONFERENCES: GuildConference[] = [
   {
@@ -134,21 +142,12 @@ const scheduledInterviewsStore: ConferenceInterview[] = [
     scholarId: 'e0000000-0000-0000-0000-000000000001',
     scholarName: 'Dr. Thomas Cranmer-Davies',
     scholarSlug: 'thomas-cranmer-davies',
-    institutionId: 'f2000000-0000-0000-0000-000000000001',
-    institutionName: 'Westminster Theological Seminary',
+    institutionId: CONFERENCE_PREVIEW_INSTITUTION.id,
+    institutionName: CONFERENCE_PREVIEW_INSTITUTION.name,
     timeSlot: 'Tue Nov 17 2:00 PM',
     locationLabel: 'Grand Hyatt Executive Lounge Suite 612',
     status: 'scheduled',
     candidateFocus: 'Associate Professor of Old Testament search committee screening',
-    deliberationNotes: {
-      scholarshipScore: 5,
-      pedagogyScore: 4,
-      confessionalScore: 5,
-      recommendation: 'strong_hire',
-      evaluatorName: 'Dean of Faculty / Search Committee Chair',
-      privateNotes: 'Exceptional linguistic pedigree in Semitic philology. Affirmation of Westminster standards is clear and enthusiastic.',
-      updatedAt: '2026-10-02T08:00:00.000Z',
-    },
     createdAt: '2026-10-01T14:30:00.000Z',
   },
 ];
@@ -169,14 +168,6 @@ export function getConferenceAttendees(
   }
   return REFERENCE_CONFERENCE_APPEARANCES.filter(
     (app) => app.conferenceSlug === conferenceSlug
-  );
-}
-
-export function getScholarConferenceAppearances(
-  scholarSlug: string
-): ScholarConferenceAppearance[] {
-  return REFERENCE_CONFERENCE_APPEARANCES.filter(
-    (app) => app.scholarSlug === scholarSlug
   );
 }
 
@@ -253,21 +244,4 @@ export async function scheduleConferenceInterview(
 
   scheduledInterviewsStore.push(newInterview);
   return { success: true, interview: newInterview };
-}
-
-export async function recordCommitteeDeliberationNotes(
-  interviewId: string,
-  notes: CommitteeDeliberationNotes
-): Promise<{ success: boolean; error?: string }> {
-  const interview = scheduledInterviewsStore.find((i) => i.id === interviewId);
-  if (!interview) {
-    return { success: false, error: 'Interview not found.' };
-  }
-
-  interview.deliberationNotes = {
-    ...notes,
-    updatedAt: new Date().toISOString(),
-  };
-
-  return { success: true };
 }
