@@ -208,7 +208,7 @@ Exit criteria:
 
 - [x] Opportunities directory `/opportunities` allows public discovery and type filtering for theological appointments.
 - [x] Institution users can post, manage, and close faculty opportunities via `/institution/postings`.
-- [x] Scholars can express interest in opportunities through authenticated interest submissions (rebuilt as real posting applications by ADR 0027; live once migration `20261009090000` is applied).
+- [x] Scholars can express interest in opportunities through authenticated interest submissions (rebuilt as real posting applications by ADR 0027; live once migration `20261012090000` is applied).
 - [x] Seminaries can issue official institutional endorsements with relationship status via `/institution/endorsements`.
 - [x] Scholar profiles prominently distinguish authoritative institutional endorsements from peer colleague commendations.
 - [x] 100% PostgreSQL Row Level Security enforced across all 28 public tables.

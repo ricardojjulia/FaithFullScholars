@@ -3,7 +3,7 @@
  * FaithFull Scholars — Posting application status vocabulary (ADR 0027)
  *
  * These maps MIRROR the database guard `private.guard_posting_applications`
- * (migration 20261009090000). The database is the enforcing layer; this module
+ * (migration 20261012090000). The database is the enforcing layer; this module
  * only decides which buttons and routes to offer. An integration sweep
  * (tests/integration/posting-applications.test.ts) runs every from/to pair against
  * the real guard and fails if these maps drift from it.

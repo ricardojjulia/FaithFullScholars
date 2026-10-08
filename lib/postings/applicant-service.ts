@@ -8,16 +8,16 @@
  * applicant. There is no service-role client and no guessing: the dossier shown
  * is the frozen snapshot sealed when the scholar applied, never the live profile.
  *
+ * There is deliberately NO derived confessional "fit" score (owner decision,
+ * 2026-10-08): the committee sees what the scholar DECLARED, beside what the
+ * posting requires, and judges for itself.
+ *
  * Two queries (no N+1): the posting, then its applications with their note.
  * ==============================================================================
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { isTerminalDoctorate } from '@/lib/accreditation/ats-matrix-generator';
-import {
-  evaluateConfessionalAlignment,
-  type ConfessionalAlignmentLevel,
-} from '@/lib/search/confessional-matcher';
 import { isApplicationStatus, type ApplicationStatus } from '@/lib/postings/application-status';
 import { PortalQueryError } from '@/lib/inquiries/queries';
 
@@ -74,9 +74,8 @@ export interface ApplicantDossier {
   highestDegree: string | null;
   degreeInstitution: string | null;
   isTerminalDoctorate: boolean;
-  confessions: string[];
-  alignmentLevel: ConfessionalAlignmentLevel;
-  alignmentScorePercent: number;
+  /** The scholar's declared confessions (name, adherence, exception notes) from the frozen snapshot. */
+  confessions: DossierConfession[];
   coverNote: string;
   status: ApplicationStatus;
   appliedAt: string;
@@ -94,10 +93,11 @@ export interface PostingApplicantReport {
   term: string;
   requiredDegree: string;
   confessionalRequirements: string | null;
+  /** The posting's stated confessional standard (its tradition), if any. */
+  confessionalStandard: string | null;
   totalApplicants: number;
   terminalDoctoratesCount: number;
   terminalDoctoratesRatio: number;
-  fullConfessionalMatchCount: number;
   applicants: ApplicantDossier[];
 }
 
@@ -228,7 +228,6 @@ export async function getPostingApplicantReport(
 
   const applicants: ApplicantDossier[] = [];
   let terminalDoctoratesCount = 0;
-  let fullConfessionalMatchCount = 0;
 
   for (const row of (rows ?? []) as unknown as ApplicationRow[]) {
     if (!isApplicationStatus(row.status)) continue;
@@ -237,15 +236,6 @@ export async function getPostingApplicantReport(
     const highest = pickHighestCredential(dossier.credentials);
     const terminal = highest ? isTerminalDoctorate(highest.degree) : false;
     if (terminal) terminalDoctoratesCount++;
-
-    const alignment = evaluateConfessionalAlignment({
-      targetTradition: traditionName,
-      scholarConfessions: dossier.confessions.map((c) => ({ id: c.slug || c.name, name: c.name, slug: c.slug })),
-      scholarDoctrinalStatement: dossier.doctrinalStatement ?? undefined,
-    });
-    if (alignment.alignmentLevel === 'full' || alignment.alignmentLevel === 'substantial') {
-      fullConfessionalMatchCount++;
-    }
 
     const noteRow = Array.isArray(row.posting_application_notes)
       ? row.posting_application_notes[0]
@@ -261,9 +251,7 @@ export async function getPostingApplicantReport(
       highestDegree: highest ? [highest.degree, highest.fieldOfStudy].filter(Boolean).join(' in ') : null,
       degreeInstitution: highest?.institutionName ?? null,
       isTerminalDoctorate: terminal,
-      confessions: dossier.confessions.map((c) => c.name),
-      alignmentLevel: alignment.alignmentLevel,
-      alignmentScorePercent: alignment.scorePercent,
+      confessions: dossier.confessions,
       coverNote: row.cover_note,
       status: row.status,
       appliedAt: row.created_at,
@@ -297,10 +285,10 @@ export async function getPostingApplicantReport(
     term: posting.term,
     requiredDegree: posting.required_degree,
     confessionalRequirements: posting.confessional_requirements,
+    confessionalStandard: traditionName ?? null,
     totalApplicants,
     terminalDoctoratesCount,
     terminalDoctoratesRatio,
-    fullConfessionalMatchCount,
     applicants,
   };
 }

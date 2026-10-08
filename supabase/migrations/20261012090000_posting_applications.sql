@@ -1,5 +1,5 @@
 -- ==============================================================================
--- FaithFull Scholars — Migration 20261009090000: Posting applications
+-- FaithFull Scholars — Migration 20261012090000: Posting applications
 -- ADR 0027 (partially supersedes ADR 0020; builds on ADR 0022, 0023, 0025, 0026).
 -- Idempotent and additive: no existing table, column or row is changed.
 --
@@ -21,7 +21,7 @@
 --                                  plus a transition table.
 --   3. posting_application_notes   the institution's private notes (a separate
 --                                  table because RLS works per row).
---   4. posting_application_events  append-only audit, written by a DEFINER
+--   4. posting_application_events  audit, append-only for API callers, written by a DEFINER
 --                                  trigger on submit and on every status change.
 --   5. public.submit_posting_application()  the ONLY insert path. DEFINER. Seals
 --                                  the dossier from the scholar's reviewed,
@@ -188,7 +188,7 @@ CREATE TRIGGER set_posting_applications_updated_at
 -- ------------------------------------------------------------------------------
 -- 2. The guard
 --
--- Transition table (status):
+-- Transition table (status), for every API caller (admins included):
 --   member     submitted -> under_review
 --              under_review -> interview_scheduled
 --              under_review -> declined
@@ -220,8 +220,11 @@ DECLARE
   v_applicant BOOLEAN;
   v_member BOOLEAN;
 BEGIN
-  IF NOT private.is_restricted_caller() THEN
-    -- Service role, admins and direct sessions are not restricted, but the
+  -- Any caller running as anon or authenticated is bound by these rules, platform admins
+  -- included: an admin who is also the applicant or a member must not edit sealed content
+  -- or withdraw for the scholar. Only the service role and direct database sessions are exempt.
+  IF NOT (private.is_restricted_caller() OR current_user IN ('anon', 'authenticated')) THEN
+    -- Service role and direct sessions are not restricted, but the
     -- platform still maintains status_changed_at on a real status change.
     IF TG_OP = 'UPDATE' AND NEW.status IS DISTINCT FROM OLD.status
        AND NEW.status_changed_at IS NOT DISTINCT FROM OLD.status_changed_at THEN
@@ -346,7 +349,7 @@ AS $$
 DECLARE
   v_institution_id UUID;
 BEGIN
-  IF private.is_restricted_caller() THEN
+  IF private.is_restricted_caller() OR current_user IN ('anon', 'authenticated') THEN
     IF TG_OP = 'INSERT' THEN
       -- Read under the caller's RLS: a non-member simply does not see the application.
       SELECT a.institution_id INTO v_institution_id
@@ -378,14 +381,16 @@ CREATE TRIGGER trg_guard_posting_application_notes
   FOR EACH ROW EXECUTE FUNCTION private.guard_posting_application_notes();
 
 -- ------------------------------------------------------------------------------
--- 4. posting_application_events — append-only audit
+-- 4. posting_application_events — audit, append-only for API callers
 --    Written only by the DEFINER trigger below. Users can read, never write.
---    Members (not as the applicant) and admins read; the actor id is internal.
+--    Members, the applicant and admins read. Contact reveals are logged here too.
 -- ------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.posting_application_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id UUID NOT NULL REFERENCES public.posting_applications(id) ON DELETE CASCADE,
   institution_id UUID NOT NULL,
+  -- 'status' = submission or a status change; 'contact_revealed' = a member read the applicant's email.
+  event_kind TEXT NOT NULL DEFAULT 'status' CHECK (event_kind IN ('status', 'contact_revealed')),
   from_status TEXT,
   to_status TEXT NOT NULL,
   actor_account_id UUID,
@@ -409,7 +414,8 @@ CREATE POLICY "Members and admins read application events"
   FOR SELECT
   TO authenticated
   USING (
-    (private.is_institution_user(institution_id) AND NOT private.is_application_applicant(application_id))
+    private.is_institution_user(institution_id)
+    OR private.is_application_applicant(application_id)
     OR private.is_admin()
   );
 
@@ -594,16 +600,21 @@ GRANT EXECUTE ON FUNCTION public.submit_posting_application(UUID, TEXT) TO authe
 -- 6. get_application_contact — the scholar's login email, released late
 --    Only a member of the posting institution, only at interview_scheduled, and
 --    never to the applicant (even if the applicant is also a member). NULL otherwise,
---    so the caller learns nothing about why.
+--    so the caller learns nothing about why. A successful release is logged as a
+--    'contact_revealed' event.
 -- ------------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.get_application_contact(p_application_id UUID)
 RETURNS TEXT
-LANGUAGE sql
-STABLE
+LANGUAGE plpgsql
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT acc.email
+DECLARE
+  v_email TEXT;
+  v_institution_id UUID;
+BEGIN
+  SELECT acc.email, a.institution_id INTO v_email, v_institution_id
   FROM public.posting_applications a
   JOIN public.scholars s ON s.id = a.scholar_id
   JOIN public.accounts acc ON acc.id = s.account_id
@@ -611,6 +622,14 @@ AS $$
     AND a.status = 'interview_scheduled'
     AND private.is_institution_user(a.institution_id)
     AND s.id IS DISTINCT FROM (SELECT private.get_current_scholar_id());
+
+  -- Every release of the email is audited (VOLATILE: this function writes).
+  IF v_email IS NOT NULL THEN
+    INSERT INTO public.posting_application_events (application_id, institution_id, event_kind, from_status, to_status, actor_account_id)
+    VALUES (p_application_id, v_institution_id, 'contact_revealed', NULL, 'interview_scheduled', (SELECT auth.uid()));
+  END IF;
+  RETURN v_email;
+END;
 $$;
 
 REVOKE ALL ON FUNCTION public.get_application_contact(UUID) FROM PUBLIC, anon, authenticated, service_role;

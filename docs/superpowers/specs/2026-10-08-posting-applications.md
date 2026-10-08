@@ -105,7 +105,7 @@ Proposed defaults, to be confirmed with the story:
 
 ## Technical brief (spec-writer, 2026-10-08), condensed
 
-**Migration `20261009090000_posting_applications.sql`** is idempotent and additive. Its preflight DO block requires the ADR 0022/0025 helpers and the `trg_guard_published_children` trigger.
+**Migration `20261012090000_posting_applications.sql`** is idempotent and additive. Its preflight DO block requires the ADR 0022/0025 helpers and the `trg_guard_published_children` trigger.
 
 - **`posting_applications`.** Columns: posting, institution, scholar, frozen `posting_title` and `institution_name`, `cover_note` (5–4000 characters), and `dossier_snapshot` (a JSON object of at most 256 KB). Also status, `status_changed_at` and the timestamps.
   - Constraints: UNIQUE(posting, scholar), FORCE RLS, and a posting FK of NO ACTION.
@@ -176,7 +176,7 @@ Proposed defaults, to be confirmed with the story:
 
 **Intent.** Implement the approved story and brief exactly: a separate `posting_applications` table, one insert path, a transition-table guard, private notes, an audit trail, late contact release, and the matrix on real data. ADR 0027 was written first.
 
-**Architecture impact.** One additive migration (`20261009090000_posting_applications.sql`); `lib/postings/applicant-service.ts` leaves the service-role allow-list in `eslint.config.mjs`; `express-interest` now calls `submit_posting_application`; four new API routes; `/dashboard/applications`; `common_app` i18n namespace.
+**Architecture impact.** One additive migration (`20261012090000_posting_applications.sql`); `lib/postings/applicant-service.ts` leaves the service-role allow-list in `eslint.config.mjs`; `express-interest` now calls `submit_posting_application`; four new API routes; `/dashboard/applications`; `common_app` i18n namespace.
 
 **Decisions taken where the brief left room.**
 - Events are readable by members who are not the applicant, and by admins, not by the applicant (the actor id is internal).
@@ -192,9 +192,11 @@ Proposed defaults, to be confirmed with the story:
 - Mutation probes (each broke exactly the intended tests, then was reverted): removing the `frozen` rule, the `member_forward_only` rule, the `rate` rule; granting INSERT to `authenticated`; removing the "not the applicant" clause from the notes policy; removing the interview-stage condition from `get_application_contact`; adding the email to the snapshot; leaving `anon` granted; dropping `search_path` from the submit function.
 - CI: see the PR. The final head SHA's runs are listed in the hand-off.
 
+**Owner decision after review (2026-10-08).** The derived confessional "fit" score is removed everywhere (matrix, KPI, CSV, types). The committee sees the scholar's declared confessions, adherence and exceptions beside the posting's stated requirements. Also after review: admins who are a party are bound by the guards; contact reveals are logged as `contact_revealed` events (`get_application_contact` is VOLATILE) and events are readable by members, the applicant and admins; the disclosure names the login email, who can see it and what the institution keeps after withdrawal; dialogs trap focus, close on Escape and return focus; the migration is renamed `20261012090000` to sort after PR #68's.
+
 **Residual risk.**
 - Contact release uses the account login email, which may differ from the scholar's preferred address.
 - All institution members can triage and read notes (owner decision).
 - Pre-existing pilot rows from the fake seed remain as harmless inquiries.
 
-**Follow-up.** Email notifications for new applications and status changes; interview scheduling (conference hub slice); a per-member triage permission if institutions ask for it; apply migration `20261009090000` to production before merging, then smoke-test one application end to end.
+**Follow-up.** Email notifications for new applications and status changes; interview scheduling (conference hub slice); a per-member triage permission if institutions ask for it; apply migration `20261012090000` to production before merging, then smoke-test one application end to end.

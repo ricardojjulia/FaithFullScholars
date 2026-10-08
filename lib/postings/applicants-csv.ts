@@ -4,7 +4,7 @@
  *
  * One CSV module for the matrix export. RFC 4180 quoting (every field is quoted,
  * quotes doubled, CRLF between records) plus spreadsheet formula-injection
- * neutralisation: a cell that starts with = + - @ , a tab or a carriage return
+ * neutralisation: a cell that starts with = + - @, a tab, a carriage return or a line feed
  * is prefixed with a single quote so Excel and Sheets read it as text. The
  * applicant controls the cover note and profile text, so every free-text cell is
  * treated as hostile.
@@ -13,7 +13,7 @@
 
 import type { PostingApplicantReport } from '@/lib/postings/applicant-service';
 
-const FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+const FORMULA_TRIGGER = /^[=+\-@\t\r\n]/;
 
 /** Neutralises a spreadsheet formula and quotes the value per RFC 4180. */
 export function csvCell(value: string | number | boolean | null | undefined): string {
@@ -31,8 +31,7 @@ export const APPLICANT_CSV_HEADERS = [
   'Highest Degree',
   'Awarding Institution',
   'ATS Terminal Doctorate',
-  'Confessional Alignment',
-  'Alignment Score',
+  'Declared Confessions',
   'Application Status',
   'Applied Date',
   'Cover Note',
@@ -48,8 +47,7 @@ export function buildApplicantsCsv(applicants: PostingApplicantReport['applicant
       csvCell(a.highestDegree),
       csvCell(a.degreeInstitution),
       csvCell(a.isTerminalDoctorate ? 'YES' : 'NO'),
-      csvCell(a.alignmentLevel.toUpperCase()),
-      csvCell(`${a.alignmentScorePercent}%`),
+      csvCell(a.confessions.map((c) => (c.adherenceLevel ? `${c.name} (${c.adherenceLevel.replace(/_/g, ' ')})` : c.name)).join('; ')),
       csvCell(a.status.toUpperCase()),
       csvCell(new Date(a.appliedAt).toISOString().split('T')[0]),
       csvCell(a.coverNote),

@@ -63,14 +63,16 @@ test.describe('Search Committee Applicant Matrix & Confessional Common App (ADR 
 
     // 2. Route and formal executive header.
     await expect(page).toHaveURL(new RegExp(`/institution/postings/${APPLICATIONS_POSTING.id}/applicants`));
-    await expect(page.getByText('ADR 0020 Candidate Clearinghouse')).toBeVisible();
+    await expect(page.getByText('Candidate applications', { exact: true })).toBeVisible();
     await expect(page.getByText(/Search Committee Applicant Comparison Matrix/i)).toBeVisible();
 
     // 3. Compliance and evaluation KPI cards, computed from the one real application.
     await expect(page.getByText('Total Applicants', { exact: true })).toBeVisible();
     await expect(page.getByTestId('total-applicants')).toHaveText('1');
     await expect(page.getByText('Terminal Doctorates', { exact: true })).toBeVisible();
-    await expect(page.getByText('Confessional Alignment', { exact: true })).toBeVisible();
+    // The declared confessions are shown beside the posting's standard; there is no fit score (owner decision).
+    await expect(page.getByText('Confessional Standard', { exact: true })).toBeVisible();
+    await expect(page.getByText(/Confessional (Fit|Alignment)/)).toHaveCount(0);
     await expect(page.getByText('Position Type', { exact: true })).toBeVisible();
 
     // 4. Action buttons and filter controls.
@@ -93,7 +95,8 @@ test.describe('Search Committee Applicant Matrix & Confessional Common App (ADR 
     // 5. Table headers and the real applicant row, from the frozen snapshot.
     await expect(page.getByRole('columnheader', { name: /Candidate/i })).toBeVisible();
     await expect(page.getByRole('columnheader', { name: /Terminal Degree \(ATS Standard 3\)/i })).toBeVisible();
-    await expect(page.getByRole('columnheader', { name: /Confessional Fit/i })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /Declared confessions/i })).toBeVisible();
+    await expect(page.getByRole('columnheader', { name: /fit|score|alignment/i })).toHaveCount(0);
     const row = page.getByTestId('applicant-row');
     await expect(row).toHaveCount(1);
     await expect(row).toContainText(APPLICANT_SCHOLAR.fullName);

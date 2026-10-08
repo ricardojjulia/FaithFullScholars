@@ -12,9 +12,7 @@ const dossier = (over: Partial<ApplicantDossier> = {}): ApplicantDossier => ({
   highestDegree: 'Ph.D. in New Testament',
   degreeInstitution: 'University of Aberdeen',
   isTerminalDoctorate: true,
-  confessions: ['Westminster Confession of Faith'],
-  alignmentLevel: 'full',
-  alignmentScorePercent: 95,
+  confessions: [{ name: 'Westminster Confession of Faith', slug: 'westminster-confession', adherenceLevel: 'full_subscription', exceptionNotes: null }],
   coverNote: 'Excited to apply for this modular intensive teaching role.',
   status: 'submitted',
   appliedAt: '2026-09-29T12:00:00Z',
@@ -49,7 +47,7 @@ describe('applicants CSV (RFC 4180 + formula-injection neutralisation)', () => {
     expect(csv).toContain('"Dr. Sarah Edwards"');
     expect(csv).toContain('"University of Aberdeen"');
     expect(csv).toContain('"YES"');
-    expect(csv).toContain('"95%"');
+    expect(csv).toContain('"Westminster Confession of Faith (full subscription)"');
     expect(csv).toContain('"INTERVIEW_SCHEDULED"');
     expect(csv).toContain('"2026-09-29"');
   });
@@ -73,13 +71,21 @@ describe('applicants CSV (RFC 4180 + formula-injection neutralisation)', () => {
     expect(csvCell(undefined)).toBe('""');
   });
 
-  it.each(['=1+1', '+1+1', '-1+1', '@SUM(A1)', '\t=1+1', '\r=1+1'])('neutralises the formula trigger %j', (value) => {
+  it.each(['=1+1', '+1+1', '-1+1', '@SUM(A1)', '\t=1+1', '\r=1+1', '\n=1+1'])('neutralises the formula trigger %j', (value) => {
     expect(csvCell(value)).toBe(`"'${value}"`);
   });
 
   it('does not touch values that merely contain a trigger later', () => {
     expect(csvCell('a=b')).toBe('"a=b"');
     expect(csvCell('Dr. -Smith')).toBe('"Dr. -Smith"');
+  });
+
+  it('has no fit, score or alignment column (owner decision: the committee judges the declared confessions)', () => {
+    for (const header of APPLICANT_CSV_HEADERS) expect(header).not.toMatch(/fit|score|alignment/i);
+    const csv = buildApplicantsCsv([dossier()]);
+    expect(csv).not.toMatch(/alignment|score|\bfit\b/i);
+    expect(csv).not.toContain('FULL"');
+    expect(APPLICANT_CSV_HEADERS).toContain('Declared Confessions');
   });
 
   it('neutralises hostile applicant-controlled cells in a full export', () => {

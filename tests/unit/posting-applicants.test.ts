@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isTerminalDoctorate } from '@/lib/accreditation/ats-matrix-generator';
 import {
-  evaluateConfessionalAlignment,
-} from '@/lib/search/confessional-matcher';
-import {
   getPostingApplicantReport,
   parseDossierSnapshot,
   pickHighestCredential,
@@ -34,43 +31,6 @@ describe('Search Committee Applicant Matrix & Confessional Common App (ADR 0020)
       expect(isTerminalDoctorate('Ph.D. Candidate (ABD)')).toBe(false);
       expect(isTerminalDoctorate(null)).toBe(false);
       expect(isTerminalDoctorate(undefined)).toBe(false);
-    });
-  });
-
-  describe('Confessional Alignment Engine', () => {
-    it('scores full alignment when candidate directly affirms target confessional standard', () => {
-      const result = evaluateConfessionalAlignment({
-        targetStandardId: 'westminster-confession',
-        scholarConfessions: [
-          { id: 'c1', name: 'Westminster Confession of Faith (1646)', slug: 'westminster-confession' },
-        ],
-      });
-
-      expect(result.alignmentLevel).toBe('full');
-      expect(result.scorePercent).toBe(100);
-    });
-
-    it('scores substantial alignment when candidate affirms matching tradition', () => {
-      const result = evaluateConfessionalAlignment({
-        targetTradition: 'Reformed',
-        scholarConfessions: [
-          { id: 'c1', name: 'Westminster Confession of Faith (1646)', slug: 'westminster-confession' },
-        ],
-      });
-
-      expect(result.alignmentLevel).toBe('substantial');
-      expect(result.scorePercent).toBeGreaterThanOrEqual(80);
-    });
-
-    it('scores distinctive when candidate has no historic confessional affirmations', () => {
-      const result = evaluateConfessionalAlignment({
-        targetTradition: 'Reformed',
-        scholarConfessions: [],
-        scholarDoctrinalStatement: 'Personal statement of faith in the historic gospel.',
-      });
-
-      expect(result.alignmentLevel).toBe('distinctive');
-      expect(result.scorePercent).toBeLessThan(50);
     });
   });
 
@@ -162,7 +122,12 @@ describe('Search Committee Applicant Matrix & Confessional Common App (ADR 0020)
       expect(a.isTerminalDoctorate).toBe(true);
       expect(a.status).toBe('under_review');
       expect(a.note).toBe('Strong candidate');
-      expect(a.confessions).toEqual(['Westminster Confession of Faith']);
+      expect(a.confessions).toEqual([
+        { name: 'Westminster Confession of Faith', slug: 'westminster-confession', adherenceLevel: 'full_subscription', exceptionNotes: null },
+      ]);
+      expect(report!.confessionalStandard).toBe('Reformed');
+      expect(Object.keys(a)).not.toEqual(expect.arrayContaining(['alignmentLevel']));
+      expect(JSON.stringify(report)).not.toMatch(/alignment|fullConfessionalMatch/i);
       expect(report!.terminalDoctoratesCount).toBe(1);
       expect(report!.terminalDoctoratesRatio).toBe(100);
     });

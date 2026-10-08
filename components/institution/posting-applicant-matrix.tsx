@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Users,
@@ -25,6 +25,7 @@ import {
 } from '@/lib/postings/application-status';
 import { ApplicationStatusBadge } from '@/components/applications/application-status-badge';
 import { useTranslation } from '@/lib/i18n/i18n-context';
+import { useDialogFocus } from '@/components/portal/use-dialog-focus';
 
 interface PostingApplicantMatrixProps {
   report: PostingApplicantReport;
@@ -41,6 +42,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
   const [applicants, setApplicants] = useState<ApplicantDossier[]>(report.applicants);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [liveMessage, setLiveMessage] = useState('');
 
   const selectedApplicant = applicants.find((a) => a.applicationId === selectedId) ?? null;
 
@@ -75,6 +77,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
   const handleStatusChange = async (applicationId: string, newStatus: ApplicationStatus) => {
     setUpdatingId(applicationId);
     setStatusError(null);
+    setLiveMessage('');
     try {
       const res = await fetch(`/api/institution/applications/${applicationId}/status`, {
         method: 'PATCH',
@@ -87,13 +90,16 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
         return;
       }
       const data = (await res.json()) as { status?: ApplicationStatus; statusChangedAt?: string };
+      const applied = data.status ?? newStatus;
+      const who = applicants.find((a) => a.applicationId === applicationId)?.scholarName ?? '';
       setApplicants((prev) =>
         prev.map((a) =>
           a.applicationId === applicationId
-            ? { ...a, status: data.status ?? newStatus, statusChangedAt: data.statusChangedAt ?? a.statusChangedAt }
+            ? { ...a, status: applied, statusChangedAt: data.statusChangedAt ?? a.statusChangedAt }
             : a
         )
       );
+      setLiveMessage(t('common_app.m_status_updated', { name: who, status: t(`common_app.status_${applied}`) }));
     } catch {
       setStatusError(t('common_app.matrix_update_failed'));
     } finally {
@@ -105,31 +111,6 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
     setApplicants((prev) => prev.map((a) => (a.applicationId === applicationId ? { ...a, note } : a)));
   };
 
-  const getAlignmentBadge = (level: string, score: number) => {
-    if (level === 'full' || score >= 90) {
-      return {
-        label: 'Full Match',
-        classes: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
-      };
-    }
-    if (level === 'substantial' || score >= 70) {
-      return {
-        label: 'Substantial',
-        classes: 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800',
-      };
-    }
-    if (level === 'ecumenical' || score >= 50) {
-      return {
-        label: 'Ecumenical',
-        classes: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
-      };
-    }
-    return {
-      label: 'Distinctive',
-      classes: 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800',
-    };
-  };
-
   return (
     <div className="space-y-6">
       {/* Header and Action Bar */}
@@ -137,13 +118,13 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-              ADR 0020 Candidate Clearinghouse
+              {t('common_app.m_badge')}
             </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Term: {report.term}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{t('common_app.m_term', { term: report.term })}</span>
           </div>
           <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white">{report.postingTitle}</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Search Committee Applicant Comparison Matrix · Required: {report.requiredDegree}
+            {t('common_app.m_subtitle', { degree: report.requiredDegree })}
           </p>
         </div>
 
@@ -153,14 +134,14 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl shadow-2xs transition"
           >
             <Download className="w-3.5 h-3.5" />
-            <span>Export CSV</span>
+            <span>{t('common_app.m_export_csv')}</span>
           </button>
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Print Dossier</span>
+            <span>{t('common_app.m_print')}</span>
           </button>
         </div>
       </div>
@@ -172,7 +153,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Total Applicants</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t('common_app.m_kpi_total')}</div>
             <div className="text-xl font-display font-bold text-slate-900 dark:text-white" data-testid="total-applicants">
               {applicants.length}
             </div>
@@ -184,7 +165,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Terminal Doctorates</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t('common_app.m_kpi_terminal')}</div>
             <div className="text-xl font-display font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>{report.terminalDoctoratesCount}</span>
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
@@ -199,12 +180,9 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             <ShieldCheck className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Confessional Alignment</div>
-            <div className="text-xl font-display font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>{report.fullConfessionalMatchCount}</span>
-              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                ({report.totalApplicants > 0 ? Math.round((report.fullConfessionalMatchCount / report.totalApplicants) * 100) : 0}%)
-              </span>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t('common_app.m_kpi_standard')}</div>
+            <div className="text-sm font-display font-bold text-slate-900 dark:text-white">
+              {report.confessionalStandard ?? t('common_app.m_standard_none')}
             </div>
           </div>
         </div>
@@ -214,7 +192,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Position Type</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">{t('common_app.m_kpi_position')}</div>
             <div className="text-sm font-display font-bold text-slate-900 dark:text-white capitalize">
               {report.opportunityType.replace(/_/g, ' ')}
             </div>
@@ -230,8 +208,8 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Filter candidates by name, institution, or degree..."
-            aria-label="Filter candidates by name, institution, or degree"
+            placeholder={t('common_app.m_filter_placeholder')}
+            aria-label={t('common_app.m_filter_placeholder').replace(/\.+$/, '')}
             className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
@@ -258,10 +236,22 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
               onChange={(e) => setTerminalOnly(e.target.checked)}
               className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
             />
-            <span>ATS Doctorates Only</span>
+            <span>{t('common_app.m_ats_only')}</span>
           </label>
         </div>
       </div>
+
+      <div role="status" aria-live="polite" className="sr-only" data-testid="status-live">
+        {liveMessage}
+      </div>
+
+      {report.confessionalRequirements && (
+        <div className="p-4 bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 rounded-2xl text-xs text-slate-700 dark:text-slate-300 space-y-1">
+          <h2 className="font-bold text-slate-900 dark:text-white">{t('common_app.m_requires')}</h2>
+          <p className="whitespace-pre-wrap leading-relaxed">{report.confessionalRequirements}</p>
+          <p className="text-[11px] text-slate-500">{t('common_app.m_requires_note')}</p>
+        </div>
+      )}
 
       {statusError && (
         <div
@@ -279,27 +269,24 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
           <div className="p-12 text-center space-y-3">
             <Users className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
             <p className="text-xs text-slate-500">
-              {applicants.length === 0
-                ? t('common_app.matrix_empty')
-                : 'No candidate applications match the selected criteria.'}
+              {applicants.length === 0 ? t('common_app.matrix_empty') : t('common_app.m_no_match')}
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto print:overflow-visible">
-            <table className="w-full text-left text-xs" aria-label="Applicant Matrix">
+            <table className="w-full text-left text-xs" aria-label={t('common_app.m_table_label')}>
               <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 border-b border-slate-200/80 dark:border-slate-800 font-semibold">
                 <tr>
-                  <th scope="col" className="py-3.5 px-4">Candidate</th>
-                  <th scope="col" className="py-3.5 px-4">Terminal Degree (ATS Standard 3)</th>
-                  <th scope="col" className="py-3.5 px-4">Confessional Fit</th>
-                  <th scope="col" className="py-3.5 px-4">Applied</th>
-                  <th scope="col" className="py-3.5 px-4">Status</th>
-                  <th scope="col" className="py-3.5 px-4 text-right print:hidden">Actions</th>
+                  <th scope="col" className="py-3.5 px-4">{t('common_app.m_col_candidate')}</th>
+                  <th scope="col" className="py-3.5 px-4">{t('common_app.m_col_degree')}</th>
+                  <th scope="col" className="py-3.5 px-4">{t('common_app.m_col_confessions')}</th>
+                  <th scope="col" className="py-3.5 px-4">{t('common_app.m_col_applied')}</th>
+                  <th scope="col" className="py-3.5 px-4">{t('common_app.m_col_status')}</th>
+                  <th scope="col" className="py-3.5 px-4 text-right print:hidden">{t('common_app.m_col_actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredApplicants.map((a) => {
-                  const alignment = getAlignmentBadge(a.alignmentLevel, a.alignmentScorePercent);
                   const isUpdating = updatingId === a.applicationId;
                   const moves = nextMemberStatuses(a.status);
 
@@ -323,22 +310,22 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
                         </div>
                         <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {a.title ? `${a.title} · ` : ''}
-                          {a.currentInstitution || 'Independent Scholar'}
+                          {a.currentInstitution || t('common_app.m_independent')}
                         </div>
                       </td>
 
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-2">
                           <span className="font-medium text-slate-800 dark:text-slate-200">
-                            {a.highestDegree || 'Not Specified'}
+                            {a.highestDegree || t('common_app.m_not_specified')}
                           </span>
                           {a.isTerminalDoctorate ? (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shrink-0">
-                              ATS Qualified
+                              {t('common_app.m_ats_qualified')}
                             </span>
                           ) : (
                             <span className="px-2 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 shrink-0">
-                              Master&apos;s / Other
+                              {t('common_app.m_other_degree')}
                             </span>
                           )}
                         </div>
@@ -347,15 +334,20 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
                         )}
                       </td>
 
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${alignment.classes}`}>
-                            {alignment.label} ({a.alignmentScorePercent}%)
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
-                          {a.confessions.length > 0 ? a.confessions.join(', ') : 'Statement of Faith'}
-                        </div>
+                      <td className="py-3.5 px-4" data-testid="declared-confessions">
+                        {a.confessions.length > 0 ? (
+                          <ul className="space-y-0.5">
+                            {a.confessions.map((c) => (
+                              <li key={c.slug || c.name} className="text-[11px] text-slate-700 dark:text-slate-300">
+                                <span className="font-semibold">{c.name}</span>
+                                {c.adherenceLevel ? ` · ${c.adherenceLevel.replace(/_/g, ' ')}` : ''}
+                                {c.exceptionNotes ? ` · ${t('common_app.m_exceptions', { notes: c.exceptionNotes })}` : ''}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-[11px] text-slate-400">{t('common_app.m_none_declared')}</span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-500 text-[11px]">{a.appliedAt.slice(0, 10)}</td>
@@ -390,7 +382,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 rounded-lg transition"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          <span>View Dossier</span>
+                          <span>{t('common_app.m_view_dossier')}</span>
                         </button>
                       </td>
                     </tr>
@@ -408,6 +400,7 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
           // Remount per applicant so the note and contact state never leak between candidates.
           key={selectedApplicant.applicationId}
           applicant={selectedApplicant}
+          requirements={report.confessionalRequirements}
           onClose={() => setSelectedId(null)}
           onNoteSaved={handleNoteSaved}
         />
@@ -418,10 +411,12 @@ export function PostingApplicantMatrix({ report }: PostingApplicantMatrixProps) 
 
 function DossierModal({
   applicant,
+  requirements,
   onClose,
   onNoteSaved,
 }: {
   applicant: ApplicantDossier;
+  requirements: string | null;
   onClose: () => void;
   onNoteSaved: (applicationId: string, note: string) => void;
 }) {
@@ -432,6 +427,9 @@ function DossierModal({
   const [contactError, setContactError] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
   const d = applicant.dossier;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Escape closes, focus moves in and is trapped, and returns to the "View Dossier" opener.
+  useDialogFocus(dialogRef, onClose, '[data-initial-focus]');
 
   async function saveNote() {
     setNoteState('saving');
@@ -478,6 +476,7 @@ function DossierModal({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal={true}
       aria-labelledby="dossier-modal-title"
@@ -486,7 +485,8 @@ function DossierModal({
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative max-h-[85vh] overflow-y-auto space-y-6">
         <button
           onClick={onClose}
-          aria-label="Close candidate dossier"
+          data-initial-focus
+          aria-label={t('common_app.m_close_dossier')}
           className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
         >
           <X className="w-5 h-5" />
@@ -495,11 +495,11 @@ function DossierModal({
         <div>
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
-              Common App Candidate Dossier
+              {t('common_app.m_dossier_badge')}
             </span>
             {applicant.isTerminalDoctorate && (
               <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                ATS Terminal Doctorate
+                {t('common_app.m_ats_terminal')}
               </span>
             )}
             <ApplicationStatusBadge status={applicant.status} />
@@ -509,7 +509,7 @@ function DossierModal({
           </h2>
           <p className="text-xs text-slate-500">
             {applicant.title ? `${applicant.title} · ` : ''}
-            {applicant.currentInstitution || 'Independent Scholar'}
+            {applicant.currentInstitution || t('common_app.m_independent')}
           </p>
           <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400" data-testid="dossier-frozen-note">
             {t('common_app.dossier_frozen', { date: (d.sealedAt ?? applicant.appliedAt).slice(0, 10) })}
@@ -536,24 +536,30 @@ function DossierModal({
           )}
         </div>
 
-        {/* Confessional Alignment */}
+        {/* Declared confessions, beside what the posting states (no score) */}
         <div className="space-y-2">
-          <h3 className={sectionTitle}>Affirmed Confessional Standards</h3>
-          <div className="flex flex-wrap gap-2">
-            {d.confessions.length > 0 ? (
-              d.confessions.map((c) => (
-                <span
+          <h3 className={sectionTitle}>{t('common_app.m_declared_confessions')}</h3>
+          {requirements && (
+            <p className="text-[11px] text-slate-500 whitespace-pre-wrap">
+              {t('common_app.m_requires')}: {requirements}
+            </p>
+          )}
+          {d.confessions.length > 0 ? (
+            <ul className="space-y-1.5">
+              {d.confessions.map((c) => (
+                <li
                   key={c.slug || c.name}
-                  className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50 dark:border-indigo-800/50"
+                  className="text-xs text-slate-700 dark:text-slate-300 px-2.5 py-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/50 dark:border-indigo-800/50"
                 >
-                  {c.name}
+                  <span className="font-semibold text-indigo-700 dark:text-indigo-300">{c.name}</span>
                   {c.adherenceLevel ? ` · ${c.adherenceLevel.replace(/_/g, ' ')}` : ''}
-                </span>
-              ))
-            ) : (
-              <span className="text-xs text-slate-400">No historic standards selected.</span>
-            )}
-          </div>
+                  {c.exceptionNotes && <span className="block text-[11px] mt-0.5">{t('common_app.m_exceptions', { notes: c.exceptionNotes })}</span>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <span className="text-xs text-slate-400">{t('common_app.m_no_confessions')}</span>
+          )}
         </div>
 
         {(d.disciplines.length > 0 || d.traditions.length > 0) && (
@@ -597,7 +603,7 @@ function DossierModal({
 
         {/* Candidate Cover Note */}
         <div className="space-y-2">
-          <h3 className={sectionTitle}>Candidate Cover Note</h3>
+          <h3 className={sectionTitle}>{t('common_app.m_cover_note')}</h3>
           <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
             {applicant.coverNote}
           </div>
@@ -693,7 +699,7 @@ function DossierModal({
             onClick={onClose}
             className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition"
           >
-            Close
+            {t('common_app.m_close')}
           </button>
         </div>
       </div>

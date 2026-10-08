@@ -56,14 +56,17 @@ test.describe('posting application journey', () => {
       await expect(dialog).toBeVisible();
 
       // Honest disclosure and a bounded note field.
-      await expect(dialog.getByText('Your email is shared only if an interview is scheduled.')).toBeVisible();
+      await expect(dialog.getByText(/any member of that institution can view it/)).toBeVisible();
+      await expect(dialog.getByText(/the institution keeps the dossier and cover note you sent/)).toBeVisible();
       await expect(dialog.getByLabel(/Introductory note/i)).toHaveAttribute('maxlength', '4000');
 
       await dialog.getByLabel(/Introductory note/i).fill(COVER_NOTE);
       await expect(dialog.getByText(`${COVER_NOTE.length} / 4000`)).toBeVisible();
       await dialog.getByRole('button', { name: /Send application/i }).click();
       await expect(dialog.getByText('Application sent')).toBeVisible();
-      await dialog.getByRole('button', { name: 'Close', exact: true }).first().click();
+      // Escape closes the dialog and focus returns to the page (not lost on <body>).
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
 
       // The page refreshed itself: the button is gone and the real status is shown.
       await expect(page.getByTestId('applied-panel')).toBeVisible();
@@ -97,7 +100,7 @@ test.describe('posting application journey', () => {
     const page = await openAs(browser, 'institution');
     try {
       await page.goto(MATRIX_URL);
-      await expect(page.getByText('ADR 0020 Candidate Clearinghouse')).toBeVisible();
+      await expect(page.getByText('Candidate applications', { exact: true })).toBeVisible();
       await expect(page.getByTestId('total-applicants')).toHaveText('1');
 
       const row = page.getByTestId('applicant-row').filter({ hasText: APPLICANT_SCHOLAR.fullName });
@@ -109,9 +112,17 @@ test.describe('posting application journey', () => {
       await expect(row.getByTestId('move-declined')).toHaveCount(0);
 
       // The sealed dossier: degrees and confession come from the snapshot.
-      await row.getByRole('button', { name: /View Dossier/i }).click();
+      const opener = row.getByRole('button', { name: /View Dossier/i });
+      await opener.click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
+      // Focus moved into the dialog; Escape closes it and returns focus to the opener.
+      await expect(dialog.getByRole('button', { name: /Close candidate dossier/i })).toBeFocused();
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toHaveCount(0);
+      await expect(opener).toBeFocused();
+      await opener.click();
+      await expect(page.getByRole('dialog')).toBeVisible();
       await expect(dialog.getByTestId('dossier-frozen-note')).toContainText('Dossier as sealed on');
       await expect(dialog.getByText('E2E University')).toBeVisible();
       await expect(dialog.getByText(COVER_NOTE)).toBeVisible();
@@ -129,6 +140,7 @@ test.describe('posting application journey', () => {
 
       await row.getByTestId('move-under_review').click();
       await expect(row.getByTestId('application-status')).toHaveText('Under review');
+      await expect(page.getByTestId('status-live')).toContainText('is now Under review');
       await expect(page.getByTestId('status-error')).toHaveCount(0);
       // Next valid moves from under review.
       await expect(row.getByTestId('move-interview_scheduled')).toBeVisible();
@@ -154,6 +166,7 @@ test.describe('posting application journey', () => {
       await expect(row.getByTestId('application-status')).toHaveText('Under review');
 
       await row.getByRole('button', { name: /Withdraw application/i }).click();
+      await expect(page.getByRole('alertdialog')).toContainText('The institution will keep the dossier and cover note you sent.');
       await page.getByRole('button', { name: /Yes, withdraw/i }).click();
       await expect(row.getByTestId('application-status')).toHaveText('Withdrawn');
       await expect(row.getByRole('button', { name: /Withdraw application/i })).toHaveCount(0);
@@ -161,6 +174,7 @@ test.describe('posting application journey', () => {
       // The posting page shows the real status and no way to apply again.
       await page.goto(POSTING_URL);
       await expect(page.getByTestId('applied-panel').getByTestId('application-status')).toHaveText('Withdrawn');
+      await expect(page.getByText('You cannot apply to this position again.')).toBeVisible();
       await expect(page.getByRole('button', { name: /Express Interest/i })).toHaveCount(0);
     } finally {
       await page.context().close();

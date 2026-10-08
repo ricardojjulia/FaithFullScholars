@@ -11,7 +11,7 @@ import {
 } from '@/lib/postings/application-status';
 
 /**
- * Posting applications (ADR 0027, migration 20261009090000) evaluated as real
+ * Posting applications (ADR 0027, migration 20261012090000) evaluated as real
  * `anon` / `authenticated` callers, the way PostgREST runs requests: SET LOCAL ROLE
  * plus JWT claims, inside transactions that are rolled back. The two concurrency
  * tests commit under a unique marker and clean up after themselves.
@@ -200,7 +200,7 @@ describe('Posting applications — real database roles', () => {
   // ===========================================================================
   describe('migration preflight', () => {
     const sql = fs.readFileSync(
-      path.resolve(process.cwd(), 'supabase/migrations/20261009090000_posting_applications.sql'),
+      path.resolve(process.cwd(), 'supabase/migrations/20261012090000_posting_applications.sql'),
       'utf8'
     );
     const block = sql.slice(sql.indexOf('-- PREFLIGHT-BEGIN'), sql.indexOf('-- PREFLIGHT-END'));
@@ -799,6 +799,36 @@ describe('Posting applications — real database roles', () => {
     });
   });
 
+  describe('guard: platform admins are bound when they are a party', () => {
+    it('an admin who is a member cannot edit sealed content or withdraw for the scholar, but can triage like any member', async () => {
+      await as(asAdmin, async () => { await memberOf(INST_A, 'owner', ADMIN_ACCOUNT); await seedApplication(); }, async () => {
+        for (const set of [`cover_note = 'Rewritten by an admin member'`, `dossier_snapshot = '{"forged":true}'::jsonb`]) {
+          const err = await failure(`UPDATE public.posting_applications SET ${set}`);
+          expect(err.code, set).toBe('42501');
+          expect(err.message, set).toMatch(/sealed/);
+        }
+        expect((await failure(`UPDATE public.posting_applications SET status = 'withdrawn'`)).message).toMatch(/only the applicant can withdraw/);
+        expect((await client.query(`UPDATE public.posting_applications SET status = 'under_review'`)).rowCount).toBe(1);
+      });
+    });
+
+    it('an admin who is the applicant can only withdraw', async () => {
+      await as(
+        asAdmin,
+        async () => {
+          await client.query(`INSERT INTO public.scholars (account_id, slug, full_name, profile_status) VALUES ($1, 'admin-applicant-probe', 'Admin Applicant', 'draft')`, [ADMIN_ACCOUNT]);
+          const sid = (await client.query(`SELECT id FROM public.scholars WHERE account_id = $1`, [ADMIN_ACCOUNT])).rows[0].id;
+          await seedApplication({ scholar: sid });
+        },
+        async () => {
+          expect((await failure(`UPDATE public.posting_applications SET cover_note = 'Edited by the admin applicant'`)).message).toMatch(/sealed/);
+          expect((await failure(`UPDATE public.posting_applications SET status = 'under_review'`)).message).toMatch(/applicants can only withdraw/);
+          expect((await client.query(`UPDATE public.posting_applications SET status = 'withdrawn'`)).rowCount).toBe(1);
+        }
+      );
+    });
+  });
+
   // ===========================================================================
   // 4. Visibility
   // ===========================================================================
@@ -1024,11 +1054,11 @@ describe('Posting applications — real database roles', () => {
       });
     });
 
-    it('is readable by members and admins but not by the applicant, and writable by no API caller', async () => {
+    it('is readable by members, the applicant and admins (not other scholars), and writable by no API caller', async () => {
       const setup = async () => { await memberOf(INST_A); await seedApplication(); await client.query(`UPDATE public.posting_applications SET status = 'under_review'`); };
       await as(asMember, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
       await as(asAdmin, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
-      await as(asScholarA, setup, async () => { expect(await events()).toEqual([]); });
+      await as(asScholarA, setup, async () => { expect((await events()).length).toBeGreaterThan(0); });
       await as(asScholarB, setup, async () => { expect(await events()).toEqual([]); });
       await as(asMember, setup, async () => {
         for (const sql of [
@@ -1071,6 +1101,25 @@ describe('Posting applications — real database roles', () => {
           expect(await contact(id), st).toBe(st === 'interview_scheduled' ? SCHOLAR_A_EMAIL : null);
         });
       }
+    });
+
+    it('logs every release as a contact_revealed event, and logs nothing when nothing is released', async () => {
+      let id = '';
+      await as(asMember, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'interview_scheduled' })).id; }, async () => {
+        const kinds = async () => (await client.query(`SELECT event_kind, actor_account_id FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows;
+        expect(await kinds()).toEqual([]);
+        expect(await contact(id)).toBe(SCHOLAR_A_EMAIL);
+        expect(await kinds()).toEqual([{ event_kind: 'contact_revealed', actor_account_id: MEMBER_ACCOUNT }]);
+      });
+      await as(asMember, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'under_review' })).id; }, async () => {
+        expect(await contact(id)).toBeNull();
+        expect((await client.query(`SELECT count(*)::int AS n FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows[0].n).toBe(0);
+      });
+      // The applicant can read the log of reveals, and nobody can forge or erase one.
+      await as(asScholarA, async () => { await memberOf(INST_A); id = (await seedApplication({ status: 'interview_scheduled' })).id; await client.query(`INSERT INTO public.posting_application_events (application_id, institution_id, event_kind, to_status) VALUES ($1, $2, 'contact_revealed', 'interview_scheduled')`, [id, INST_A]); }, async () => {
+        expect((await client.query(`SELECT count(*)::int AS n FROM public.posting_application_events WHERE event_kind = 'contact_revealed'`)).rows[0].n).toBe(1);
+        expect((await failure(`DELETE FROM public.posting_application_events`)).code).toBe('42501');
+      });
     });
 
     it('never releases it to the applicant, even when the applicant is also a member', async () => {

@@ -1,6 +1,6 @@
 # ADR 0027: Posting Applications with Frozen Dossiers
 
-- **Status:** Accepted. Built on `feat/posting-applications`; migration `20261009090000` not yet applied to production (pending deploy).
+- **Status:** Accepted. Built on `feat/posting-applications`; migration `20261012090000` not yet applied to production (pending deploy).
 - **Date:** 2026-10-08
 - **Deciders:** Core Engineering (owner-approved story and brief, 2026-10-08)
 - **Builds on:** ADR 0020, ADR 0022, ADR 0023, ADR 0025, ADR 0026
@@ -34,20 +34,23 @@ Research on `main` (2026-10-07) found that ADR 0020 was not working in productio
    - the applicant may move `submitted`, `under_review` or `interview_scheduled` to `withdrawn`;
    - same status is a no-op; everything else is refused; `withdrawn` and `declined` are terminal;
    - a person who is both applicant and member is treated as the applicant;
-   - the guard maintains `status_changed_at`.
+   - the guard maintains `status_changed_at`;
+   - the guard binds every caller running as `anon` or `authenticated`, platform admins included: an admin who is also the applicant or a member cannot edit sealed content or withdraw for the scholar. Only the service role and direct database sessions are exempt (the notes guard follows the same rule).
 
    Every rule sits on one line ending `-- check:<name>` so a test can remove exactly one rule in a rolled-back transaction and prove the refusal comes from that rule.
 5. **Private notes in a separate table, `posting_application_notes`.** RLS works per row, so a column on the application could not hide notes from the scholar. One row per application, with a composite foreign key `(application_id, institution_id)` to the application, so a note can only point at an application of its own institution. Access is limited to members who are not the applicant; admins can read. The guard derives `institution_id`, forces `updated_by` to the caller and makes the key columns immutable.
-6. **An append-only audit, `posting_application_events`**, written by a SECURITY DEFINER trigger `AFTER INSERT OR UPDATE OF status`. Users can only read it (members who are not the applicant, and admins).
-7. **Contact is released late.** `public.get_application_contact(application)` is STABLE SECURITY DEFINER and returns the scholar's account login email only to a member of the posting institution, only at `interview_scheduled`, and never to the applicant. The API sends it with `Cache-Control: no-store`.
+6. **An audit trail, `posting_application_events`** (append-only for API callers), written by SECURITY DEFINER code only: a trigger `AFTER INSERT OR UPDATE OF status`, and `get_application_contact`. An `event_kind` column (`status` default, or `contact_revealed`) separates status changes from reveals of the applicant's email. Members, the applicant and admins can read it; nobody calling through the API can write or delete.
+7. **Contact is released late and audited.** `public.get_application_contact(application)` is VOLATILE SECURITY DEFINER (it writes the reveal event) and returns the scholar's account login email only to a member of the posting institution, only at `interview_scheduled`, and never to the applicant. Any member can view it. The API sends it with `Cache-Control: no-store`. The apply dialog says all of this, and that after a withdrawal the institution keeps the dossier and cover note.
 8. **API and app.** All routes use the caller's client; no service-role client appears on any of these paths. They return 401 when signed out, 503 when the session lookup fails, validate UUIDs and log error codes only. `getPostingApplicantReport` now reads with the member's own client under RLS in two queries (applications, then the posting), so it leaves the service-role allow-list. Status vocabulary and the transition maps live in `lib/postings/application-status.ts`; an integration sweep compares them against the database guard so they cannot drift. The matrix offers only valid next moves, surfaces errors, shows the frozen dossier and notes, and reveals contact only at the interview stage. One CSV module neutralises spreadsheet formula injection.
-9. **Fake data removed.** The `[Common App` inquiries are deleted from the pilot seed. Rows already in the pilot database are left as harmless inquiries.
-10. **Deferred by design:** email notifications, interview scheduling (the conference hub slice), and messaging inside applications.
+9. **No derived confessional "fit" score (owner decision, 2026-10-08).** The matrix, the KPI cards, the CSV and the report types show what the scholar DECLARED (name, adherence level, exception notes, from the frozen snapshot) beside the posting's stated `confessional_requirements` and standard. The platform does not score or rate the match, and this path no longer calls `lib/search/confessional-matcher.ts`. A regression test fails if a fit, score or alignment column returns.
+10. **Fake data removed.** The `[Common App` inquiries are deleted from the pilot seed. Rows already in the pilot database are left as harmless inquiries.
+11. **Deferred by design:** email notifications, interview scheduling (the conference hub slice), and messaging inside applications.
 
 Defaults confirmed by the owner (2026-10-08): forward-only transitions with decline only after review; no reapplying after withdrawal; the posting deadline is not enforced; every member can triage; syllabi and CV are not sealed; contact is the account login email.
 
 ## Consequences
 
+- **Deploy order:** PR #67 (migration `20261010090000`) and PR #68 (`20261011090000`) land first; this migration is `20261012090000`.
 - **Positive:**
   - Express interest works and cannot be forged: institution, status and snapshot are never client input.
   - The matrix shows real applicants only, scoped by RLS to the member's institution.

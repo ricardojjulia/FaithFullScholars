@@ -16,6 +16,8 @@ interface ApplyPanelProps {
   postingId: string;
   postingTitle: string;
   institutionName: string;
+  /** The posting page path, used as the post-login destination. */
+  nextPath: string;
 }
 
 /**
@@ -25,13 +27,13 @@ interface ApplyPanelProps {
  * tree for every state), so it survives the server refresh that turns "apply" into
  * "applied" and can finish showing its confirmation.
  */
-export function ApplyPanel({ state, postingId, postingTitle, institutionName }: ApplyPanelProps) {
+export function ApplyPanel({ state, postingId, postingTitle, institutionName, nextPath }: ApplyPanelProps) {
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
 
   return (
     <>
-      <ApplyContent state={state} postingTitle={postingTitle} onApply={() => setModalOpen(true)} />
+      <ApplyContent state={state} postingTitle={postingTitle} nextPath={nextPath} onApply={() => setModalOpen(true)} />
       <ExpressInterestModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -47,22 +49,24 @@ export function ApplyPanel({ state, postingId, postingTitle, institutionName }: 
 function ApplyContent({
   state,
   postingTitle,
+  nextPath,
   onApply,
 }: {
   state: ApplyState;
   postingTitle: string;
+  nextPath: string;
   onApply: () => void;
 }) {
   const { t } = useTranslation();
 
   switch (state.kind) {
     case 'institution':
-      return null;
+      return <p className="text-xs text-slate-600 dark:text-slate-400">{t('common_app.institution_note')}</p>;
 
     case 'signed_out':
       return (
         <Link
-          href="/login"
+          href={`/login?next=${encodeURIComponent(nextPath)}`}
           className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors"
         >
           {t('common_app.sign_in_to_apply')}
@@ -118,6 +122,9 @@ function ApplyContent({
           >
             {t('common_app.view_my_applications')}
           </Link>
+          {state.status === 'withdrawn' && (
+            <p className="text-xs text-slate-600 dark:text-slate-400">{t('common_app.withdrawn_no_reapply')}</p>
+          )}
           {isOpenApplication(state.status) && (
             <WithdrawApplicationButton applicationId={state.applicationId} postingTitle={postingTitle} />
           )}

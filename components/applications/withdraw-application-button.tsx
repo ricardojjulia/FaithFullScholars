@@ -67,6 +67,7 @@ export function WithdrawApplicationButton({ applicationId, postingTitle }: Withd
       className="space-y-3 p-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50/60 dark:bg-rose-950/30"
     >
       <p className="text-xs text-slate-800 dark:text-slate-200">{t('common_app.withdraw_confirm', { posting: postingTitle })}</p>
+      <p className="text-xs text-slate-700 dark:text-slate-300">{t('common_app.withdraw_retention')}</p>
       {error && (
         <p role="alert" className="text-xs text-rose-700 dark:text-rose-300">
           {error}

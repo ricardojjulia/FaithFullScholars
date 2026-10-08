@@ -115,11 +115,11 @@ describe('what the posting page offers (loadApplyState)', () => {
 });
 
 describe('ApplyPanel states', () => {
-  const props = { postingId: 'p-1', postingTitle: 'Adjunct NT', institutionName: 'Real Seminary' };
+  const props = { postingId: 'p-1', postingTitle: 'Adjunct NT', institutionName: 'Real Seminary', nextPath: '/opportunities/adjunct-nt' };
 
   it('links a signed-out visitor to sign in', () => {
     const markup = html(createElement(ApplyPanel, { ...props, state: { kind: 'signed_out' } }));
-    expect(markup).toContain('href="/login"');
+    expect(markup).toContain('href="/login?next=%2Fopportunities%2Fadjunct-nt"');
     expect(markup).toContain('Sign in to apply');
   });
 
@@ -128,8 +128,11 @@ describe('ApplyPanel states', () => {
     expect(html(createElement(ApplyPanel, { ...props, state: { kind: 'not_eligible', hasProfile: false } }))).toContain('href="/dashboard/onboarding"');
   });
 
-  it('renders nothing for institution users', () => {
-    expect(html(createElement(ApplyPanel, { ...props, state: { kind: 'institution' } }))).toBe('');
+  it('shows institution users no apply control, only a neutral note', () => {
+    const markup = html(createElement(ApplyPanel, { ...props, state: { kind: 'institution' } }));
+    expect(markup).toContain('Institution accounts do not apply to positions.');
+    expect(markup).not.toContain('<button');
+    expect(markup).not.toContain('href=');
   });
 
   it('renders the apply button, and no modal until it is opened', () => {
@@ -152,6 +155,7 @@ describe('ApplyPanel states', () => {
     );
     expect(markup).toContain(`data-status="${status}"`);
     expect(markup).not.toContain('Withdraw application');
+    if (status === 'withdrawn') expect(markup).toContain('You cannot apply to this position again.');
   });
 });
 
@@ -173,8 +177,12 @@ describe('ExpressInterestModal', () => {
     expect(markup()).toContain('0 / 4000');
   });
 
-  it('discloses that the email is shared only if an interview is scheduled', () => {
-    expect(markup()).toContain('Your email is shared only if an interview is scheduled.');
+  it('discloses who sees the login email, when, and what the institution keeps after withdrawal', () => {
+    const text = markup();
+    expect(text).toContain('Your account login email is shared with the institution');
+    expect(text).toContain('any member of that institution can view it');
+    expect(text).toContain('only once an interview is scheduled');
+    expect(text).toContain('the institution keeps the dossier and cover note you sent');
   });
 
   it('labels the note field for assistive technology', () => {

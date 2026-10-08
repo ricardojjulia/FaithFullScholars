@@ -223,12 +223,13 @@ export default async function OpportunityDetailPage({ params }: OpportunityPageP
                 postingId={posting.id}
                 postingTitle={posting.title}
                 institutionName={posting.institution?.name || 'Institution'}
+                nextPath={`/opportunities/${posting.slug}`}
               />
 
               {posting.deadline && (
                 <div className="pt-3 border-t border-indigo-100 dark:border-indigo-900/40 flex items-center gap-2 text-[11px] text-slate-500">
                   <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Application Deadline: {posting.deadline}</span>
+                  <span>Application deadline: {posting.deadline} (guidance only; applications are not closed automatically)</span>
                 </div>
               )}
             </div>

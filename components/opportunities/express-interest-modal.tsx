@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { X, Send, CheckCircle2, AlertCircle, Loader2, Briefcase, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/lib/i18n/i18n-context';
+import { useDialogFocus } from '@/components/portal/use-dialog-focus';
 
 export const MAX_COVER_NOTE_LENGTH = 4000;
 const MIN_COVER_NOTE_LENGTH = 5;
@@ -17,32 +18,27 @@ interface ExpressInterestModalProps {
   institutionName: string;
 }
 
-export function ExpressInterestModal({
-  isOpen,
+/** Mounts the dialog only while open, so its focus handling runs once per open. */
+export function ExpressInterestModal({ isOpen, ...rest }: ExpressInterestModalProps) {
+  if (!isOpen) return null;
+  return <ExpressInterestDialog {...rest} />;
+}
+
+function ExpressInterestDialog({
   onClose,
   onApplied,
   postingId,
   postingTitle,
   institutionName,
-}: ExpressInterestModalProps) {
+}: Omit<ExpressInterestModalProps, 'isOpen'>) {
   const { t } = useTranslation();
   const [coverNote, setCoverNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const noteRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    noteRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Focus moves in, is trapped, Escape closes, and focus returns to the opener.
+  useDialogFocus(dialogRef, onClose, '#express-interest-note');
 
   /** Friendly, honest message for each outcome the API reports. */
   function messageFor(res: Response): string {
@@ -101,6 +97,7 @@ export function ExpressInterestModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal={true}
         aria-labelledby="express-interest-title"
@@ -156,6 +153,7 @@ export function ExpressInterestModal({
               <p>{t('common_app.modal_intro', { institution: institutionName })}</p>
               <p>{t('common_app.dossier_includes')}</p>
               <p className="font-semibold text-slate-700 dark:text-slate-300">{t('common_app.disclosure')}</p>
+              <p>{t('common_app.retention')}</p>
             </div>
 
             {error && (
@@ -174,7 +172,6 @@ export function ExpressInterestModal({
               </label>
               <textarea
                 id="express-interest-note"
-                ref={noteRef}
                 rows={5}
                 maxLength={MAX_COVER_NOTE_LENGTH}
                 placeholder={t('common_app.note_placeholder')}
