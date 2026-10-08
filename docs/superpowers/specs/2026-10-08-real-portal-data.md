@@ -102,3 +102,96 @@ As a **scholar** or an **institution user**, every number, list and status I see
    - drop "average response time";
    - remove directory views and their trend until telemetry exists;
    - the month-over-month inquiry change is computed from `created_at`.
+
+## Technical brief (spec-writer, 2026-10-08)
+
+**No schema, RLS or migration change.** The existing policies already cover these reads and deletes, including member DELETE on `saved_*`. Admins pass RLS, so every query also filters explicitly on the scholar or institution taken from the session.
+
+### Pages
+All pages use the user/RLS client (never the admin client), call their own guard, and catch data errors in try/catch. A failed load shows an amber panel and never fake zeros. Logs carry codes only.
+
+- **`/institution`.** Server component.
+  - Identity: `requireInstitutionMember()` gives the institution.
+  - Profile: `fetchInstitutionProfile` with a narrowed select. Accreditation is shown when present. "Verified" appears only when the institution is approved, otherwise "Pending verification".
+  - Stats: `fetchInstitutionStats` is rewritten with `head` counts.
+    - It runs the queries in `Promise.all` and throws on error.
+    - Existing field names are kept.
+    - It adds `awaitingInquiries`.
+  - Average response time is removed.
+- **`/institution/saved`.**
+  - The server page loads `fetchSaved*OrThrow`. The exported non-throwing wrappers stay.
+  - A new client `components/institution/saved-lists.tsx` renders the lists.
+  - Remove is a pessimistic `DELETE /api/institution/saved-scholars?scholarId=` (and the courses equivalent).
+    - It is idempotent and returns `{removed}`.
+    - It validates the UUID, uses `resolveInstitutionAccess`, and never takes a client row id.
+  - The toggle POST stays for add.
+  - Unavailable profiles say so instead of breaking.
+- **`/dashboard`.** Server component.
+  - Uses `requireSignedIn` and a new `fetchScholarDashboardSummary(supabase, scholarId, now)`, which runs 5 light queries.
+  - Pure mappers:
+    - `initialsFrom`;
+    - `profileStatusLabel`;
+    - `revisionStatusText` (ADR 0024 vocabulary);
+    - `inquiryTrend` (rolling 30 days compared with the previous 30, no percentages);
+    - `summarizeAvailability`.
+  - Course count: public courses.
+  - Directory views are removed.
+  - A user with no scholar profile sees an onboarding prompt.
+- **`/dashboard/inquiries`.**
+  - The server page calls `fetchScholarInquiriesOrThrow` and maps the rows through `toInboxItems`.
+  - The inbox drops `DEFAULT_INQUIRIES` and rolls back on a failed PATCH, which was previously masked.
+  - Labels move to `lib/inquiries/labels.ts`.
+- **`/dashboard/analytics`.**
+  - Removed: the "Live Feed" badge.
+  - Added: a prominent `role=note` banner, "Sample data — analytics are coming soon".
+  - Trend pills become "Sample" chips.
+- **`/institution/conferences`.** A server page with an in-page staff check.
+  - Staff see the preview with the banner "Preview — demo data, nothing is saved".
+  - Everyone else sees "coming soon".
+  - The nav hides the link for non-staff.
+  - Inside the preview:
+    - the false "saved" message and the save action are removed;
+    - scores start unset;
+    - the hard-coded institution id and name are replaced with a preview placeholder.
+- **Public profile** (`app/scholars/[slug]`): the demo conference appearances are removed.
+
+### Tests
+- **Mapper units:**
+  - window boundaries with an injected `now`;
+  - every enum label;
+  - the rejected-only-if-newer rule.
+- **Page guards:**
+  - anonymous → login, with no fetch;
+  - non-member → 404;
+  - a member's fetch uses the session institution even when params carry another;
+  - conferences: non-staff get coming soon, staff get the preview.
+- **API (lockdown suite)**, for the DELETE routes:
+  - 401 when signed out;
+  - 403 for a foreign institution;
+  - 400 for a non-UUID id;
+  - an idempotent second call returns `removed:false`.
+- **Real-role integration** (`portal-data-rls.test.ts`):
+  - institutions A and B with different counts, so any leak is visible;
+  - a cross-institution delete removes zero rows;
+  - scholar S1 sees only S1's inquiries.
+- **Fixture regression:**
+  - per-file checks that the removed literals and constants are gone (not a tree-wide grep of seed names);
+  - positive checks that the pages call the real query functions;
+  - a tree-wide ban on the fixture UUID prefixes.
+- **E2E** (`portal-real-data.spec.ts`; the persona setup seeds one inquiry and an availability row):
+  - the institution home and the real shortlist;
+  - remove, using an isolated third scholar so the shared rows are left alone;
+  - the scholar dashboard and inbox;
+  - the analytics banner;
+  - the conference page hidden from the institution persona.
+- **Test-surface:** new `covers()` tags. The newly covered exemptions are deleted.
+
+### Docs
+README, CHANGELOG, the feature-catalog known-broken box, the plan, `test-surface.md`, and a status line on ADR 0021. **No new ADR**: there is no new boundary or contract.
+
+### Owner questions
+- **Q1:** include the Outreach Log (`/institution/inquiries`, also fixture data).
+- **Q2:** leave the institution layout as is, so only staff who are also members reach the preview.
+- **Q5:** should "awaiting response" include `read`?
+
+The brief also documents, without asking: multiple memberships use the earliest institution (no switcher), and the integration tests sign in real users through supabase-js.
