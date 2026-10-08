@@ -32,7 +32,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0017-sabbatical-swap-visiting-scholar-exchange-network.md`: SabbaticalSwap visiting scholar network, reciprocal housing/office exchange, and institutional hosting clearance.
 - `0018-doctoral-dissertation-supervision-and-external-reader-exchange.md`: Doctoral dissertation supervision exchange, external committee reader registry, and theological specialization matching.
 - `0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md`: ATS Standard 3 & ABHE faculty credentials self-study matrix, terminal doctorate ratio calculator, and RFC-4180 audit export.
-- `0020-confessional-common-application-and-applicant-matrix.md`: Confessional Common Application (scholar express-interest) and search committee applicant matrix. Council 12: express-interest is blocked by RLS and the matrix has no real applicants yet.
+- `0020-confessional-common-application-and-applicant-matrix.md`: Confessional Common Application (scholar express-interest) and search committee applicant matrix. Partially superseded by ADR 0027 (the data model).
 - `0021-theological-guild-annual-conference-interview-hub.md`: ETS/SBL/EPS annual conference mobile interview and presentation hub. Council 12: runs on in-memory demo data.
 - `0022-session-derived-identity-and-rls-helper-isolation.md`: Session-derived identity, page-level guards, RLS helper isolation in a non-exposed `private` schema, and trust-column guard triggers.
 - `0023-trust-guards-phase2-and-policy-matrix.md`: Trust guards for subscriptions, contracts, milestones, licensing, endorsements and consortiums; the policy matrix as the declared column-write contract.
@@ -40,6 +40,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0025-review-gated-profile-content.md`: Database-enforced review gating of public profile content (fail-closed `scholars` allow-list, child-table denial), relational promotion on approval, slug contract and always-live baseline. Resolves ADR 0024 residual risks 1 and 2.
 
 - `0026-persistent-enforced-rate-limits.md`: One persistent, service-role-only rate-limit primitive (`check_rate_limit`), enforced directory search and public postings limits, and the 10-per-hour inquiry cap enforced by a database guard (SQLSTATE `FS429`). Amends ADR 0008.
+- `0027-posting-applications-and-frozen-dossiers.md`: Real posting applications in their own table, a SQL-sealed dossier snapshot, a single `submit_posting_application` insert path, a transition-table guard, private institution notes, an audit trail, and late contact release. Partially supersedes ADR 0020.
 
 Each ADR must define:
 - **Status:** Proposed / Accepted / Superseded
