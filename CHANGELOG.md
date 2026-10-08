@@ -498,6 +498,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Staff triage workspace (`/admin/triage`) with queue filtering, detail drawer, and optimistic updates.
 
 ### Changed
+- **The release workflow now applies production migrations.** It is manual only (`workflow_dispatch`).
+  - **Dry run by default:** the `dry_run` input defaults to true, which only lists what `supabase db push` would apply.
+  - **Fails loudly:** the job fails if `SUPABASE_ACCESS_TOKEN` or `SUPABASE_PROJECT_REF` is missing. It used to print a notice and pass while doing nothing.
+  - **No staging step:** the job that silently skipped is removed, because there is no staging environment.
+  - **No automatic tag trigger:** pushing a `v*` tag no longer applies migrations.
+  - **Hardening:** `permissions: contents: read`, a concurrency group, the CLI pinned to 2.120.0, and the optional `SUPABASE_DB_PASSWORD` read from the environment rather than the command line.
+  - **Runbook:** see `docs/deployment/vercel-supabase.md`.
 - **Hygiene (Council Review 12, Prompt C).**
   - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.
   - **AI faculty matcher:** fictional `SEED_CANDIDATES` are used only under local `next dev`. Deployed builds no longer present invented scholars as real matches.
