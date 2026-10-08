@@ -5,4 +5,4 @@
  * floor cannot silently exceed reality. Lower it only when a migration removes
  * policies on purpose, and record why.
  */
-export const MIN_PUBLIC_POLICIES = 100;
+export const MIN_PUBLIC_POLICIES = 120; // measured in CI after all migrations (2026-10-08): 120 policies, 35 tables
