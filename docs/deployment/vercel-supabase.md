@@ -45,6 +45,19 @@ Required controls:
 - Allow public storage reads only for explicitly public files tied to approved profiles or courses.
 - Keep migrations in `supabase/migrations/`.
 
+### Applying production migrations (Release workflow)
+
+Migrations are applied by the **Release** workflow (`.github/workflows/release.yml`). It never runs automatically.
+
+1. **One-time setup.** Under **GitHub → Settings → Environments → production**:
+   - Add the secrets `SUPABASE_ACCESS_TOKEN` (Supabase → Account → Access Tokens) and `SUPABASE_PROJECT_REF`. Optionally add `SUPABASE_DB_PASSWORD`, if the CLI asks for the database password.
+   - Turn on **Required reviewers**, so every run waits for an approval before it can read the secrets.
+2. **Dry run.** Go to **Actions → Release → Run workflow**, choose the branch that holds the migration, and leave **dry_run** ticked. Approve the run. The "Plan" step lists the migrations that would be applied; check it is exactly what you expect.
+3. **Apply.** Run it again with **dry_run** unticked and approve it.
+4. **Verify.** Check the migration's verify queries (grants, triggers, RLS) in the SQL Editor or with a read-only script, then merge the PR so Vercel deploys the app.
+
+**Order:** migrations apply in timestamp order. If a PR's new routes need its tables, apply the migration before merging; otherwise merging first is fine. The preflight blocks inside each migration abort without changes on unsafe data.
+
 ## Local Development
 
 Expected local setup after the app scaffold exists:

@@ -1,5 +1,9 @@
-name: Release
+name: Release (production database migrations)
 
+# Manual only. Applies pending supabase/migrations to production with
+# `supabase db push`. Runs as a dry run (plan only) unless `dry_run` is unticked.
+# The `production` environment should require a reviewer, so every run waits
+# for an explicit approval before it can read the production secrets.
 on:
   workflow_dispatch:
     inputs:
@@ -7,9 +11,9 @@ on:
         description: 'Only list the migrations that would be applied (no changes)'
         type: boolean
         default: true
-  push:
-    tags:
-      - 'v*'
+
+permissions:
+  contents: read
 
 # Never run two migration pushes at once.
 concurrency:
@@ -17,78 +21,36 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-staging:
-    environment: staging
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
-        with:
-          version: latest
-      - name: Push migrations to staging
-        run: |
-          if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$STAGING_SUPABASE_PROJECT_REF" ]; then
-            echo "::notice title=Supabase Staging Skipped::SUPABASE_ACCESS_TOKEN or STAGING_SUPABASE_PROJECT_REF secret is not configured. Skipping staging migration push."
-            exit 0
-          fi
-          supabase db push --project-ref "$STAGING_SUPABASE_PROJECT_REF"
-        env:
-          STAGING_SUPABASE_PROJECT_REF: ${{ secrets.STAGING_SUPABASE_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
-  approve:
-    needs: [deploy-staging]
+  migrate:
+    name: Migrate production database
     environment: production
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      # Optional. The CLI reads it from the environment; it is never passed on the command line.
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
     steps:
-      - run: echo "Production approval verified"
+      - uses: actions/checkout@v5
 
-  deploy:
-    needs: approve
-    environment: production
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.120.0
+
       - name: Check production configuration
-        # Fail loudly instead of "skipping": a migration run that silently did
-        # nothing would look like success (AGENTS.md: checks must fail on bad state).
+        # Fail loudly: a run that silently did nothing would look like success
+        # (AGENTS.md: checks must fail on bad state).
         run: |
           if [ -z "$SUPABASE_ACCESS_TOKEN" ] || [ -z "$SUPABASE_PROJECT_REF" ]; then
             echo "::error title=Supabase production not configured::SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF must be set on the production environment."
             exit 1
           fi
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          echo "Ref: ${GITHUB_REF_NAME} @ ${GITHUB_SHA}  dry_run=${{ inputs.dry_run }}"
+
       - name: Plan (dry run) — migrations that would be applied
-        run: |
-          PW_ARGS=()
-          if [ -n "$SUPABASE_DB_PASSWORD" ]; then PW_ARGS=(--password "$SUPABASE_DB_PASSWORD"); fi
-          supabase db push --project-ref "$SUPABASE_PROJECT_REF" --dry-run "${PW_ARGS[@]}"
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      - name: Push migrations to production
-        # Tag pushes always apply; manual runs apply only when dry_run is unticked.
-        if: github.event_name == 'push' || inputs.dry_run == false
-        run: |
-          PW_ARGS=()
-          if [ -n "$SUPABASE_DB_PASSWORD" ]; then PW_ARGS=(--password "$SUPABASE_DB_PASSWORD"); fi
-          supabase db push --project-ref "$SUPABASE_PROJECT_REF" "${PW_ARGS[@]}"
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      - name: Notify deployment
-        if: success() && (github.event_name == 'push' || inputs.dry_run == false)
-        env:
-          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
-        run: |
-          if [ -n "$WEBHOOK_URL" ]; then
-            curl -s -X POST "$WEBHOOK_URL" -H "Content-Type: application/json" \
-              -d "{\"text\": \"✅ FaithFull Scholars deployed commit ${{ github.sha }} by ${{ github.actor }}\"}"
-          fi
+        run: supabase db push --project-ref "$SUPABASE_PROJECT_REF" --dry-run
+
+      - name: Apply migrations to production
+        if: inputs.dry_run == false
+        run: supabase db push --project-ref "$SUPABASE_PROJECT_REF"
