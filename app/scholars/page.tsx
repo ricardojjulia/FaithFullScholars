@@ -1,19 +1,41 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import Link from 'next/link';
-import { Lock, Search } from 'lucide-react';
+import { Clock, Lock, Search } from 'lucide-react';
 import { getPublicScholars, getTaxonomies, MAX_ANONYMOUS_SEARCH_PAGES } from '@/lib/domain/queries';
 import { ScholarCard } from '@/components/scholars/scholar-card';
 import { ScholarFilters } from '@/components/scholars/scholar-filters';
 import { ScholarRecommendationsRail } from '@/components/scholars/scholar-recommendations-rail';
 import { ScholarDirectoryHeader } from '@/components/scholars/scholar-directory-header';
+import { createClient } from '@/lib/supabase/server';
+import { checkSearchRequest, retryAfterSeconds } from '@/lib/search/rate-limiter';
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 
-export const metadata: Metadata = {
+// Rate limiting reads request headers, so this page must never be statically cached.
+export const dynamic = 'force-dynamic';
+
+const BASE_METADATA: Metadata = {
   title: 'Theological Faculty Directory | FaithFull Scholars',
   description:
     'Discover accredited theological professors, doctoral supervisors, and adjunct faculty filtered by discipline, tradition, and confessional standards.',
 };
+
+/**
+ * Every request that carries search or filter parameters is noindex, which
+ * includes any rate-limited response (its state is never a page worth indexing).
+ * Metadata deliberately does not call the limiter, so it never double-counts.
+ */
+export async function generateMetadata({ searchParams }: ScholarsPageProps): Promise<Metadata> {
+  const params = await searchParams;
+  return hasSearchParams(params) ? { ...BASE_METADATA, robots: { index: false, follow: false } } : BASE_METADATA;
+}
+
+function hasSearchParams(params: Awaited<ScholarsPageProps['searchParams']>): boolean {
+  return Boolean(
+    params.search || params.discipline || params.tradition || params.confession || params.available || params.page
+  );
+}
 
 interface ScholarsPageProps {
   searchParams: Promise<{
@@ -40,8 +62,29 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
     page: currentPage,
   };
 
+  // Rate limit (ADR 0008 / 0026): only requests that carry search or filter
+  // parameters count. A page cannot set a status code, so the rendered state is
+  // the response. Reads fail open: a limiter error never takes search down.
+  let retryAfter: number | null = null;
+  if (hasSearchParams(params) && !isPageGated) {
+    // An auth error must not take search down: fall back to the anonymous key.
+    let userId: string | null = null;
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      console.error('Search rate limit: session lookup failed; using the anonymous key');
+    }
+    const limit = await checkSearchRequest(await headers(), userId);
+    if (!limit.allowed) retryAfter = retryAfterSeconds(limit);
+  }
+  const isRateLimited = retryAfter !== null;
+
   const [scholars, taxonomies] = await Promise.all([
-    isPageGated ? Promise.resolve([]) : getPublicScholars(filters),
+    isPageGated || isRateLimited ? Promise.resolve([]) : getPublicScholars(filters),
     getTaxonomies(),
   ]);
 
@@ -68,7 +111,22 @@ export default async function ScholarsPage({ searchParams }: ScholarsPageProps) 
 
           {/* Center Column (5 or 6 of 12): Main Content Feed */}
           <section className="lg:col-span-8 xl:col-span-6 space-y-6">
-            {isPageGated ? (
+            {isRateLimited ? (
+              <div
+                role="alert"
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-10 text-center shadow-xs space-y-3"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 flex items-center justify-center mx-auto shadow-inner">
+                  <Clock className="w-6 h-6" aria-hidden="true" />
+                </div>
+                <h2 className="font-display font-bold text-lg tracking-tight text-slate-900 dark:text-white">
+                  Search paused
+                </h2>
+                <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
+                  You&apos;re searching quickly. Please wait {retryAfter} {retryAfter === 1 ? 'second' : 'seconds'} and try again.
+                </p>
+              </div>
+            ) : isPageGated ? (
               /* Anti-Harvesting Deep Pagination Wall (ADR 0008) */
               <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 sm:p-10 text-center shadow-xs space-y-4">
                 <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-300 flex items-center justify-center mx-auto border border-indigo-100 dark:border-indigo-900 shadow-inner">

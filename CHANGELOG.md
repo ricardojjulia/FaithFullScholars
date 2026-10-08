@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Persistent, enforced rate limits, backend (ADR 0026, migration `20261008090000_persistent_rate_limits.sql`).** Amends ADR 0008, whose limits were specified but enforced nowhere.
+  - **One limiter primitive:** `public.check_rate_limit(key, window, max)` is a SECURITY DEFINER fixed-window counter on the new `rate_limit_buckets` table (FORCE RLS, explicit deny-all policy, no API grants). It is atomic under concurrency, validates its inputs, deletes at most 100 buckets per call (each one hour after its own window ended, `FOR UPDATE SKIP LOCKED`), and is executable by `service_role` only. Keys are derived on the server (`search:ip:<hash>`, `search:user:<account>`); raw IPs are never stored or logged, and `RATE_LIMIT_SALT` is the HMAC-SHA256 key (required in production; `verify:deploy` fails without it).
+  - **Search is actually limited:** `/scholars` (requests with search, filter or page parameters) and `GET /api/postings` apply 15 per minute for anonymous visitors and 120 per minute for signed-in users. The page shows "Search paused ... please wait N seconds" and is noindex; the API returns 429 with `Retry-After` and `X-RateLimit-*` headers. If the limiter errors, search stays available and only the SQLSTATE is logged.
+  - **Hardening from review:** `inquiries.created_at` is server-controlled for restricted callers (forced to the clock on INSERT, immutable on UPDATE) so the cap cannot be evaded by back-dating; the inquiry 429 says the cap is shared by the institution and carries `Retry-After`; the limiter has a 1.5 s timeout (fails open); client IP comes from `x-vercel-forwarded-for` then `x-forwarded-for` (never `x-real-ip`), with a separate 60 per minute `unknown` bucket; the count helper is member-gated; raw error objects are no longer logged by the inquiry code.
+  - **Over-broad grant closed:** `check_search_rate_limit` is no longer executable by `authenticated` (service role only). It and `search_rate_limits` stay in place unused; removal is a follow-up.
+  - **Inquiry cap in the database:** the 10 per hour per institution cap is now a BEFORE INSERT guard (`trg_guard_inquiry_rate`, SQLSTATE `FS429`, advisory lock per institution), so direct PostgREST inserts are covered, it survives restarts and it fails closed. The in-memory limiter (`lib/inquiries/rate-limiter.ts`) is deleted; `sendInquiry` maps `FS429` to a friendly message with status 429.
+  - **Tests:** real-role integration suite with concurrency (20 parallel limiter hits, 14 parallel inquiry inserts) and in-suite rollback probes; unit tests for client keys, the limiter fail-open and fail-closed paths, the postings 429, the `/scholars` limited state and the action mapping. The `page:/scholars` and `api:GET /api/postings` test-surface exemptions were removed because they are now covered.
+  - **Docs:** ADR 0026, ADR 0008 amendment, `RATE_LIMIT_SALT` in `.env.example` and HOWTO. The stale `record_search_query` mention (no migration defines that function) was removed from the pinned-search-path entry here and in the feature catalog.
+  - Deploy: apply the migration first, then deploy the app. Until the migration is applied, search is not limited and the inquiry cap is not enforced in the database.
+- **Builds no longer depend on Google Fonts.** Plus Jakarta Sans and Geist Mono are now self-hosted through `next/font/local` (Latin subset, variable weights; SIL OFL 1.1, with the license texts in `app/fonts/`). A CI build had failed when it could not download a font from `fonts.gstatic.com`.
+- **Revision UX follow-ups (Council Review 13 minors).** The admin review queue gains a **Rejected** tab, and its `?status=` filter now accepts only known tab values. The draft preview gains a **Withdraw** button while a submission awaits review. The onboarding profile fields have labels linked to their inputs (`htmlFor`/`id`). The E2E journey now also submits and withdraws from the preview.
+- **Production deploys had silently stopped.** The Vercel `ignoreCommand` added in #51 (`[ "$VERCEL_ENV" != "production" ]`) skipped builds, including production builds of `main`. The likely cause is that `VERCEL_ENV` is not available in the ignore step.
+  - Production stayed on #50 (`f971bd4`), so #51, #54 (the Next.js 16.3.6 security bump) and #56 never deployed.
+  - The ignore command is removed, restoring the previously working behaviour.
+  - Migration `20261006090000` was applied to production first, then this was merged. Production deployed `eb52c39` on 2026-10-07 and passed a smoke test.
+  - Preview builds for branches will run again and fail without preview environment variables. Those failures are not required checks.
+  - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
+
+- **Scholar signup never created a profile.** It wrote non-existent `scholars` columns (`preferred_title`, `primary_institution`), ignored the error, and reported success. It now writes `title` and `current_institution`.
+- **Both signup flows now check every write.** A failure rolls back the half-created login, so there are no orphaned logins and no false success. They insert `accounts` rather than upserting, so an existing role is never rewritten, and they reject institution names that produce an empty slug.
+- **ATS accreditation matrix:** fabricated seed candidates are now shown only under local `next dev`. Previously this also happened with `ENABLE_DEV_ROUTES=true`, including in production.
+- **Feedback telemetry** no longer records the user-editable `user_metadata.role`.
+
+- **E2E Playwright Selector Resilience**:
+  - Updated `tests/e2e/translation-and-locale.spec.ts` to use `page.locator('header').first()` and `page.locator('footer').first()`, preventing strict mode locator resolution ambiguity.
+
+- **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019 / Phase 16)**:
+  - Authored Architectural Decision Record `docs/adr/0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md`.
+  - Implemented core calculation and export engine in `lib/accreditation/ats-matrix-generator.ts`:
+    - `isTerminalDoctorate(degree)`: Verifies research and ministerial doctorates (Ph.D., Th.D., D.Phil., D.Min., S.T.D., Ed.D., D.Miss., etc.) per ATS Standard 3 and ABHE Standard 11.
+    - `generateAccreditationMatrix(candidates)`: Aggregates institutional rosters, calculates terminal doctorate ratios, confessional affirmation ratios, publication totals, and evaluates ATS Standard 3 compliance (≥50% terminal doctorates).
+    - `exportAccreditationCsv(report)`: RFC-4180 compliant CSV generator with leading UTF-8 BOM (`\uFEFF`) ensuring native Microsoft Excel opening without encoding corruption.
+  - Implemented server-side loader in `lib/accreditation/ats-matrix-service.ts` connecting institutional shortlist candidates directly to the matrix engine under RLS isolation.
+  - Created `<ATSComplianceMatrixTable />` in `components/institution/ats-compliance-matrix-table.tsx` with executive academic styling, summary KPI cards (Total Faculty, Terminal Ratio with compliance badge, Scholarly Works, Confessional Ratio), credentials matrix table, CSV download, and print-optimized layout (`@media print`).
+  - Mounted dedicated institutional route at `app/(institution)/institution/saved/accreditation/page.tsx`.
+  - Added "Accreditation Matrix" action button on `/institution/saved` alongside the Committee Dossier button.
+  - Added `aria-current="page"` accessibility attribute to active navigation links in `components/institution/institution-nav.tsx`.
+  - Created branded root error handling boundaries:
+    - `app/not-found.tsx`: Dignified 404 page with navigation links to Faculty Directory, Course Catalog, and Home.
+    - `app/error.tsx`: Root client-side error boundary with incident diagnostic logging, "Try Again" retry action, and Home navigation.
+  - Added full bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under the `accreditation` namespace with 100% key parity.
+  - Authored comprehensive test suites:
+    - Unit tests: `tests/unit/ats-matrix-generator.test.ts` (6 passing tests).
+    - Playwright E2E browser tests: `tests/e2e/accreditation-matrix.spec.ts` (2 passing tests).
+  - All verification gates passed: 47 test files (238 vitest tests), 40 Playwright E2E browser tests, 35/35 RLS tables, 0 Splinter issues, and 59 Next.js App Router routes compiled cleanly.
+
+- **E2E Playwright Hydration Race Condition & WebServer Diagnostics Route Access**:
+  - Hardened `<LanguageSwitcher />` interaction in `tests/e2e/translation-and-locale.spec.ts` using Playwright's `expect.toPass()` polling retry pattern to eliminate click-dropping race conditions during client-side Next.js App Router hydration.
+  - Enhanced Course Catalog and Speaking Bureau test to explicitly verify bidirectional language transitions (`en` → `es` → `en`).
+  - Added `ENABLE_DEV_ROUTES: 'true'` to `playwright.config.ts` `webServer.env` allowing unauthenticated E2E browser tests to verify `/dev/status` system diagnostics in production webServer mode.
+
+- **Integration Test Concurrency & ADR 0005 Revision Invariant Enforcement**:
+  - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
+    - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
+    - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
+    - Staged scholar initial state as `draft` in `tests/integration/security-guardrails-and-rls.test.ts` and `tests/integration/admin-review.test.ts` before atomic elevation to `approved` alongside `published_revision_id`, eliminating transient zero-revision windows during test setup.
+
+- **Database Security Hardening & Vulnerability Remediation (Supabase Splinter Advisor)**:
+  - **Eliminated `rls_references_user_metadata` Vulnerability**: Removed mutable JWT `user_metadata` checks from RLS policies in favor of server-verified `auth.uid()` references, preventing unprivileged clients from tampering with role or tenant metadata.
+  - **Pinned Function Search Paths (`function_search_path_mutable`)**: Applied `SET search_path = public, pg_temp` to all stored PostgreSQL functions and triggers (`handle_updated_at`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), preventing malicious search-path hijacking.
+  - **Restricted Permissive Insert Policies (`rls_policy_always_true`)**: Hardened `inquiries` insert policy (`"Institutions or visitors can submit inquiries"`) by verifying target scholar existence rather than accepting blanket `WITH CHECK (true)` bypasses.
+  - **Auth RLS InitPlan Optimization (`auth_rls_initplan`)**: Converted repetitive inline `auth.uid()` policy calls across 16 policies into scalar subqueries `(select auth.uid())`, allowing PostgreSQL query planner to evaluate auth context once per query instead of re-evaluating per row.
+  - **Covering Indexes for Unindexed Foreign Keys (`unindexed_foreign_keys`)**: Added 20 covering indexes on foreign key columns across child tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `inquiries`, `saved_scholars`, `saved_courses`, etc.), preventing full sequential table scans during cascading deletes and foreign key validation.
+  - **Enforced Defense-in-Depth RLS (`FORCE ROW LEVEL SECURITY`)**: Enabled `FORCE ROW LEVEL SECURITY` across all 25 public tables to ensure RLS is enforced regardless of table ownership.
+- **SSR Hydration Mismatch in `LanguageSwitcher` / `I18nProvider`**:
+  - Replaced client-branching `useState(() => if (typeof window !== 'undefined'))` with React 19 idiomatic `useSyncExternalStore` in `lib/i18n/i18n-context.tsx` to eliminate hydration mismatch errors when `fs_locale` differs from server defaults.
+  - Added `suppressHydrationWarning` on `components/shell/language-switcher.tsx` button and flag/code spans for defense-in-depth.
+  - Ensured zero cascading renders and 100% compliance with React 19 ESLint rules.
+- **CI / Supabase Local Stack & Test Environment Fix**:
+  - Adopted official `supabase/setup-cli@v1` in GitHub Actions CI to spin up the complete local Supabase stack (`supabase start`) matching local development configuration, including PostgreSQL, PostgREST API, Auth, and automatic migration/seeding.
+  - Provided explicit `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to the `unit-tests` job step.
+  - Upgraded GitHub Actions runners to Node.js 24 (`node-version: '24'`) across lint, typecheck, unit-tests, and build jobs to resolve deprecation warnings and package engine requirements.
+  - Isolated test session IDs and fingerprints dynamically in `tests/integration/triage.test.ts` to prevent rate-limit collisions across consecutive test executions.
+  - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
+
 ### Added
 - **Repository presentation aligned with ChurchCore-Orthos.**
   - **README:** rewritten as an overview with a hero banner (`public/assets/brand/hero-banner.svg`), stack badges and live CI/E2E status badges. It adds sections on why the project exists, project status (including the not-launch-ready caveats), personas, quality gates and the software factory, plus Mermaid diagrams of the product surface, architecture, revision lifecycle and factory flow.
@@ -21,7 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **No data loss:** `GET /api/scholars/revisions` and the admin diff baseline are built from the scholar's real rows (`loadLiveProfileSnapshot`), so a first approval never removes existing credentials, publications or confessions. `GET` also returns `taxonomy` and `unresolved`; submit returns 422 with `unresolved` while entries do not match, and persists the slug-mapped snapshot. Submit now also rejects incomplete credential rows (400). The diff compares lists canonically and reports a changed primary discipline or tradition.
   - **Tests:** real-role `review-gated-content` suite with in-suite proof-of-failure probes (each guard replaced by a pass-through inside a rolled-back transaction), policy-matrix scenarios for the gated `scholars` columns and the five child tables (with a row-visibility check), a TS/SQL slug parity test, and unit tests for the resolver, sanitiser, diff, admin 422 mapping, submit gate and loader.
   - **Review fixes:** the migration now opens with an enforced read-only preflight (aborts with counts if an open revision would clear live rows: key `[]`, absent or not an array while live rows exist). Approval validates scalars in SQL before any write (length caps equal to `sanitizeSnapshot`, ORCID and Google Scholar shapes equal to the column CHECKs, timezone 100) and years 1000 to 2100 in lists; whitespace-only required text is empty and length caps apply to the raw value. A check or not-null violation during replacement becomes a generic FS002. `sanitizeSnapshot` clears a non-http(s) Google Scholar link and out-of-range years, and submit reports a bad Google Scholar link. Four lossy aliases were removed (`confessional baptist`, `evangelical free & independent`, `pastoral & practical theology`, `philosophical theology & apologetics`). The live loader orders disciplines, traditions and confessions deterministically. Integration tests now run one file at a time (separate vitest project) to stop cross-file deadlocks; unit tests stay parallel. Admin review logs record error codes only.
-  - Deploy: the migration enforces the preflight itself; deploy the app, then apply the migration close together.
+  - Deploy: the migration enforces the preflight itself; deploy the app, then apply the migration close together. Applied to production by the owner on 2026-10-07 and verified; ADR 0024 residual risks 1 and 2 are resolved there.
   - **Editor UI (frontend):** database-backed pickers store slugs (`TaxonomyMultiSelect` for disciplines and traditions with a Primary badge and Make primary; `ConfessionalStandardsSelector` now takes `standards` from the database and the hard-coded list is gone). New repeatable credentials and publications editors (add, remove, move, cap of 50, labelled fields, DOI or http(s) validation). Unmatched entries show as removable alerts, and Save or Submit is disabled with a visible reason while entries are unmatched or rows are incomplete. Onboarding maps CV suggestions to slugs, lists unmatched ones, and lets the scholar edit disciplines, traditions, credentials and publications. The preview shows taxonomy names. The admin review panel lists unmatched entries on a 422. E2E covers adding a credential and picking a tradition, then save, reload, submit and withdraw.
   - **Review fixes (frontend).**
     - **CV import never wipes lists.** An empty parsed list leaves the draft list untouched; a non-empty one is merged (existing entries first, new ones appended, duplicates skipped) and a notice says what happened. No `field_of_study` is invented any more; an empty field is flagged for the scholar. The unmatched-suggestion notice has a "Handled" button per entry.
@@ -429,73 +505,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Personal doctrinal statements and historic confessional standards taxonomy (ADR 0001, ADR 0003).
   - Draft vs. published profile revisioning model ([ADR 0005](docs/adr/0005-draft-published-profile-revisions.md)).
   - Assisted CV onboarding with automated PDF extraction in Phase 3.
-
-### Fixed
-- **Builds no longer depend on Google Fonts.** Plus Jakarta Sans and Geist Mono are now self-hosted through `next/font/local` (Latin subset, variable weights; SIL OFL 1.1, with the license texts in `app/fonts/`). A CI build had failed when it could not download a font from `fonts.gstatic.com`.
-- **Revision UX follow-ups (Council Review 13 minors).** The admin review queue gains a **Rejected** tab, and its `?status=` filter now accepts only known tab values. The draft preview gains a **Withdraw** button while a submission awaits review. The onboarding profile fields have labels linked to their inputs (`htmlFor`/`id`). The E2E journey now also submits and withdraws from the preview.
-- **Production deploys had silently stopped.** The Vercel `ignoreCommand` added in #51 (`[ "$VERCEL_ENV" != "production" ]`) skipped builds, including production builds of `main`. The likely cause is that `VERCEL_ENV` is not available in the ignore step.
-  - Production stayed on #50 (`f971bd4`), so #51, #54 (the Next.js 16.3.6 security bump) and #56 never deployed.
-  - The ignore command is removed, restoring the previously working behaviour.
-  - Migration `20261006090000` was applied to production first, then this was merged. Production deployed `eb52c39` on 2026-10-07 and passed a smoke test.
-  - Preview builds for branches will run again and fail without preview environment variables. Those failures are not required checks.
-  - To stop preview builds, disable preview deployments in the Vercel project settings rather than through an ignore command that CI cannot verify.
-
-- **Scholar signup never created a profile.** It wrote non-existent `scholars` columns (`preferred_title`, `primary_institution`), ignored the error, and reported success. It now writes `title` and `current_institution`.
-- **Both signup flows now check every write.** A failure rolls back the half-created login, so there are no orphaned logins and no false success. They insert `accounts` rather than upserting, so an existing role is never rewritten, and they reject institution names that produce an empty slug.
-- **ATS accreditation matrix:** fabricated seed candidates are now shown only under local `next dev`. Previously this also happened with `ENABLE_DEV_ROUTES=true`, including in production.
-- **Feedback telemetry** no longer records the user-editable `user_metadata.role`.
-
-- **E2E Playwright Selector Resilience**:
-  - Updated `tests/e2e/translation-and-locale.spec.ts` to use `page.locator('header').first()` and `page.locator('footer').first()`, preventing strict mode locator resolution ambiguity.
-
-- **ATS/ABHE Accreditation Self-Study Faculty Credentials Matrix & Standard 3 Compliance Report (ADR 0019 / Phase 16)**:
-  - Authored Architectural Decision Record `docs/adr/0019-ats-abhe-accreditation-self-study-faculty-credentials-matrix.md`.
-  - Implemented core calculation and export engine in `lib/accreditation/ats-matrix-generator.ts`:
-    - `isTerminalDoctorate(degree)`: Verifies research and ministerial doctorates (Ph.D., Th.D., D.Phil., D.Min., S.T.D., Ed.D., D.Miss., etc.) per ATS Standard 3 and ABHE Standard 11.
-    - `generateAccreditationMatrix(candidates)`: Aggregates institutional rosters, calculates terminal doctorate ratios, confessional affirmation ratios, publication totals, and evaluates ATS Standard 3 compliance (≥50% terminal doctorates).
-    - `exportAccreditationCsv(report)`: RFC-4180 compliant CSV generator with leading UTF-8 BOM (`\uFEFF`) ensuring native Microsoft Excel opening without encoding corruption.
-  - Implemented server-side loader in `lib/accreditation/ats-matrix-service.ts` connecting institutional shortlist candidates directly to the matrix engine under RLS isolation.
-  - Created `<ATSComplianceMatrixTable />` in `components/institution/ats-compliance-matrix-table.tsx` with executive academic styling, summary KPI cards (Total Faculty, Terminal Ratio with compliance badge, Scholarly Works, Confessional Ratio), credentials matrix table, CSV download, and print-optimized layout (`@media print`).
-  - Mounted dedicated institutional route at `app/(institution)/institution/saved/accreditation/page.tsx`.
-  - Added "Accreditation Matrix" action button on `/institution/saved` alongside the Committee Dossier button.
-  - Added `aria-current="page"` accessibility attribute to active navigation links in `components/institution/institution-nav.tsx`.
-  - Created branded root error handling boundaries:
-    - `app/not-found.tsx`: Dignified 404 page with navigation links to Faculty Directory, Course Catalog, and Home.
-    - `app/error.tsx`: Root client-side error boundary with incident diagnostic logging, "Try Again" retry action, and Home navigation.
-  - Added full bilingual internationalization catalogs in `lib/i18n/messages/en.json` and `lib/i18n/messages/es.json` under the `accreditation` namespace with 100% key parity.
-  - Authored comprehensive test suites:
-    - Unit tests: `tests/unit/ats-matrix-generator.test.ts` (6 passing tests).
-    - Playwright E2E browser tests: `tests/e2e/accreditation-matrix.spec.ts` (2 passing tests).
-  - All verification gates passed: 47 test files (238 vitest tests), 40 Playwright E2E browser tests, 35/35 RLS tables, 0 Splinter issues, and 59 Next.js App Router routes compiled cleanly.
-
-- **E2E Playwright Hydration Race Condition & WebServer Diagnostics Route Access**:
-  - Hardened `<LanguageSwitcher />` interaction in `tests/e2e/translation-and-locale.spec.ts` using Playwright's `expect.toPass()` polling retry pattern to eliminate click-dropping race conditions during client-side Next.js App Router hydration.
-  - Enhanced Course Catalog and Speaking Bureau test to explicitly verify bidirectional language transitions (`en` → `es` → `en`).
-  - Added `ENABLE_DEV_ROUTES: 'true'` to `playwright.config.ts` `webServer.env` allowing unauthenticated E2E browser tests to verify `/dev/status` system diagnostics in production webServer mode.
-
-- **Integration Test Concurrency & ADR 0005 Revision Invariant Enforcement**:
-  - Eliminated parallel execution race conditions between concurrent Vitest integration test workers:
-    - Scoped `tests/integration/domain-rls.test.ts` to persistent baseline scholars (`s.slug NOT LIKE 'test-%' AND s.slug NOT LIKE 'dr-inquiry%' AND s.slug NOT LIKE 'admin-review%'`) ensuring baseline revision integrity without interference from ephemeral parallel test records.
-    - Seeded approved profile revision and linked `published_revision_id` for `dr-inquiry-scholar` in `tests/integration/institution-inquiry.test.ts`, maintaining strict ADR 0005 compliance across all test fixtures.
-    - Staged scholar initial state as `draft` in `tests/integration/security-guardrails-and-rls.test.ts` and `tests/integration/admin-review.test.ts` before atomic elevation to `approved` alongside `published_revision_id`, eliminating transient zero-revision windows during test setup.
-
-- **Database Security Hardening & Vulnerability Remediation (Supabase Splinter Advisor)**:
-  - **Eliminated `rls_references_user_metadata` Vulnerability**: Removed mutable JWT `user_metadata` checks from RLS policies in favor of server-verified `auth.uid()` references, preventing unprivileged clients from tampering with role or tenant metadata.
-  - **Pinned Function Search Paths (`function_search_path_mutable`)**: Applied `SET search_path = public, pg_temp` to all stored PostgreSQL functions and triggers (`handle_updated_at`, `record_search_query`, `is_admin`, `get_current_scholar_id`, `is_institution_user`), preventing malicious search-path hijacking.
-  - **Restricted Permissive Insert Policies (`rls_policy_always_true`)**: Hardened `inquiries` insert policy (`"Institutions or visitors can submit inquiries"`) by verifying target scholar existence rather than accepting blanket `WITH CHECK (true)` bypasses.
-  - **Auth RLS InitPlan Optimization (`auth_rls_initplan`)**: Converted repetitive inline `auth.uid()` policy calls across 16 policies into scalar subqueries `(select auth.uid())`, allowing PostgreSQL query planner to evaluate auth context once per query instead of re-evaluating per row.
-  - **Covering Indexes for Unindexed Foreign Keys (`unindexed_foreign_keys`)**: Added 20 covering indexes on foreign key columns across child tables (`scholar_disciplines`, `scholar_traditions`, `scholar_confessions`, `inquiries`, `saved_scholars`, `saved_courses`, etc.), preventing full sequential table scans during cascading deletes and foreign key validation.
-  - **Enforced Defense-in-Depth RLS (`FORCE ROW LEVEL SECURITY`)**: Enabled `FORCE ROW LEVEL SECURITY` across all 25 public tables to ensure RLS is enforced regardless of table ownership.
-- **SSR Hydration Mismatch in `LanguageSwitcher` / `I18nProvider`**:
-  - Replaced client-branching `useState(() => if (typeof window !== 'undefined'))` with React 19 idiomatic `useSyncExternalStore` in `lib/i18n/i18n-context.tsx` to eliminate hydration mismatch errors when `fs_locale` differs from server defaults.
-  - Added `suppressHydrationWarning` on `components/shell/language-switcher.tsx` button and flag/code spans for defense-in-depth.
-  - Ensured zero cascading renders and 100% compliance with React 19 ESLint rules.
-- **CI / Supabase Local Stack & Test Environment Fix**:
-  - Adopted official `supabase/setup-cli@v1` in GitHub Actions CI to spin up the complete local Supabase stack (`supabase start`) matching local development configuration, including PostgreSQL, PostgREST API, Auth, and automatic migration/seeding.
-  - Provided explicit `DATABASE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to the `unit-tests` job step.
-  - Upgraded GitHub Actions runners to Node.js 24 (`node-version: '24'`) across lint, typecheck, unit-tests, and build jobs to resolve deprecation warnings and package engine requirements.
-  - Isolated test session IDs and fingerprints dynamically in `tests/integration/triage.test.ts` to prevent rate-limit collisions across consecutive test executions.
-  - Added `scripts/ci-bootstrap-db.sql` utility for standalone PostgreSQL bootstrap.
 
 ### Security
 - **`sharp` 0.35.4 → 0.35.5** (lockfile only, within Next's `^0.35.4` range). Fixes the high-severity librsvg vulnerability in the bundled libvips (GHSA-wq5f-xc86-pv6w / CVE-2026-96889). `npm audit --omit=dev` is now clean. `source-map-js` 1.2.2 (CVE-2026-93749) landed in #55.

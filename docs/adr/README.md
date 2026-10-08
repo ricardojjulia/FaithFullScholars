@@ -39,6 +39,7 @@ ADRs are sequentially numbered 4-digit markdown files:
 - `0024-scholar-revision-lifecycle-and-atomic-review.md`: Scholar draft/submit/withdraw lifecycle enforced by database guards, owner-and-admin-only revision reads, and the atomic service-role-only `review_profile_revision` function.
 - `0025-review-gated-profile-content.md`: Database-enforced review gating of public profile content (fail-closed `scholars` allow-list, child-table denial), relational promotion on approval, slug contract and always-live baseline. Resolves ADR 0024 residual risks 1 and 2.
 
+- `0026-persistent-enforced-rate-limits.md`: One persistent, service-role-only rate-limit primitive (`check_rate_limit`), enforced directory search and public postings limits, and the 10-per-hour inquiry cap enforced by a database guard (SQLSTATE `FS429`). Amends ADR 0008.
 
 Each ADR must define:
 - **Status:** Proposed / Accepted / Superseded

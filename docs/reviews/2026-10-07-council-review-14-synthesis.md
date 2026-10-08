@@ -3,7 +3,7 @@
 - **Date:** 2026-10-07
 - **Subject:** PR #62 (`feat/review-gated-profile-content`, ADR 0025, migration `20261007090000_review_gated_profile_content.sql`), reviewed through head `a5677ee`.
 - **Scope statement:** This Council was scoped to a single vertical slice. Seats run: Agent 1 (data/API), Agents 2 and 3 (routes/pages, UX/shell), and Agent 7 (Stakeholder & Trust Lens). Agent 4 (feature/competitive) and Agent 5 (Wildcard) were deliberately omitted for this slice. Agent 6 (Documenter) wrote this record. Individual agent reports were not written as separate files; findings are consolidated below.
-- **Result:** No real Critical findings. Merge awaits owner approval. Migration `20261007090000` is NOT applied to production (`20261006090000` is already applied).
+- **Result:** No real Critical findings. Merge awaits owner approval. Update 2026-10-07 (Documenter, after merge): migration `20261007090000` was applied to production by the owner (see section 8). At review time it was not applied.
 
 ## 1. Gates
 
@@ -54,7 +54,9 @@ Agents 2 and 3 ran concurrently with other agents in a single shared working tre
 
 ## 8. Deploy runbook
 
-Both migrations: `20261006090000` is ALREADY applied in production; `20261007090000` is not.
+Both migrations are now applied in production: `20261006090000` earlier, `20261007090000` on 2026-10-07 by the owner.
+
+**Outcome (2026-10-07):** the preflight passed (0 open revisions, no FK references, taxonomy 9/6/12, Lausanne name free). Verify output: `review_profile_revision`, `promote_snapshot_lists` and `resolve_taxonomy_id` executable by postgres and service_role only; child guard triggers exist on credentials, publications, scholar_confessions, scholar_disciplines and scholar_traditions; `trg_guard_scholars` exists; all 8 private helpers present; the `lausanne-covenant` (1974) row exists; version 20261007090000 recorded. The app (PR #62, `e9f8d57`) was already deployed; production smoke test passed (`/` 200, `/scholars` 200, `/login` 200, `/api/scholars/revisions` 401). The runbook below is kept as written for the record.
 
 1. Merge, so the app deploys first.
 2. Run the read-only preflight queries; the migration also self-checks (enforced `DO` block).

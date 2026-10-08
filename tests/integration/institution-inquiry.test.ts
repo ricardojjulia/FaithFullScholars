@@ -20,7 +20,6 @@ import {
   getDispatchedNotifications,
   clearDispatchedNotifications,
 } from '@/lib/notifications/email-service';
-import { resetInquiryRateLimits } from '@/lib/inquiries/rate-limiter';
 import { createAdminClient } from '@/lib/supabase/server';
 
 // These tests exercise business rules with the service role; RLS/tenant
@@ -146,7 +145,6 @@ describe('Institution Inquiry & Shortlist Integration (Phase 5)', () => {
       ON CONFLICT DO NOTHING
     `, [testApprovedInstId, testInstAccountId]);
 
-    resetInquiryRateLimits();
     clearDispatchedNotifications();
   });
 

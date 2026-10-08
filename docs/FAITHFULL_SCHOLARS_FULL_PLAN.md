@@ -46,7 +46,7 @@ FaithFull Scholars creates a trusted, searchable academic directory where:
 - **Hosting:** Vercel.
 - **Authentication:** Supabase Auth with cookie-based SSR sessions.
 - **Database:** Supabase Postgres with 100% Row Level Security (RLS) enforcement.
-- **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, token-bucket search rate limiting, deep-pagination walls, and signed storage URLs (ADR 0008).
+- **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, persistent database-enforced rate limiting (ADR 0008, ADR 0026; pending production migration), deep-pagination walls, and signed storage URLs (ADR 0008).
 - **File storage:** Supabase Storage with private encrypted buckets for CVs, full syllabi, and administrative review assets.
 - **External media:** YouTube and other external platforms for video, podcasts, and public course content.
 - **Styling & Iconography:** Tailwind CSS with accessible semantic tokens, modern Aptos / clean sans geometric typography, and edge-grade Lucide vector iconography.
@@ -278,16 +278,22 @@ Implemented lifecycle (ADR 0024, PR #56; migration `20261006090000` not yet appl
 - Endpoints: `GET/PUT /api/scholars/revisions`, `POST /api/scholars/revisions/submit`, `POST /api/scholars/revisions/withdraw` (session identity, RLS-scoped client, `revisionId` pin returns 409 on a stale tab, 256 KB cap returns 413). Admin decisions go through `POST /api/admin/reviews/[id]` and the service-role-only `review_profile_revision()` RPC (atomic decision plus `profile_reviews` audit row). Feedback notes are required for request-changes and reject and capped at 2000 characters (reversible default chosen during review; owner-visible decision).
 - Revisions are readable only by the owning scholar and admins.
 
-Review-gated profile content (ADR 0025, PR #62; migration `20261007090000` NOT yet applied to production):
+Review-gated profile content (ADR 0025, PR #62; LIVE in production: migration `20261007090000` applied 2026-10-07 and verified):
 
 - Approval atomically promotes the scalar fields and the five relational lists (disciplines, traditions, confessions, credentials, publications) in the same transaction as the audit row. Validate-then-replace: an absent list is unchanged and `[]` clears it; the first discipline and first tradition are primary. Unmatched taxonomy blocks approval (FS001); an invalid snapshot, including SQL scalar validation and the constraint backstop, is FS002.
 - Database guards close the direct-edit gap: an allow-list guard on `scholars` lets a scholar change only `contact_preference` and `draft_revision_id`, and a child-table guard blocks restricted INSERT, UPDATE and DELETE on the five relational tables. Slug and file paths are admin-only. Courses, media, speaker topics and availability stay self-service and unreviewed (accepted risk).
 - The editor and the admin diff load the live baseline from the scholar's real rows, so a first approval cannot wipe existing data. Taxonomy uses database-backed slug pickers; credentials, publications and tradition editors and onboarding CV-import merge (never wipes or invents data) are added. Confession adherence must be chosen explicitly and an Art. 9 public-data notice is shown.
-- Deploy: an enforced preflight in the migration refuses to run when an open revision would clear live rows. Verification and runbook: `docs/reviews/2026-10-07-council-review-14-synthesis.md`.
+- Deploy: applied by the owner on 2026-10-07 after a passing preflight (0 open revisions, taxonomy 9/6/12). Verified: the three functions are executable by postgres and service_role only, the five child guard triggers and `trg_guard_scholars` exist, all 8 private helpers are present, the `lausanne-covenant` (1974) row exists and the version is recorded. Record: `docs/reviews/2026-10-07-council-review-14-synthesis.md`.
+
+Persistent, enforced rate limits (ADR 0026, PR #65; migration `20261008090000` built and reviewed, NOT yet applied to production):
+
+- One service-role-only Postgres limiter (`check_rate_limit`, fixed window, atomic upsert, bounded SKIP LOCKED cleanup; `rate_limit_buckets` has FORCE RLS and a deny-all policy). `/scholars` searches (15/min anonymous, 120/min signed in) and `GET /api/postings` use it (HTTP 429 with Retry-After; IP keys are HMAC-SHA256 with `RATE_LIMIT_SALT`). Reads fail open with an error log after 1.5 s.
+- The inquiry cap (10/hour per institution, shared by members) is a database trigger (`trg_guard_inquiry_rate`, FS429) that fails closed. `inquiries.created_at` is server-controlled so back-dating cannot evade it. The in-memory limiter is deleted.
+- Until the migration is applied, search is not limited and the inquiry cap is not database-enforced. Record: `docs/reviews/2026-10-08-council-review-15-synthesis.md`.
 
 Known gaps (accepted residual risk, see ADR 0024 and ADR 0025):
 
-- Until migration `20261007090000` is applied to production, the direct-edit gap (ADR 0024 residual risk 1) is still open there and approval still copies scalar fields only.
+- ADR 0024 residual risks 1 and 2 are resolved in production (migration `20261007090000`, applied 2026-10-07).
 - Delete-and-insert on approval changes child row ids and `created_at`; non-primary disciplines and traditions are name-sorted, not draft-ordered.
 - Rejected and superseded snapshots (possible religious-belief data, GDPR Art. 9) are retained indefinitely and admin-readable; belongs to the GDPR retention/erasure slice.
 
@@ -759,7 +765,7 @@ Acceptance:
 
 ### Phase 4: Scholar Dashboard (Completed)
 
-> **Status:** Partially complete (the revision lifecycle, PR #56 and migration `20261006090000`, is live in production. PR #62 / ADR 0025 is built, CI green and Council-reviewed: it closes direct edits to live content and promotes the five lists on approval, but migration `20261007090000` is pending the production deploy. Remaining: GDPR retention/erasure/export, and unreviewed self-service courses, media, speaker topics and availability). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
+> **Status:** Partially complete (the revision lifecycle, PR #56 and migration `20261006090000`, is live in production. PR #62 / ADR 0025 is live in production (migration `20261007090000` applied 2026-10-07): it closes direct edits to live content and promotes the five lists on approval. Remaining: GDPR retention/erasure/export, and unreviewed self-service courses, media, speaker topics and availability). Built: Assisted CV onboarding with heuristic parsing, revision staging manager UI, doctrinal statement & confessional standards manager, course/syllabus manager, availability calendar, LinkedIn-grade staging preview, universal translation framework with Spanish `es` catalog).
 
 1. Build profile editor.
 2. Build CV and publication manager.
@@ -793,7 +799,7 @@ Acceptance:
 
 ### Phase 6: Institution Workflows (Completed)
 
-> **Status:** Completed, with caveats (Council 12: rate limiting is in-memory and per instance; inquiry `contact_email` is client-supplied; `/institution` and `/dashboard` metrics and `/institution/saved` are partly hard-coded fixtures; scholar express-interest is covered under Phase 17). Built: Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
+> **Status:** Completed, with caveats (Council 12 found rate limiting in-memory and per instance; ADR 0026 / PR #65 replaces it with a database limiter and trigger, pending its production migration. Also: inquiry `contact_email` is client-supplied; `/institution` and `/dashboard` metrics and `/institution/saved` are partly hard-coded fixtures; scholar express-interest is covered under Phase 17). Built: Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
 
 1. Build institution profiles and membership.
 2. Build saved scholars and courses.

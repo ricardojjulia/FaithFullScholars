@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/server';
 import { CreateInquiryInput, InquiryStatus, Institution } from '@/lib/domain/types';
-import { checkInquiryRateLimit, recordInquirySent } from '@/lib/inquiries/rate-limiter';
 import {
   notifyScholarOfNewInquiry,
   notifyInstitutionOfInquiryResponse,
@@ -11,6 +10,42 @@ export interface ActionResult<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
+  /** HTTP status the API layer should use for a failure (default 400). */
+  status?: number;
+  /** Seconds until a rate-limited caller may retry (sent as Retry-After). */
+  retryAfterSeconds?: number;
+}
+
+/** SQLSTATE raised by the database inquiry-rate guard (ADR 0026). */
+export const INQUIRY_RATE_LIMIT_SQLSTATE = 'FS429';
+export const INQUIRY_RATE_LIMIT_MESSAGE =
+  'Your institution has reached its limit of 10 inquiries per hour. The limit is shared by everyone at your institution; please try again later.';
+
+/**
+ * Seconds until the oldest counted inquiry leaves the one-hour window (that is
+ * when the next slot opens). Read with the caller's own client, so RLS applies:
+ * members can see their institution's inquiries. Advisory only; any failure
+ * falls back to the full window.
+ */
+async function inquiryRetryAfterSeconds(supabase: SupabaseClient, institutionId: string): Promise<number> {
+  const WINDOW_MS = 3600 * 1000;
+  try {
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('created_at')
+      .eq('institution_id', institutionId)
+      .gt('created_at', new Date(Date.now() - WINDOW_MS).toISOString())
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const oldest = data?.created_at ? new Date(data.created_at).getTime() : NaN;
+    if (!error && Number.isFinite(oldest)) {
+      return Math.min(3600, Math.max(1, Math.ceil((oldest + WINDOW_MS - Date.now()) / 1000)));
+    }
+  } catch {
+    // fall through to the conservative default
+  }
+  return 3600;
 }
 
 /**
@@ -51,14 +86,8 @@ export async function sendInquiry(
     return { success: false, error: 'A valid institutional contact email is required.' };
   }
 
-  // 2. Rate limit verification (ADR 0008)
-  const rateLimit = checkInquiryRateLimit(input.institution_id);
-  if (!rateLimit.allowed) {
-    return {
-      success: false,
-      error: 'Inquiry rate limit exceeded. Verified institutions can send up to 10 inquiries per hour.',
-    };
-  }
+  // 2. The hourly inquiry cap (10 per institution) is enforced by the database
+  //    guard on INSERT (ADR 0026), so it also covers direct API writes.
 
   // 3. Verify Institution Approval Status
   const { data: institution, error: instError } = await supabase
@@ -115,13 +144,19 @@ export async function sendInquiry(
     .select('id')
     .single();
 
-  if (insertError || !newInquiry) {
-    console.error('Error inserting inquiry:', insertError);
-    return { success: false, error: 'Unable to dispatch inquiry at this time. Please try again later.' };
+  if (insertError?.code === INQUIRY_RATE_LIMIT_SQLSTATE) {
+    return {
+      success: false,
+      error: INQUIRY_RATE_LIMIT_MESSAGE,
+      status: 429,
+      retryAfterSeconds: await inquiryRetryAfterSeconds(supabase, input.institution_id),
+    };
   }
 
-  // Record rate limit consumption
-  recordInquirySent(input.institution_id);
+  if (insertError || !newInquiry) {
+    console.error('Error inserting inquiry (code):', insertError?.code ?? 'no-data');
+    return { success: false, error: 'Unable to dispatch inquiry at this time. Please try again later.' };
+  }
 
   // 7. Dispatch Notification. The scholar's private email is read server-side with
   // the service role (RLS correctly hides it from institutions) and never returned.
@@ -132,7 +167,7 @@ export async function sendInquiry(
     .maybeSingle();
 
   if (!scholarAccount?.email) {
-    console.error('Inquiry stored but scholar email is missing; notification skipped:', newInquiry.id);
+    console.error('Inquiry stored but scholar email is missing; notification skipped');
     return { success: true, data: { inquiryId: newInquiry.id } };
   }
 
@@ -202,7 +237,7 @@ export async function respondToInquiry(
     .eq('id', inquiryId);
 
   if (updateError) {
-    console.error('Error updating inquiry status:', updateError);
+    console.error('Error updating inquiry status (code):', updateError.code);
     return { success: false, error: 'Failed to update inquiry status.' };
   }
 
@@ -249,7 +284,7 @@ export async function toggleSaveScholar(
       .eq('id', existing.id);
 
     if (deleteError) {
-      console.error('Error removing scholar from shortlist:', deleteError);
+      console.error('Error removing scholar from shortlist (code):', deleteError.code);
       return { success: false, error: 'Failed to remove scholar from shortlist.' };
     }
     return { success: true, data: { saved: false } };
@@ -265,7 +300,7 @@ export async function toggleSaveScholar(
     });
 
   if (insertError) {
-    console.error('Error adding scholar to shortlist:', insertError);
+    console.error('Error adding scholar to shortlist (code):', insertError.code);
     return { success: false, error: 'Failed to add scholar to shortlist.' };
   }
 
@@ -296,7 +331,7 @@ export async function toggleSaveCourse(
       .eq('id', existing.id);
 
     if (deleteError) {
-      console.error('Error removing course from saved list:', deleteError);
+      console.error('Error removing course from saved list (code):', deleteError.code);
       return { success: false, error: 'Failed to remove course from saved list.' };
     }
     return { success: true, data: { saved: false } };
@@ -311,7 +346,7 @@ export async function toggleSaveCourse(
     });
 
   if (insertError) {
-    console.error('Error saving course:', insertError);
+    console.error('Error saving course (code):', insertError.code);
     return { success: false, error: 'Failed to save course.' };
   }
 
@@ -342,7 +377,7 @@ export async function updateInstitutionProfile(
     .eq('id', institutionId);
 
   if (error) {
-    console.error('Error updating institution profile:', error);
+    console.error('Error updating institution profile (code):', error.code);
     return { success: false, error: 'Failed to update institutional profile.' };
   }
 

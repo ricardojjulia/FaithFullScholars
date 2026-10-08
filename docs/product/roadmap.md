@@ -66,7 +66,7 @@ Deliverables:
 - Persistent universal top application bar with integrated search typeahead and scope selectors.
 - Modern 3-column desktop layout for directory and discovery feeds (mini-profile & filters on left, main directory in center, recommendations & trust rail on right).
 - Canonical LinkedIn-style profile card hierarchy: cover banner, 120px overlapping avatar, credential headline, action bar, and modular cards for degrees, publications, syllabi, and doctrinal affirmations.
-- Distributed token-bucket search rate limiter (`search_rate_limits` table) with 15 req/min for anonymous callers and 120 req/min for verified institutions.
+- Search rate limiter: 15 req/min for anonymous callers and 120 req/min for signed-in users. The original `search_rate_limits` limiter was never called; ADR 0026 (PR #65) replaces it with the enforced `check_rate_limit` and `rate_limit_buckets`, pending the production migration `20261008090000`.
 - 3-page anonymous discovery cap (max 18 results) with sign-in wall preventing automated candidate harvesting.
 - Search input sanitization and PII segregation.
 
@@ -94,7 +94,7 @@ Deliverables:
 Exit criteria:
 
 - [x] Scholars can onboard via CV upload or manual entry.
-- [ ] Scholars can submit complete profiles or revision diffs for review. Persisted lifecycle shipped (PR #56, ADR 0024). Review-gated content and relational promotion on approval built in PR #62 (ADR 0025); the direct-edit bypass closes only once migration `20261007090000` is applied to production.
+- [ ] Scholars can submit complete profiles or revision diffs for review. Persisted lifecycle shipped (PR #56, ADR 0024). Review-gated content and relational promotion on approval shipped in PR #62 (ADR 0025) and is live in production (migration `20261007090000` applied 2026-10-07).
 - [x] Ownership checks prevent cross-profile edits.
 - [x] All 6 quality gates pass (`npm run verify`).
 
@@ -130,7 +130,7 @@ Deliverables:
 - Candidate shortlisting and course bookmarking systems (`saved_scholars`, `saved_courses`) with persistence.
 - Scholar Inquiry Inbox (`/dashboard/inquiries`) with status transitions (pending, accepted, declined, archived) and decision feedback.
 - Institution Portal workspace (`/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`).
-- Anti-spam rate limiting (10 inquiries/hr per institution) and input validation.
+- Anti-spam rate limiting (10 inquiries/hr per institution) and input validation. Now a database trigger (ADR 0026, PR #65), pending the production migration `20261008090000`.
 - Transactional email notification service abstraction (`email-service.ts`) with event logging.
 - Unit and database integration tests verifying end-to-end communication workflows.
 

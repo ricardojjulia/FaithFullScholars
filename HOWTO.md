@@ -50,6 +50,7 @@ Open [http://localhost:3845](http://localhost:3845).
 | `TURNSTILE_SECRET_KEY` ¹ | optional | Cloudflare Turnstile verification on scholar and institution sign-up |
 | `NEXT_PUBLIC_PILOT_FEEDBACK_ENABLED`, `PILOT_FEEDBACK_ENABLED` ¹ | optional | Pilot feedback widget (client) and API (server) |
 | `ENABLE_DEV_ROUTES` ¹ | never in production | Guardrail flag: the app does not read it, but `npm run verify:deploy` fails if it is `true` in a production deploy |
+| `RATE_LIMIT_SALT` | **required in production** | Secret key for the HMAC-SHA256 of the client IP used as the search rate-limit key (ADR 0026). Use a long random value, the same on every instance. Unset, the app uses a per-process random fallback (limits then hold per instance only) and logs one warning, and `npm run verify:deploy` FAILS a production deploy. In `.env.example` |
 | `VERCEL_ENV` | automatic | Set by Vercel and used by the deploy checks |
 
 ¹ Not in `.env.example`; add it manually when needed.

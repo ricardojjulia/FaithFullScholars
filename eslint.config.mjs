@@ -38,7 +38,7 @@ const eslintConfig = defineConfig([
       "lib/feedback/store.ts",
       "lib/inquiries/actions.ts",
       "lib/postings/applicant-service.ts",
-      "lib/search/rate-limiter.ts",
+      "lib/rate-limit/limiter.ts",
     ],
     rules: { "no-restricted-imports": "off" },
   },

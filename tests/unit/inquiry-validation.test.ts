@@ -1,52 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  checkInquiryRateLimit,
-  recordInquirySent,
-  resetInquiryRateLimits,
-} from '@/lib/inquiries/rate-limiter';
-import {
   notifyScholarOfNewInquiry,
   notifyInstitutionOfInquiryResponse,
   getDispatchedNotifications,
   clearDispatchedNotifications,
 } from '@/lib/notifications/email-service';
 
-describe('Inquiry Rate Limiting & Notification Validation', () => {
+describe('Inquiry Notification Validation', () => {
   beforeEach(() => {
-    resetInquiryRateLimits();
     clearDispatchedNotifications();
-  });
-
-  describe('Rate Limiter', () => {
-    const institutionId = 'inst-uuid-1234-5678';
-
-    it('allows inquiries up to the 10 inquiries/hr limit', () => {
-      const initial = checkInquiryRateLimit(institutionId);
-      expect(initial.allowed).toBe(true);
-      expect(initial.remaining).toBe(10);
-
-      for (let i = 0; i < 10; i++) {
-        expect(checkInquiryRateLimit(institutionId).allowed).toBe(true);
-        recordInquirySent(institutionId);
-      }
-
-      const capped = checkInquiryRateLimit(institutionId);
-      expect(capped.allowed).toBe(false);
-      expect(capped.remaining).toBe(0);
-    });
-
-    it('recovers capacity after the 1-hour window expires', () => {
-      const now = 1000000;
-      const oneHourPlus = now + 60 * 60 * 1000 + 1000;
-
-      for (let i = 0; i < 10; i++) {
-        recordInquirySent(institutionId, now);
-      }
-
-      expect(checkInquiryRateLimit(institutionId, now).allowed).toBe(false);
-      expect(checkInquiryRateLimit(institutionId, oneHourPlus).allowed).toBe(true);
-      expect(checkInquiryRateLimit(institutionId, oneHourPlus).remaining).toBe(10);
-    });
   });
 
   describe('Notification Dispatch', () => {
