@@ -1,6 +1,6 @@
 # Spec: Posting Applications (Express Interest / Common Application)
 
-- **Status:** Story approved by the owner on 2026-10-08 (gate 3), with the defaults confirmed. Technical brief pending (gate 5).
+- **Status:** Story approved by the owner on 2026-10-08 (gate 3), with the defaults confirmed. Technical brief approved by the owner on 2026-10-08 (gate 5), with the defaults confirmed.
 - **Order:** slice 3 of the remaining known-broken fixes. Owner order: rate limits (done) → real portal data (done) → applications → conference hub.
 - **Supersedes/extends:** ADR 0020 (Confessional Common Application). A new ADR 0027 is written before the code.
 - **Branch:** `feat/posting-applications`
@@ -162,3 +162,12 @@ Proposed defaults, to be confirmed with the story:
 - every member can triage;
 - syllabi and CV are not sealed;
 - contact is the account login email.
+
+### Owner decisions on the brief (2026-10-08)
+- Approved as designed:
+  - forward-only status transitions; decline only from under_review or interview_scheduled;
+  - no reapplying after withdrawal;
+  - the posting deadline is not enforced;
+  - all institution members can triage.
+- The syllabi and CV are not sealed. Contact is the account login email.
+- The fake `[Common App` inquiries are removed from the pilot seed. Live pilot DB rows are left as harmless inquiries.
