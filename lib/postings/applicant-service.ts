@@ -1,23 +1,71 @@
 /**
  * ==============================================================================
- * FaithFull Scholars — Search Committee Applicant Matrix Engine (ADR 0020)
+ * FaithFull Scholars — Search Committee Applicant Matrix (ADR 0020, ADR 0027)
  *
- * Provides candidate application dossier triage, side-by-side comparative
- * matrices, ATS Standard 3 terminal degree validation, and confessional fit
- * scoring for seminary faculty search committees.
+ * Reads the REAL applications of one posting with the member's own client, so
+ * Postgres RLS is the enforcing layer: a member sees only applications of their
+ * own institution, and the institution's private notes only if they are not the
+ * applicant. There is no service-role client and no guessing: the dossier shown
+ * is the frozen snapshot sealed when the scholar applied, never the live profile.
+ *
+ * There is deliberately NO derived confessional "fit" score (owner decision,
+ * 2026-10-08): the committee sees what the scholar DECLARED, beside what the
+ * posting requires, and judges for itself.
+ *
+ * Two queries (no N+1): the posting, then its applications with their note.
  * ==============================================================================
  */
 
-import { createAdminClient } from '@/lib/supabase/server';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { isTerminalDoctorate } from '@/lib/accreditation/ats-matrix-generator';
-import {
-  evaluateConfessionalAlignment,
-  ConfessionalAlignmentLevel,
-} from '@/lib/search/confessional-matcher';
-import { InquiryStatus } from '@/lib/domain/types';
+import { isApplicationStatus, type ApplicationStatus } from '@/lib/postings/application-status';
+import { PortalQueryError } from '@/lib/inquiries/queries';
+
+export interface DossierCredential {
+  degree: string;
+  fieldOfStudy: string | null;
+  institutionName: string | null;
+  yearAwarded: number | null;
+  isTerminal: boolean;
+}
+
+export interface DossierPublication {
+  title: string;
+  publicationType: string | null;
+  publisherOrJournal: string | null;
+  year: number | null;
+  doiOrUrl: string | null;
+}
+
+export interface DossierNamed {
+  name: string;
+  slug: string;
+  isPrimary?: boolean;
+}
+
+export interface DossierConfession extends DossierNamed {
+  adherenceLevel: string | null;
+  exceptionNotes: string | null;
+}
+
+/** The frozen dossier, parsed defensively from the stored JSON. */
+export interface DossierView {
+  sealedAt: string | null;
+  biography: string | null;
+  location: string | null;
+  institutionalRole: string | null;
+  doctrinalStatement: string | null;
+  orcidId: string | null;
+  googleScholarUrl: string | null;
+  credentials: DossierCredential[];
+  publications: DossierPublication[];
+  disciplines: DossierNamed[];
+  traditions: DossierNamed[];
+  confessions: DossierConfession[];
+}
 
 export interface ApplicantDossier {
-  inquiryId: string;
+  applicationId: string;
   scholarId: string;
   scholarName: string;
   scholarSlug: string;
@@ -26,12 +74,15 @@ export interface ApplicantDossier {
   highestDegree: string | null;
   degreeInstitution: string | null;
   isTerminalDoctorate: boolean;
-  confessions: string[];
-  alignmentLevel: ConfessionalAlignmentLevel;
-  alignmentScorePercent: number;
+  /** The scholar's declared confessions (name, adherence, exception notes) from the frozen snapshot. */
+  confessions: DossierConfession[];
   coverNote: string;
-  status: InquiryStatus;
+  status: ApplicationStatus;
   appliedAt: string;
+  statusChangedAt: string;
+  /** The institution's private note (empty when none, or when the caller is the applicant). */
+  note: string;
+  dossier: DossierView;
 }
 
 export interface PostingApplicantReport {
@@ -42,176 +93,189 @@ export interface PostingApplicantReport {
   term: string;
   requiredDegree: string;
   confessionalRequirements: string | null;
+  /** The posting's stated confessional standard (its tradition), if any. */
+  confessionalStandard: string | null;
   totalApplicants: number;
   terminalDoctoratesCount: number;
   terminalDoctoratesRatio: number;
-  fullConfessionalMatchCount: number;
   applicants: ApplicantDossier[];
 }
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Json = Record<string, unknown>;
+
+const asObject = (value: unknown): Json => (value && typeof value === 'object' && !Array.isArray(value) ? (value as Json) : {});
+const asList = (value: unknown): Json[] => (Array.isArray(value) ? value.map(asObject) : []);
+const asText = (value: unknown): string | null => (typeof value === 'string' && value.trim() !== '' ? value : null);
+const asNumber = (value: unknown): number | null => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+
+/** Parses the stored snapshot into a safe view. Unknown shapes degrade to empty lists, never throw. */
+export function parseDossierSnapshot(raw: unknown): DossierView & { fullName: string | null; title: string | null; currentInstitution: string | null; scholarSlug: string | null } {
+  const s = asObject(raw);
+  const named = (list: unknown): DossierNamed[] =>
+    asList(list)
+      .map((row) => ({ name: asText(row.name) ?? '', slug: asText(row.slug) ?? '', isPrimary: row.is_primary === true }))
+      .filter((row) => row.name !== '');
+  return {
+    fullName: asText(s.full_name),
+    title: asText(s.title),
+    currentInstitution: asText(s.current_institution),
+    scholarSlug: asText(s.scholar_slug),
+    sealedAt: asText(s.sealed_at),
+    biography: asText(s.biography),
+    location: asText(s.location),
+    institutionalRole: asText(s.institutional_role),
+    doctrinalStatement: asText(s.doctrinal_statement_text),
+    orcidId: asText(s.orcid_id),
+    googleScholarUrl: asText(s.google_scholar_url),
+    credentials: asList(s.credentials)
+      .map((row) => ({
+        degree: asText(row.degree) ?? '',
+        fieldOfStudy: asText(row.field_of_study),
+        institutionName: asText(row.institution_name),
+        yearAwarded: asNumber(row.year_awarded),
+        isTerminal: row.is_terminal === true,
+      }))
+      .filter((row) => row.degree !== ''),
+    publications: asList(s.publications)
+      .map((row) => ({
+        title: asText(row.title) ?? '',
+        publicationType: asText(row.publication_type),
+        publisherOrJournal: asText(row.publisher_or_journal),
+        year: asNumber(row.year),
+        doiOrUrl: asText(row.doi_or_url),
+      }))
+      .filter((row) => row.title !== ''),
+    disciplines: named(s.disciplines),
+    traditions: named(s.traditions),
+    confessions: asList(s.confessions)
+      .map((row) => ({
+        name: asText(row.name) ?? '',
+        slug: asText(row.slug) ?? '',
+        adherenceLevel: asText(row.adherence_level),
+        exceptionNotes: asText(row.exception_notes),
+      }))
+      .filter((row) => row.name !== ''),
+  };
+}
+
+/** The credential to headline: a terminal doctorate if there is one, else the most recent. */
+export function pickHighestCredential(credentials: DossierCredential[]): DossierCredential | null {
+  if (credentials.length === 0) return null;
+  const terminal = credentials.find((c) => isTerminalDoctorate(c.degree));
+  if (terminal) return terminal;
+  return [...credentials].sort((a, b) => (b.yearAwarded ?? 0) - (a.yearAwarded ?? 0))[0];
+}
+
+interface ApplicationRow {
+  id: string;
+  scholar_id: string;
+  cover_note: string;
+  dossier_snapshot: unknown;
+  status: string;
+  status_changed_at: string;
+  created_at: string;
+  posting_application_notes?: { body?: string | null }[] | { body?: string | null } | null;
+}
+
 /**
- * Compiles a comprehensive applicant comparison report for a faculty opening.
+ * Compiles the applicant comparison report for one posting, or null when the
+ * posting does not exist or is not one of the caller's institutions' postings.
  *
- * Reads with the service role, so `institutionId` is REQUIRED and must come from
- * the caller's verified membership (requireInstitutionMember): it is the only
- * thing scoping the report to the posting's owner.
+ * `client` MUST be the caller's own (RLS-scoped) client and `institutionIds` the
+ * verified membership from the session. RLS is the enforcing layer; the explicit
+ * `.in()` keeps the query honest and cheap. Throws PortalQueryError when a query
+ * fails (an outage is not "no applicants").
  */
 export async function getPostingApplicantReport(
+  client: SupabaseClient,
   postingId: string,
-  institutionId: string
+  institutionIds: string[]
 ): Promise<PostingApplicantReport | null> {
-  if (!institutionId) {
+  if (!UUID_REGEX.test(postingId) || institutionIds.length === 0) {
     return null;
   }
 
-  const adminDb = createAdminClient();
-
-  // 1. Fetch posting
-  const postingQuery = adminDb
+  // Query 1: the posting, only if it belongs to one of the caller's institutions.
+  const { data: posting, error: postingError } = await client
     .from('institution_postings')
-    .select(`
-      id,
-      institution_id,
-      title,
-      slug,
-      opportunity_type,
-      term,
-      required_degree,
-      confessional_requirements,
-      traditions(name)
-    `)
+    .select('id, institution_id, title, slug, opportunity_type, term, required_degree, confessional_requirements, traditions(name)')
     .eq('id', postingId)
-    .eq('institution_id', institutionId);
+    .in('institution_id', institutionIds)
+    .maybeSingle();
 
-  const { data: posting, error: postingError } = await postingQuery.maybeSingle();
-
-  if (postingError || !posting) {
-    console.error('Error fetching posting for applicant report:', postingError);
+  if (postingError) {
+    throw new PortalQueryError('posting', postingError.code);
+  }
+  if (!posting) {
     return null;
   }
 
-  // 2. Fetch associated inquiries / Common App dossiers
-  const { data: inquiries, error: inqError } = await adminDb
-    .from('inquiries')
-    .select(`
-      id,
-      scholar_id,
-      opportunity_type,
-      proposed_term,
-      message,
-      status,
-      created_at
-    `)
-    .eq('institution_id', posting.institution_id)
+  // Query 2: its applications with the institution's private note.
+  const { data: rows, error: applicationsError } = await client
+    .from('posting_applications')
+    .select('id, scholar_id, cover_note, dossier_snapshot, status, status_changed_at, created_at, posting_application_notes(body)')
+    .eq('posting_id', postingId)
+    .in('institution_id', institutionIds)
     .order('created_at', { ascending: false });
 
-  if (inqError || !inquiries) {
-    console.error('Error fetching inquiries for applicant report:', inqError);
-    return null;
+  if (applicationsError) {
+    throw new PortalQueryError('posting applications', applicationsError.code);
   }
 
-  // Filter inquiries related to this posting
-  const relatedInquiries = inquiries.filter((inq) => {
-    if (!inq.message) return false;
-    const msg = inq.message;
-    return (
-      msg.includes(posting.id) ||
-      msg.includes(posting.title) ||
-      inq.opportunity_type === posting.opportunity_type
-    );
-  });
+  const traditionName = (posting.traditions as unknown as { name?: string } | null)?.name;
 
   const applicants: ApplicantDossier[] = [];
   let terminalDoctoratesCount = 0;
-  let fullConfessionalMatchCount = 0;
 
-  for (const inq of relatedInquiries) {
-    // Fetch scholar profile, credentials, confessions
-    const { data: scholar } = await adminDb
-      .from('scholars')
-      .select(`
-        id,
-        full_name,
-        slug,
-        title,
-        current_institution,
-        doctrinal_statement_text
-      `)
-      .eq('id', inq.scholar_id)
-      .maybeSingle();
+  for (const row of (rows ?? []) as unknown as ApplicationRow[]) {
+    if (!isApplicationStatus(row.status)) continue;
 
-    if (!scholar) continue;
+    const dossier = parseDossierSnapshot(row.dossier_snapshot);
+    const highest = pickHighestCredential(dossier.credentials);
+    const terminal = highest ? isTerminalDoctorate(highest.degree) : false;
+    if (terminal) terminalDoctoratesCount++;
 
-    // Fetch highest degree / credentials
-    const { data: creds } = await adminDb
-      .from('credentials')
-      .select('degree, institution')
-      .eq('scholar_id', scholar.id)
-      .order('year', { ascending: false });
-
-    const highestDegree = creds && creds.length > 0 ? creds[0].degree : null;
-    const degreeInstitution = creds && creds.length > 0 ? creds[0].institution : null;
-    const isTerminal = isTerminalDoctorate(highestDegree);
-    if (isTerminal) terminalDoctoratesCount++;
-
-    // Fetch confessions
-    const { data: confessionsData } = await adminDb
-      .from('scholar_confessions')
-      .select(`
-        confessional_standards(id, name, slug)
-      `)
-      .eq('scholar_id', scholar.id);
-
-    const confessionsList = (confessionsData || [])
-      .map((c) => (c.confessional_standards as unknown as { id: string; name: string; slug: string })?.name)
-      .filter(Boolean);
-
-    const mappedConfessions = (confessionsData || [])
-      .map((c) => c.confessional_standards as unknown as { id: string; name: string; slug: string })
-      .filter(Boolean);
-
-    const traditionCategory = (posting.traditions as { name?: string } | null)?.name;
-
-    const alignment = evaluateConfessionalAlignment({
-      targetTradition: traditionCategory,
-      scholarConfessions: mappedConfessions,
-      scholarDoctrinalStatement: scholar.doctrinal_statement_text || undefined,
-    });
-
-    if (alignment.alignmentLevel === 'full' || alignment.alignmentLevel === 'substantial') {
-      fullConfessionalMatchCount++;
-    }
-
-    // Strip prefix header from cover note if present
-    let cleanedNote = inq.message;
-    if (cleanedNote.startsWith('[Common App')) {
-      const parts = cleanedNote.split('\n\n');
-      cleanedNote = parts.length > 1 ? parts.slice(1).join('\n\n') : cleanedNote;
-    }
+    const noteRow = Array.isArray(row.posting_application_notes)
+      ? row.posting_application_notes[0]
+      : row.posting_application_notes;
 
     applicants.push({
-      inquiryId: inq.id,
-      scholarId: scholar.id,
-      scholarName: scholar.full_name,
-      scholarSlug: scholar.slug,
-      title: scholar.title,
-      currentInstitution: scholar.current_institution,
-      highestDegree,
-      degreeInstitution,
-      isTerminalDoctorate: isTerminal,
-      confessions: confessionsList,
-      alignmentLevel: alignment.alignmentLevel,
-      alignmentScorePercent: alignment.scorePercent,
-      coverNote: cleanedNote,
-      status: inq.status as InquiryStatus,
-      appliedAt: inq.created_at,
+      applicationId: row.id,
+      scholarId: row.scholar_id,
+      scholarName: dossier.fullName ?? 'Applicant',
+      scholarSlug: dossier.scholarSlug ?? '',
+      title: dossier.title,
+      currentInstitution: dossier.currentInstitution,
+      highestDegree: highest ? [highest.degree, highest.fieldOfStudy].filter(Boolean).join(' in ') : null,
+      degreeInstitution: highest?.institutionName ?? null,
+      isTerminalDoctorate: terminal,
+      confessions: dossier.confessions,
+      coverNote: row.cover_note,
+      status: row.status,
+      appliedAt: row.created_at,
+      statusChangedAt: row.status_changed_at,
+      note: noteRow?.body ?? '',
+      dossier: {
+        sealedAt: dossier.sealedAt,
+        biography: dossier.biography,
+        location: dossier.location,
+        institutionalRole: dossier.institutionalRole,
+        doctrinalStatement: dossier.doctrinalStatement,
+        orcidId: dossier.orcidId,
+        googleScholarUrl: dossier.googleScholarUrl,
+        credentials: dossier.credentials,
+        publications: dossier.publications,
+        disciplines: dossier.disciplines,
+        traditions: dossier.traditions,
+        confessions: dossier.confessions,
+      },
     });
   }
 
   const totalApplicants = applicants.length;
-  const terminalDoctoratesRatio = totalApplicants > 0
-    ? Math.round((terminalDoctoratesCount / totalApplicants) * 100)
-    : 0;
+  const terminalDoctoratesRatio = totalApplicants > 0 ? Math.round((terminalDoctoratesCount / totalApplicants) * 100) : 0;
 
   return {
     postingId: posting.id,
@@ -221,51 +285,10 @@ export async function getPostingApplicantReport(
     term: posting.term,
     requiredDegree: posting.required_degree,
     confessionalRequirements: posting.confessional_requirements,
+    confessionalStandard: traditionName ?? null,
     totalApplicants,
     terminalDoctoratesCount,
     terminalDoctoratesRatio,
-    fullConfessionalMatchCount,
     applicants,
   };
-}
-
-/**
- * Generates an RFC-4180 CSV export of candidate applicants for committee deliberation.
- */
-export function exportApplicantMatrixCsv(report: PostingApplicantReport): string {
-  const headers = [
-    'Candidate Name',
-    'Preferred Title',
-    'Current Institution',
-    'Highest Degree',
-    'Awarding Institution',
-    'ATS Terminal Doctorate',
-    'Confessional Alignment',
-    'Alignment Score',
-    'Application Status',
-    'Applied Date',
-    'Cover Note',
-  ];
-
-  const escapeCsv = (val: string | null | undefined): string => {
-    if (!val) return '""';
-    return `"${val.replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
-  };
-
-  const rows = report.applicants.map((a) => [
-    escapeCsv(a.scholarName),
-    escapeCsv(a.title),
-    escapeCsv(a.currentInstitution),
-    escapeCsv(a.highestDegree),
-    escapeCsv(a.degreeInstitution),
-    a.isTerminalDoctorate ? '"YES"' : '"NO"',
-    escapeCsv(a.alignmentLevel.toUpperCase()),
-    `"${a.alignmentScorePercent}%"`,
-    escapeCsv(a.status.toUpperCase()),
-    escapeCsv(new Date(a.appliedAt).toISOString().split('T')[0]),
-    escapeCsv(a.coverNote),
-  ]);
-
-  const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\r\n');
-  return `\uFEFF${csvContent}`;
 }

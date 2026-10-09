@@ -60,3 +60,6 @@ supabase/.temp/
 .gdrive*
 Icon?
 
+
+# Claude Code agent worktrees (local only)
+.claude/worktrees/

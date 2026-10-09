@@ -25,6 +25,9 @@ const updateCalls: { table: string; values: Record<string, unknown>; filters: [s
 let updatedRows: { id: string }[] = [{ id: 'row-1' }];
 let failTable: string | null = null;
 const adminClientSpy = vi.fn();
+// Calls to supabase.rpc(), and what the fake database function answers.
+const rpcCalls: { fn: string; args: unknown }[] = [];
+let rpcResult: { data: unknown; error: { code?: string } | null } = { data: 'application-1', error: null };
 
 function resultFor(table: string) {
   if (failTable === table) return { data: null, error: { code: '57014', message: 'timeout detail' } };
@@ -88,6 +91,10 @@ vi.mock('@/lib/supabase/server', () => ({
       getUser: async () => ({ data: { user: identity.user }, error: null }),
     },
     from: (table: string) => fakeQuery(table),
+    rpc: async (fn: string, args: unknown) => {
+      rpcCalls.push({ fn, args });
+      return rpcResult;
+    },
   }),
   createAdminClient: () => {
     adminClientSpy();
@@ -177,6 +184,8 @@ describe('Authorization lockdown', () => {
     updateCalls.length = 0;
     updatedRows = [{ id: 'row-1' }];
     failTable = null;
+    rpcCalls.length = 0;
+    rpcResult = { data: 'application-1', error: null };
     vi.mocked(inquiryQueries.fetchScholarInquiries).mockClear();
     vi.mocked(inquiryQueries.fetchInstitutionInquiries).mockClear();
     process.env = { ...originalEnv };
@@ -503,14 +512,38 @@ describe('Authorization lockdown', () => {
   });
 
   describe('express interest', () => {
-    it('requires a signed-in scholar and never reports a simulated success', async () => {
-      const ctx = { params: Promise.resolve({ id: 'p1' }) };
-      const body = { coverNote: 'Interested in this adjunct post.' };
+    const ID = '33333333-3333-4333-8333-333333333333';
+    const ctx = { params: Promise.resolve({ id: ID }) };
+    const body = { coverNote: 'Interested in this adjunct post.' };
+    const apply = () => expressInterest(req(`/api/postings/${ID}/express-interest`, { method: 'POST', body }), ctx);
 
-      expect((await expressInterest(req('/api/postings/p1/express-interest', { method: 'POST', body }), ctx)).status).toBe(401);
+    it('requires a signed-in session before anything reaches the database', async () => {
+      expect((await apply()).status).toBe(401);
+      expect(rpcCalls).toEqual([]);
+    });
 
+    it('leaves the eligibility decision to the database function: an institution user is refused (403)', async () => {
       identity = institutionAUser();
-      expect((await expressInterest(req('/api/postings/p1/express-interest', { method: 'POST', body }), ctx)).status).toBe(403);
+      rpcResult = { data: null, error: { code: '42501' } };
+      expect((await apply()).status).toBe(403);
+      expect(rpcCalls).toHaveLength(1);
+      expect(rpcCalls[0].fn).toBe('submit_posting_application');
+    });
+
+    it('never reports a simulated success: it reports success only when the function returns an application', async () => {
+      identity = scholarA();
+      const res = await apply();
+      expect(res.status).toBe(201);
+      expect(await res.json()).toMatchObject({ success: true, applicationId: 'application-1' });
+      rpcResult = { data: null, error: { code: '23505' } };
+      expect((await apply()).status).toBe(409);
+    });
+
+    it('does not write to inquiries any more (the scholar INSERT path was never allowed)', async () => {
+      identity = scholarA();
+      await apply();
+      expect(updateCalls).toEqual([]);
+      expect(rpcCalls.every((c) => c.fn === 'submit_posting_application')).toBe(true);
     });
   });
 

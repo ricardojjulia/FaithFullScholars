@@ -1,7 +1,7 @@
 # ADR 0020: Confessional Common Application & Search Committee Applicant Matrix
 
 ## Status
-Accepted (Council Review #10 / Phase 17 Strategic Capability)
+Accepted (Council Review #10 / Phase 17 Strategic Capability). **Partially superseded by [ADR 0027](0027-posting-applications-and-frozen-dossiers.md)** (2026-10-08): applications now live in `posting_applications`, not `inquiries`, and the dossier is sealed in SQL. The product intent below stands.
 
 ## Context
 In theological higher education, faculty recruitment processes suffer from acute structural friction on both sides of the market:

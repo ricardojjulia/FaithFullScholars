@@ -26,7 +26,8 @@ test.describe('Academic Opportunities & Institutional Endorsements', () => {
     // Verify posting detail page
     await expect(page.locator('h1')).toContainText('Adjunct Professor in Historical Theology');
     await expect(page.getByRole('heading', { name: 'Westminster Theological Seminary' })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Express Interest/i })).toBeVisible();
+    // Institution users do not apply (ADR 0027): the posting page offers them no apply button.
+    await expect(page.getByRole('button', { name: /Express Interest/i })).toHaveCount(0);
   });
 
   test('institution portal displays opportunities management and endorsements', async ({ page }) => {

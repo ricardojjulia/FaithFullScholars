@@ -17,7 +17,9 @@ import {
 import { PublicNav } from '@/components/shell/public-nav';
 import { PublicFooter } from '@/components/shell/public-footer';
 import { getPostingBySlug, formatOpportunityType } from '@/lib/postings/postings-service';
-import { ExpressInterestButton } from '@/components/opportunities/express-interest-button';
+import { ApplyPanel } from '@/components/opportunities/apply-panel';
+import { createClient } from '@/lib/supabase/server';
+import { loadApplyState } from '@/lib/postings/apply-state';
 import { serializeJsonLd } from '@/lib/seo/json-ld';
 
 interface OpportunityPageProps {
@@ -53,6 +55,9 @@ export default async function OpportunityDetailPage({ params }: OpportunityPageP
   }
 
   // Schema.org JobPosting structured metadata
+  // What this visitor can do here, decided from their own session and rows.
+  const applyState = await loadApplyState(await createClient(), { id: posting.id, status: posting.status });
+
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'JobPosting',
@@ -210,19 +215,21 @@ export default async function OpportunityDetailPage({ params }: OpportunityPageP
                 Interested in Teaching?
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Transmit your verified academic profile, inspectable course syllabi, and confessional stance directly to the search committee.
+                Send your approved academic profile, sealed as a dossier with a note on your confessional stance, directly to the search committee.
               </p>
 
-              <ExpressInterestButton
+              <ApplyPanel
+                state={applyState}
                 postingId={posting.id}
                 postingTitle={posting.title}
                 institutionName={posting.institution?.name || 'Institution'}
+                nextPath={`/opportunities/${posting.slug}`}
               />
 
               {posting.deadline && (
                 <div className="pt-3 border-t border-indigo-100 dark:border-indigo-900/40 flex items-center gap-2 text-[11px] text-slate-500">
                   <Clock className="w-3.5 h-3.5 text-indigo-500" />
-                  <span>Application Deadline: {posting.deadline}</span>
+                  <span>Application deadline: {posting.deadline} (guidance only; applications are not closed automatically)</span>
                 </div>
               )}
             </div>

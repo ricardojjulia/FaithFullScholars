@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import {
+  UUID_REGEX,
+  computeRetryAfterSeconds,
+  errorCode,
+  jsonError,
+  mapSubmitError,
+  readJsonObject,
+  resolveCaller,
+} from '@/lib/postings/applications-api';
 
 interface RouteContext {
   params: Promise<{
@@ -7,98 +16,54 @@ interface RouteContext {
   }>;
 }
 
+/**
+ * Applies to a posting (ADR 0027). Everything that matters is decided in the
+ * database by `submit_posting_application`: who may apply, that the posting is
+ * published, the duplicate and 20-per-day checks, and the sealed dossier. The
+ * client sends only a note; the institution, status and snapshot are never input.
+ */
 export async function POST(request: NextRequest, { params }: RouteContext) {
   try {
     const { id: postingId } = await params;
-    const body = await request.json();
-    const { coverNote } = body;
-
-    if (!coverNote || typeof coverNote !== 'string' || coverNote.trim().length < 5) {
-      return NextResponse.json(
-        { error: 'A meaningful cover note is required.' },
-        { status: 400 }
-      );
+    if (!UUID_REGEX.test(postingId)) {
+      return jsonError('Invalid opportunity.', 400);
     }
 
     const supabase = await createClient();
+    const caller = await resolveCaller(supabase);
+    if (!caller.ok) return caller.response;
 
-    // Verify posting exists
-    const { data: posting, error: postingError } = await supabase
-      .from('institution_postings')
-      .select('id, title, institution_id, opportunity_type, term, delivery_mode, status')
-      .eq('id', postingId)
-      .single();
-
-    if (postingError || !posting) {
-      return NextResponse.json({ error: 'Posting not found.' }, { status: 404 });
+    const body = await readJsonObject(request);
+    const coverNote = typeof body?.coverNote === 'string' ? body.coverNote.trim() : '';
+    if (coverNote.length < 5 || coverNote.length > 4000) {
+      return jsonError('A cover note of 5 to 4000 characters is required.', 400);
     }
 
-    if (posting.status !== 'published') {
-      return NextResponse.json({ error: 'This opportunity is no longer open.' }, { status: 400 });
-    }
+    const { data, error } = await supabase.rpc('submit_posting_application', {
+      p_posting_id: postingId,
+      p_cover_note: coverNote,
+    });
 
-    // Require authenticated session
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Authentication required to express interest in faculty opportunities.' },
-        { status: 401 }
-      );
-    }
-
-    // Look up and verify approved scholar profile for this user
-    const { data: scholar } = await supabase
-      .from('scholars')
-      .select('id, full_name, profile_status')
-      .eq('account_id', user.id)
-      .maybeSingle();
-
-    if (!scholar || scholar.profile_status !== 'approved') {
-      return NextResponse.json(
-        { error: 'An active, approved scholar profile is required to apply for faculty opportunities.' },
-        { status: 403 }
-      );
-    }
-
-    // Record formal inquiry in accordance with schema
-    const { data: inquiry, error: inquiryError } = await supabase
-      .from('inquiries')
-      .insert({
-        institution_id: posting.institution_id,
-        scholar_id: scholar.id,
-        sender_account_id: user.id,
-        opportunity_type: posting.opportunity_type || 'adjunct',
-        proposed_term: posting.term || null,
-        delivery_mode: posting.delivery_mode || null,
-        message: `[Common App for Posting: ${posting.title} (${posting.id})]\n\n${coverNote.trim()}`,
-        contact_email: user.email || 'candidate@faithfullscholars.org',
-        status: 'pending',
-      })
-      .select('id')
-      .single();
-
-    if (inquiryError) {
-      console.error('Failed to record inquiry expression of interest:', inquiryError);
-      return NextResponse.json(
-        { error: 'Failed to record expression of interest. Please try again later.' },
-        { status: 400 }
-      );
+    if (error) {
+      const mapped = mapSubmitError(error);
+      console.error('POST /api/postings/[id]/express-interest rejected (code):', errorCode(error));
+      if (mapped.status === 429) {
+        const retryAfter = await computeRetryAfterSeconds(supabase, caller.session.scholarId);
+        return jsonError(mapped.message, 429, { 'Retry-After': String(retryAfter) });
+      }
+      return jsonError(mapped.message, mapped.status);
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Your expression of interest and dossier have been transmitted successfully.',
-        inquiryId: inquiry.id,
+        message: 'Your application and dossier have been sent to the search committee.',
+        applicationId: data,
       },
       { status: 201 }
     );
   } catch (err: unknown) {
-    console.error('Unexpected error in POST express-interest:', err);
-    return NextResponse.json({ error: 'An unexpected internal error occurred.' }, { status: 500 });
+    console.error('POST /api/postings/[id]/express-interest failed:', err instanceof Error ? err.name : 'unknown');
+    return jsonError('An unexpected internal error occurred.', 500);
   }
 }

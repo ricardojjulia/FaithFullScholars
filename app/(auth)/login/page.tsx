@@ -14,6 +14,8 @@ export default function LoginPage() {
     event.preventDefault();
     setErrorMessage(null);
     const formData = new FormData(event.currentTarget);
+    // Post-login destination, validated server-side by safeNextPath.
+    formData.set('next', new URLSearchParams(window.location.search).get('next') ?? '');
 
     startTransition(async () => {
       const result = await loginWithPassword(formData);

@@ -70,8 +70,8 @@ jobs:
           exit 1
 
       - name: Seed pilot reference cohort
-        # Distinguished-fellow tiers, postings and Common App applications that
-        # the dossier and applicant-matrix specs exercise.
+        # Distinguished-fellow tiers and postings that the dossier spec exercises.
+        # (Applications are real rows now, arranged by the specs themselves.)
         run: npm run seed:pilot
 
       - name: Create E2E personas

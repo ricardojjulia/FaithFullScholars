@@ -14,6 +14,7 @@ import {
   BookOpen,
   User,
   LayoutDashboard,
+  ClipboardList,
 } from 'lucide-react';
 
 export function ScholarDashboardNav() {
@@ -60,6 +61,12 @@ export function ScholarDashboardNav() {
       href: '/dashboard/inquiries',
       label: 'Inquiries',
       icon: Inbox,
+      exact: false,
+    },
+    {
+      href: '/dashboard/applications',
+      label: 'My applications',
+      icon: ClipboardList,
       exact: false,
     },
     {

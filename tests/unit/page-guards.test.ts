@@ -16,6 +16,8 @@ vi.mock('next/navigation', () => ({
   redirect: (url: string) => {
     throw new Error(`${REDIRECT}:${url}`);
   },
+  useRouter: () => ({ refresh: () => {}, push: () => {} }),
+  usePathname: () => '/',
 }));
 
 let identity: {
@@ -77,6 +79,9 @@ vi.mock('@/lib/admin/queries', () => ({
 
 vi.mock('@/lib/postings/applicant-service', () => ({ getPostingApplicantReport }));
 
+const { fetchMyApplicationsOrThrow } = vi.hoisted(() => ({ fetchMyApplicationsOrThrow: vi.fn() }));
+vi.mock('@/lib/postings/my-applications', () => ({ fetchMyApplicationsOrThrow }));
+
 // Portal data loaders: spied so the tests can prove no fetch runs before a guard
 // passes, and which institution / scholar a fetch is scoped to. PortalQueryError
 // stays real so the pages' error handling is exercised.
@@ -119,6 +124,7 @@ import InstitutionOutreachPage from '@/app/(institution)/institution/inquiries/p
 import InstitutionConferencesPage from '@/app/(institution)/institution/conferences/page';
 import DashboardPage from '@/app/dashboard/page';
 import ScholarInquiriesPage from '@/app/dashboard/inquiries/page';
+import ScholarApplicationsPage from '@/app/dashboard/applications/page';
 import { ConferenceHubPreview } from '@/components/conferences/conference-hub-preview';
 import { ConferencesComingSoon } from '@/components/conferences/conferences-coming-soon';
 import AdminReviewsPage from '@/app/(admin)/admin/reviews/page';
@@ -134,14 +140,16 @@ covers(
   'page:/institution/profile',
   'page:/institution/conferences',
   'page:/dashboard',
-  'page:/dashboard/inquiries'
+  'page:/dashboard/inquiries',
+  'page:/dashboard/applications'
 );
 
 describe('page-level authorization guards', () => {
   beforeEach(() => {
     identity = { userId: null };
     fetchPendingRevisions.mockClear();
-    getPostingApplicantReport.mockClear();
+    getPostingApplicantReport.mockReset();
+    fetchMyApplicationsOrThrow.mockReset();
     for (const fn of Object.values(portal)) fn.mockReset();
     portal.fetchInstitutionProfileOrThrow.mockResolvedValue({
       id: 'inst-1',
@@ -222,6 +230,81 @@ describe('page-level authorization guards', () => {
       PostingApplicantsPage({ params: Promise.resolve({ id: 'posting-1' }) })
     ).rejects.toThrow(`${REDIRECT}:/login`);
     expect(getPostingApplicantReport).not.toHaveBeenCalled();
+  });
+
+  it('posting applicants page 404s signed-in non-members without loading applicants', async () => {
+    identity = { userId: 'u1', role: 'scholar', institutionIds: [] };
+    await expect(
+      PostingApplicantsPage({ params: Promise.resolve({ id: 'posting-1' }) })
+    ).rejects.toThrow(NOT_FOUND);
+    expect(getPostingApplicantReport).not.toHaveBeenCalled();
+  });
+
+  it('posting applicants page reads with the member\'s own client, scoped to the session institutions (not the URL)', async () => {
+    identity = { userId: 'u1', role: 'institution_user', institutionIds: ['inst-1', 'inst-2'] };
+    getPostingApplicantReport.mockResolvedValue(null);
+    await expect(
+      PostingApplicantsPage({ params: Promise.resolve({ id: 'posting-1' }) })
+    ).rejects.toThrow(NOT_FOUND);
+    expect(getPostingApplicantReport).toHaveBeenCalledTimes(1);
+    const [client, postingId, institutionIds] = getPostingApplicantReport.mock.calls[0] as unknown as [
+      { from: unknown },
+      string,
+      string[],
+    ];
+    expect(typeof client.from).toBe('function');
+    expect(postingId).toBe('posting-1');
+    expect(institutionIds).toEqual(['inst-1', 'inst-2']);
+  });
+
+  it('posting applicants page shows an error panel (not a 404, not an empty matrix) when the load fails', async () => {
+    identity = { userId: 'u1', role: 'institution_user', institutionIds: ['inst-1'] };
+    getPostingApplicantReport.mockRejectedValue(new PortalQueryError('posting applications', '57014'));
+    const markup = renderToStaticMarkup(
+      (await PostingApplicantsPage({ params: Promise.resolve({ id: 'posting-1' }) })) as React.ReactElement
+    );
+    expect(markup).toContain('data-testid="data-error-panel"');
+    expect(markup).not.toContain('Total Applicants');
+  });
+
+  it('scholar applications page does not load applications for anonymous visitors', async () => {
+    await expect(ScholarApplicationsPage()).rejects.toThrow(`${REDIRECT}:/login`);
+    expect(fetchMyApplicationsOrThrow).not.toHaveBeenCalled();
+  });
+
+  it('scholar applications page prompts users without a scholar profile and never fetches', async () => {
+    identity = { userId: 'u1', role: 'institution_user' };
+    const markup = renderToStaticMarkup((await ScholarApplicationsPage()) as React.ReactElement);
+    expect(markup).toContain('data-testid="applications-onboarding-prompt"');
+    expect(fetchMyApplicationsOrThrow).not.toHaveBeenCalled();
+  });
+
+  it('scholar applications page scopes the read to the session scholar and shows the real rows', async () => {
+    identity = { userId: 'u1', role: 'scholar', scholarId: 'scholar-1' };
+    fetchMyApplicationsOrThrow.mockResolvedValue([
+      {
+        id: 'app-1',
+        postingId: 'p-1',
+        postingTitle: 'Adjunct in New Testament',
+        postingSlug: 'adjunct-nt',
+        institutionName: 'Real Seminary',
+        status: 'under_review',
+        appliedAt: '2026-10-01T10:00:00Z',
+        statusChangedAt: '2026-10-02T10:00:00Z',
+      },
+    ]);
+    const markup = renderToStaticMarkup((await ScholarApplicationsPage()) as React.ReactElement);
+    expect(fetchMyApplicationsOrThrow.mock.calls[0][1]).toBe('scholar-1');
+    expect(markup).toContain('Adjunct in New Testament');
+    expect(markup).toContain('data-status="under_review"');
+  });
+
+  it('scholar applications page shows an error panel, not an empty list, when the load fails', async () => {
+    identity = { userId: 'u1', role: 'scholar', scholarId: 'scholar-1' };
+    fetchMyApplicationsOrThrow.mockRejectedValue(new PortalQueryError('my applications', '57014'));
+    const markup = renderToStaticMarkup((await ScholarApplicationsPage()) as React.ReactElement);
+    expect(markup).toContain('data-testid="data-error-panel"');
+    expect(markup).not.toContain('my-applications-empty');
   });
 });
 

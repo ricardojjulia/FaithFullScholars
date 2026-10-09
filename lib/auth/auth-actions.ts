@@ -8,6 +8,7 @@ import {
   InstitutionSignupInput,
 } from './types';
 import { redirect } from 'next/navigation';
+import { safeNextPath } from '@/lib/auth/redirect';
 
 function slugify(value: string): string {
   return value
@@ -79,6 +80,13 @@ export async function loginWithPassword(formData: FormData): Promise<AuthActionR
 
   if (instUser) {
     redirect('/institution');
+  }
+
+  // Scholars return to where they were headed (e.g. the posting they wanted to apply to).
+  // Only same-origin relative paths are honoured (safeNextPath), never a client-chosen URL.
+  const requestedNext = formData.get('next');
+  if (typeof requestedNext === 'string' && requestedNext !== '') {
+    redirect(safeNextPath(requestedNext));
   }
 
   // Otherwise default to scholar dashboard

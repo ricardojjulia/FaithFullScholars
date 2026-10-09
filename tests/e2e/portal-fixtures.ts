@@ -14,6 +14,13 @@ export const REMOVAL_SCHOLAR = {
 };
 export const SEEDED_INQUIRY_MESSAGE =
   'E2E seeded inquiry: please confirm your availability to teach an adjunct course in Fall 2027.';
+/** Must match scripts/ci-setup-test-users.mjs (ADR 0027). */
+export const APPLICANT_SCHOLAR = { slug: 'e2e-applicant-scholar', fullName: 'E2E Applicant Scholar' };
+export const APPLICATIONS_POSTING = {
+  id: 'f2000000-0000-0000-0000-0000000000a1',
+  slug: 'e2e-applications-posting',
+  title: 'E2E Applications Posting: Adjunct in New Testament',
+};
 export const SCHOLAR_PERSONA = { slug: 'e2e-test-scholar', fullName: 'E2E Test Scholar' };
 
 /**
