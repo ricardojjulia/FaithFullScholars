@@ -191,6 +191,67 @@
       }
     },
     {
+      "table": "institutions",
+      "persona": "institution_recruiter",
+      "fixture": "member_of_a",
+      "row": {
+        "column": "id",
+        "value": "$INST_A"
+      },
+      "columns": {
+        "id": {
+          "skip": "primary key"
+        },
+        "name": {
+          "writable": false,
+          "value": "'Probe Seminary'"
+        },
+        "slug": {
+          "writable": false,
+          "value": "'probe-seminary-slug'"
+        },
+        "website": {
+          "writable": false,
+          "value": "'https://probe.example.edu'"
+        },
+        "institution_type": {
+          "writable": false,
+          "value": "'bible_college'"
+        },
+        "status": {
+          "writable": false,
+          "value": "'suspended'"
+        },
+        "contact_email": {
+          "writable": false,
+          "value": "'probe@example.edu'"
+        },
+        "location": {
+          "writable": false,
+          "value": "'Probe Town'"
+        },
+        "accreditation_body": {
+          "writable": false,
+          "value": "'TRACS'"
+        },
+        "accreditation_status": {
+          "writable": false,
+          "value": "'associate'"
+        },
+        "accreditation_verified_at": {
+          "writable": false,
+          "value": "'2001-01-01'"
+        },
+        "created_at": {
+          "skip": "audit timestamp"
+        },
+        "updated_at": {
+          "skip": "maintained by an updated_at trigger (overwritten on every update)"
+        }
+      },
+      "requireVisible": true
+    },
+    {
       "table": "inquiries",
       "persona": "institution_owner",
       "fixture": "inquiry",

@@ -123,10 +123,7 @@ describe('Persistent rate limits — real database roles', () => {
 
   // ---- A. the limiter primitive --------------------------------------------
   describe('check_rate_limit grants', () => {
-    const calls = [
-      `SELECT * FROM public.check_rate_limit('it:grant', 60, 5)`,
-      `SELECT * FROM public.check_search_rate_limit('it-grant-fp', 5, false)`,
-    ];
+    const calls = [`SELECT * FROM public.check_rate_limit('it:grant', 60, 5)`];
 
     it('is not executable by anon or authenticated (42501)', async () => {
       for (const caller of [{ role: 'anon' }, asMember] as Caller[]) {
@@ -161,7 +158,6 @@ describe('Persistent rate limits — real database roles', () => {
         asMember,
         async () => {
           await client.query(`GRANT EXECUTE ON FUNCTION public.check_rate_limit(TEXT, INT, INT) TO authenticated`);
-          await client.query(`GRANT EXECUTE ON FUNCTION public.check_search_rate_limit(TEXT, INT, BOOLEAN) TO authenticated`);
         },
         async () => {
           for (const sql of calls) {

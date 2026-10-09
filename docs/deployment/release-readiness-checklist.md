@@ -19,7 +19,7 @@ This release checklist serves as the authoritative pre-flight gate before promot
 - [ ] **RLS Enforcement (100% Coverage):**
   - Run `npm run audit:rls` against the target database.
   - All 25 production tables must return `PASS` with RLS explicitly enabled:
-    - `accounts`, `scholars`, `scholar_profile_revisions`, `profile_reviews`, `disciplines`, `traditions`, `confessional_standards`, `scholar_confessions`, `academic_credentials`, `academic_publications`, `courses`, `media_links`, `availability`, `institutions`, `institution_inquiries`, `institution_memberships`, `saved_scholars`, `saved_courses`, `search_rate_limits`, `content_reports`, `error_telemetry`, `feedback_items`, `audit_logs`, `pilot_invitations`, `app_settings`.
+    - `accounts`, `scholars`, `scholar_profile_revisions`, `profile_reviews`, `disciplines`, `traditions`, `confessional_standards`, `scholar_confessions`, `academic_credentials`, `academic_publications`, `courses`, `media_links`, `availability`, `institutions`, `institution_inquiries`, `institution_memberships`, `saved_scholars`, `saved_courses`, `rate_limit_buckets`, `content_reports`, `error_telemetry`, `feedback_items`, `audit_logs`, `pilot_invitations`, `app_settings`.
 - [ ] **Migration Synchronization:**
   - Verify that all migrations in `supabase/migrations/` have been applied in ascending order.
   - Confirm `supabase migration list` shows zero unapplied migrations on the target instance.

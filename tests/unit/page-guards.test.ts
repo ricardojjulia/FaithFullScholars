@@ -22,6 +22,8 @@ let identity: {
   userId: string | null;
   role?: string;
   institutionIds?: string[];
+  /** institution_users.role for the caller's memberships (default owner). */
+  institutionRole?: string;
   scholarId?: string;
   /** Tables whose session lookup fails (a database blip). */
   failTables?: string[];
@@ -44,7 +46,7 @@ vi.mock('@/lib/supabase/server', () => ({
         : table === 'accounts'
           ? { data: identity.role ? { role: identity.role } : null, error: null }
           : table === 'institution_users'
-            ? { data: (identity.institutionIds ?? []).map((institution_id) => ({ institution_id })), error: null }
+            ? { data: (identity.institutionIds ?? []).map((institution_id) => ({ institution_id, role: identity.institutionRole ?? 'owner' })), error: null }
             : table === 'scholars'
               ? { data: identity.scholarId ? { id: identity.scholarId } : null, error: null }
               : { data: null, error: null };
@@ -317,6 +319,31 @@ describe('institution portal pages call their own guard before fetching', () => 
     expect(markup).toContain('ATS Accredited');
     for (const fixture of ['Westminster Theological Seminary', 'academic.dean@wts.edu', 'Glenside']) {
       expect(markup).not.toContain(fixture);
+    }
+  });
+
+  it('profile page is editable for owners and admins', async () => {
+    for (const institutionRole of ['owner', 'admin']) {
+      identity = { userId: 'u1', role: 'institution_user', institutionIds: ['inst-1'], institutionRole };
+      const markup = html(await InstitutionProfilePage());
+      expect(markup, institutionRole).toContain('Save Profile Settings');
+      expect(markup, institutionRole).not.toContain('data-testid="profile-read-only"');
+      expect(markup, institutionRole).not.toContain('readOnly');
+    }
+  });
+
+  it('profile page is read-only with an explanation for recruiters and members', async () => {
+    for (const institutionRole of ['recruiter', 'member']) {
+      identity = { userId: 'u1', role: 'institution_user', institutionIds: ['inst-1'], institutionRole };
+      const markup = html(await InstitutionProfilePage());
+      expect(markup, institutionRole).toContain('data-testid="profile-read-only"');
+      expect(markup, institutionRole).toContain('only institution owners and admins can edit');
+      expect(markup, institutionRole).not.toContain('Save Profile Settings');
+      expect(markup, institutionRole).toContain('value="Fixture-Free Seminary"');
+      expect(markup, institutionRole).toMatch(/readOnly=""|readonly=""/i);
+      expect(markup, institutionRole).toMatch(/<select[^>]*disabled/);
+      expect(markup, institutionRole).toContain('id="profile-read-only-notice"');
+      expect(markup, institutionRole).toMatch(/id="profile-name"[^>]*aria-describedby="profile-read-only-notice"|aria-describedby="profile-read-only-notice"[^>]*id="profile-name"/);
     }
   });
 

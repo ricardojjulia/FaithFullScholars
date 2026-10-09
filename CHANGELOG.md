@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
+- **Institution profile edits are limited to owners and admins** (spec `docs/superpowers/specs/2026-10-08-db-followups.md`, migration `20261010090000`). Any institution member, including a recruiter, could previously update the institution row. The `institutions` UPDATE policy now requires the new `is_institution_admin()` (role `owner` or `admin`) or a platform admin, in both USING and WITH CHECK, so a recruiter's or member's update matches zero rows. `getSessionContext` carries the per-institution role; `PATCH /api/institution/profile` returns 403 early for other roles; `/institution/profile` shows a read-only form with an explanation. A preflight aborts the migration only on a real lockout (an institution with members but none owner or admin).
 - **Real data on portal screens; honest labels for demo features** (spec `docs/superpowers/specs/2026-10-08-real-portal-data.md`). Screens that showed invented numbers as if real now read the signed-in user's own rows through the user/RLS client, each page calling its own guard before fetching. No schema, RLS or migration change.
   - **Institution home (`/institution`):** name, location, accreditation and verification come from the member's institution (`Verified` only when approved, otherwise `Pending verification`). The four counts are exact `head` queries; "Awaiting scholar response" is `pending` + `read`. "Average response time" is removed because it is not tracked.
   - **Shortlist (`/institution/saved`):** loads the real saved scholars and courses. **Remove used to POST to the add/remove toggle and could add instead of remove.** It is now an explicit `DELETE /api/institution/saved-scholars?scholarId=` (and `saved-courses?courseId=`): UUID-validated, institution taken from the session, idempotent (`{removed}`), pessimistic in the UI with a visible error on failure. Unavailable profiles say so and can still be removed.
@@ -505,6 +506,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **No automatic tag trigger:** pushing a `v*` tag no longer applies migrations.
   - **Hardening:** `permissions: contents: read`, a concurrency group, the CLI pinned to 2.120.0, and the optional `SUPABASE_DB_PASSWORD` read from the environment rather than the command line.
   - **Runbook:** see `docs/deployment/vercel-supabase.md`.
+- **Deploy checks use the new limiter.** `verify:deploy` expects `rate_limit_buckets` and `verify:pilot` checks `rate_limit_buckets` and `check_rate_limit()` (ADR 0026) instead of the legacy table.
+- **Decision recorded (2026-10-08, owner):** the "hide the dean's email" follow-up is closed as not worth doing, because `institutions.contact_email` is already public.
 - **Hygiene (Council Review 12, Prompt C).**
   - **No raw error messages:** 14 API route handlers, `createContract`, and `updateSubscriptionTier` no longer return raw exception or database text. Details are logged server-side. Login now returns a generic "Invalid email or password", so provider messages can't reveal whether an account exists. Signup maps "already registered" to a friendly message.
   - **AI faculty matcher:** fictional `SEED_CANDIDATES` are used only under local `next dev`. Deployed builds no longer present invented scholars as real matches.
@@ -536,8 +539,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Draft vs. published profile revisioning model ([ADR 0005](docs/adr/0005-draft-published-profile-revisions.md)).
   - Assisted CV onboarding with automated PDF extraction in Phase 3.
 
+### Removed
+- **Legacy search limiter dropped:** `public.check_search_rate_limit(TEXT, INT, BOOLEAN)` and `public.search_rate_limits` (replaced by ADR 0026; unused). `tests/integration/search-rate-limits.test.ts` is deleted and `legacy-limiter-dropped.test.ts` asserts both objects are gone.
+
 ### Security
 - **Post-login redirect hardening.** `safeNextPath` now rejects control characters (tab, CR, LF and others) and backslashes anywhere in the path, and requires the path to resolve to the same origin. Browsers strip tab and newline, so `/\t/evil.com` would have become `//evil.com`. The `/auth/callback` route was already protected by its own origin check, so nothing was exploitable in production. The fix closes the gap before PR #69 adds a login `next` redirect that relies on `safeNextPath` alone. The new tests fail against the old code.
+- **Institution UPDATE policy tightened** (ADR 0023 note): role gate `owner`/`admin` at the data layer, with real-role integration tests (recruiter and member update 0 rows; owner, admin and platform admin succeed), an in-suite rollback probe that restores the old policy, and a policy-matrix `institutions` x `institution_recruiter` scenario with `requireVisible`.
 - **`sharp` 0.35.4 → 0.35.5** (lockfile only, within Next's `^0.35.4` range). Fixes the high-severity librsvg vulnerability in the bundled libvips (GHSA-wq5f-xc86-pv6w / CVE-2026-96889). `npm audit --omit=dev` is now clean. `source-map-js` 1.2.2 (CVE-2026-93749) landed in #55.
 - **CAPTCHA bypass closed.** `verifyCaptchaToken` accepted the literal client placeholder `mock-turnstile-token` even when a Turnstile secret was configured, so anyone could skip sign-up bot protection by sending that string.
   - With a secret configured, every token is now verified by Cloudflare and a missing token is refused. Provider error codes are no longer echoed to the client.

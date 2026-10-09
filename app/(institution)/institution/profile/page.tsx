@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { requireInstitutionMember } from '@/lib/auth/guards';
+import { canEditInstitutionProfile } from '@/lib/auth/session';
 import {
   fetchInstitutionProfileForEdit,
   PortalQueryError,
@@ -20,7 +21,7 @@ export default async function InstitutionProfilePage() {
   const supabase = await createClient();
   // Guard here, not only in the layout: layouts do not stop pages from rendering.
   // The institution is resolved from the session, never from the request.
-  const { institutionId } = await requireInstitutionMember(supabase);
+  const { session, institutionId } = await requireInstitutionMember(supabase);
 
   let profile: InstitutionEditableProfile | null = null;
   let loadFailed = false;
@@ -40,5 +41,5 @@ export default async function InstitutionProfilePage() {
     );
   }
 
-  return <InstitutionProfileForm profile={profile} />;
+  return <InstitutionProfileForm profile={profile} canEdit={canEditInstitutionProfile(session, institutionId)} />;
 }

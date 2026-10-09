@@ -12,6 +12,8 @@ interface FakeIdentity {
   accountRole?: string | null;
   scholarId?: string | null;
   institutionIds?: string[];
+  /** institution_users.role for the caller's memberships (default owner). */
+  institutionRole?: string;
 }
 
 let identity: FakeIdentity = { user: null };
@@ -40,7 +42,10 @@ function resultFor(table: string) {
       };
     case 'institution_users':
       return {
-        data: (identity.institutionIds ?? []).map((institution_id) => ({ institution_id })),
+        data: (identity.institutionIds ?? []).map((institution_id) => ({
+          institution_id,
+          role: identity.institutionRole ?? 'owner',
+        })),
         error: null,
       };
     case 'saved_scholars':
@@ -187,6 +192,7 @@ describe('Authorization lockdown', () => {
       role: 'institution_user',
       scholarId: null,
       institutionIds: [INST_A],
+      institutionRoles: { [INST_A]: 'owner' },
       lookupFailed: false,
     };
 
@@ -388,6 +394,26 @@ describe('Authorization lockdown', () => {
       identity = scholarA();
       expect((await patch({ name: 'X' })).status).toBe(403);
       expect(updateCalls).toHaveLength(0);
+    });
+
+    it.each(['recruiter', 'member'])('returns 403 early for a %s and never issues an UPDATE', async (institutionRole) => {
+      identity = { ...institutionAUser(), institutionRole };
+      const res = await patch({ name: 'Renamed' });
+      expect(res.status).toBe(403);
+      expect(updateCalls).toHaveLength(0);
+      expect(adminClientSpy).not.toHaveBeenCalled();
+    });
+
+    it('returns 403 when the membership role is missing (fail closed)', async () => {
+      identity = { ...institutionAUser(), institutionRole: '' };
+      expect((await patch({ name: 'Renamed' })).status).toBe(403);
+      expect(updateCalls).toHaveLength(0);
+    });
+
+    it.each(['owner', 'admin'])('lets an institution %s through to the update', async (institutionRole) => {
+      identity = { ...institutionAUser(), institutionRole };
+      expect((await patch({ name: 'Renamed' })).status).toBe(200);
+      expect(updateCalls).toHaveLength(1);
     });
 
     it('returns 503 (not 403/404) when the membership lookup itself fails', async () => {
