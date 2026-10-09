@@ -264,7 +264,7 @@ Exit criteria:
 ## Production status and next slice (2026-10-09)
 
 - Applied to production and live: ADR 0026 rate limits (`20261008090000`, PR #65), DB follow-ups (`20261010090000`, PR #67, Release run 37966269473), course integrity (`20261011090000`, PR #68, run 37967194469), posting applications (`20261012090000`, ADR 0027, PR #69, run 37968165098). Each dry run listed exactly its migration and each smoke test passed. PR #66, #70 and #71 are merged.
-- Release workflow: manual dispatch, dry run by default, fail-loud, pinned CLI 2.120.0, authenticates with `SUPABASE_ACCESS_TOKEN` alone. The production environment has no required reviewer by owner choice.
+- Release workflow: manual dispatch, dry run by default, fail-loud, pinned CLI 2.120.0, authenticates with `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF`; no database password needed. The production environment has no required reviewer by owner choice.
 - Next slice (owner): the conference hub.
 - Open items: Turnstile keys in Vercel production are unconfirmed; `RATE_LIMIT_SALT` in Vercel production is unconfirmed.
 
