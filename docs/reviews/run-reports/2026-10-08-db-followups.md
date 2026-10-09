@@ -3,7 +3,7 @@
 ## 1. Run Metadata
 - **Branch:** `fix/db-followups` (draft PR)
 - **Spec:** `docs/superpowers/specs/2026-10-08-db-followups.md`
-- **Execution status:** built and locally verified (lint, typecheck, unit, test-surface, version:check). Integration and policy-matrix results come from CI (no local database). Migration `20261010090000` is not applied to production.
+- **Execution status:** built and locally verified (lint, typecheck, unit, test-surface, version:check). Integration and policy-matrix results come from CI (no local database). Applied to production 2026-10-09 by Release run 37966269473 (dry run 37966218194 listed exactly that migration); merged as PR #67 (`7b00bb2`); live smoke test passed.
 
 ## 2. Intent
 Restrict institution profile edits to owners and admins at the data layer, and drop the unused legacy search limiter.

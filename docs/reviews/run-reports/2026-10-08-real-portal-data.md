@@ -3,7 +3,7 @@
 ## 1. Run Metadata
 - **Branch:** `fix/real-portal-data`
 - **Head reviewed:** `fbdcd73` (builds on `6301deb`, `d6f2a53`)
-- **Execution status:** VERIFIED (CI green on `fbdcd73`), AWAITING OWNER APPROVAL AND MERGE. A pr-review re-check of the fix pass was still running when this was written.
+- **Execution status:** VERIFIED (CI green on `fbdcd73`), MERGED (PR #66, `1e0a5a2`). A pr-review re-check of the fix pass was still running when this was written.
 
 ## 2. Intent
 Stop portal screens showing invented numbers and identities as real, fix the shortlist remove bug, and label the features that are still demos.

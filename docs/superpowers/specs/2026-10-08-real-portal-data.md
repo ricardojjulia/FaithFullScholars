@@ -1,6 +1,6 @@
 # Spec: Real Data on Portal Screens (and Honest Labels for Demo Features)
 
-- **Status:** Approved, implemented, pending merge (PR #66). Story and technical brief approved by the owner on 2026-10-08 (gates 3 and 5).
+- **Status:** Approved, implemented, merged and live (PR #66, `1e0a5a2`). Story and technical brief approved by the owner on 2026-10-08 (gates 3 and 5).
 - **Order:** slice 2 of the remaining known-broken fixes. The owner set the order on 2026-10-07: rate limits (done, ADR 0026) → real portal data → applications → conference hub.
 - **Branch:** `fix/real-portal-data`
 

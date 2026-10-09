@@ -27,7 +27,7 @@ Create two environments in your repository under **Settings -> Environments**:
 
 2. **`production`**:
    - Deployment branch: `main` only.
-   - Required reviewers: Require review from repository owner (`@ricardojjulia`).
+   - Required reviewers: optional. The owner chose automatic approval for `production` (no required reviewer); enabling `@ricardojjulia` as reviewer adds a manual gate.
    - Secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN`, etc.
 
 ## Branch Protection

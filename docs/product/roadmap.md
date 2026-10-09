@@ -66,7 +66,7 @@ Deliverables:
 - Persistent universal top application bar with integrated search typeahead and scope selectors.
 - Modern 3-column desktop layout for directory and discovery feeds (mini-profile & filters on left, main directory in center, recommendations & trust rail on right).
 - Canonical LinkedIn-style profile card hierarchy: cover banner, 120px overlapping avatar, credential headline, action bar, and modular cards for degrees, publications, syllabi, and doctrinal affirmations.
-- Search rate limiter: 15 req/min for anonymous callers and 120 req/min for signed-in users. The original `search_rate_limits` limiter was never called and is dropped by migration `20261010090000` (pending deploy); ADR 0026 (PR #65) replaces it with the enforced `check_rate_limit` and `rate_limit_buckets`, pending the production migration `20261008090000`.
+- Search rate limiter: 15 req/min for anonymous callers and 120 req/min for signed-in users. The original `search_rate_limits` limiter was never called and is dropped by migration `20261010090000` (applied to production 2026-10-09, Release run 37966269473); ADR 0026 (PR #65) replaces it with the enforced `check_rate_limit` and `rate_limit_buckets` (migration `20261008090000`, applied to production and verified).
 - 3-page anonymous discovery cap (max 18 results) with sign-in wall preventing automated candidate harvesting.
 - Search input sanitization and PII segregation.
 
@@ -131,7 +131,7 @@ Deliverables:
 - Scholar Inquiry Inbox (`/dashboard/inquiries`) with status transitions (pending, accepted, declined, archived) and decision feedback.
 - Institution Portal workspace (`/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`).
 - Real data on portal screens (PR #66, merged): the institution home, shortlist, outreach log and profile and the scholar dashboard and inbox read the signed-in user's own rows; analytics is labelled sample data; the conference hub is a staff-only preview. `/dashboard/courses` is now a real My Courses manager (PR #68: create, publish, edit, delete; private by default). The applications rebuild is built (PR #69, ADR 0027); next slice: the conference hub.
-- Anti-spam rate limiting (10 inquiries/hr per institution) and input validation. Now a database trigger (ADR 0026, PR #65), pending the production migration `20261008090000`.
+- Anti-spam rate limiting (10 inquiries/hr per institution) and input validation. Now a database trigger (ADR 0026, PR #65), live in production (migration `20261008090000` applied and verified).
 - Transactional email notification service abstraction (`email-service.ts`) with event logging.
 - Unit and database integration tests verifying end-to-end communication workflows.
 
@@ -260,6 +260,13 @@ Exit criteria:
 - [x] Splinter security advisor passes with 0 findings across all checks.
 - [x] Playwright E2E tests pass cleanly across 15 browser tests.
 - [x] Remaining backlog items (Course Licensing, Credential Verification, Consortia, Premium Profiles) cataloged for follow-up.
+
+## Production status and next slice (2026-10-09)
+
+- Applied to production and live: ADR 0026 rate limits (`20261008090000`, PR #65), DB follow-ups (`20261010090000`, PR #67, Release run 37966269473), course integrity (`20261011090000`, PR #68, run 37967194469), posting applications (`20261012090000`, ADR 0027, PR #69, run 37968165098). Each dry run listed exactly its migration and each smoke test passed. PR #66, #70 and #71 are merged.
+- Release workflow: manual dispatch, dry run by default, fail-loud, pinned CLI 2.120.0, authenticates with `SUPABASE_ACCESS_TOKEN` alone. The production environment has no required reviewer by owner choice.
+- Next slice (owner): the conference hub.
+- Open items: Turnstile keys in Vercel production are unconfirmed; `RATE_LIMIT_SALT` in Vercel production is unconfirmed.
 
 ## Pilot Recommendation
 

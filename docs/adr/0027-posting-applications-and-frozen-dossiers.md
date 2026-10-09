@@ -1,6 +1,6 @@
 # ADR 0027: Posting Applications with Frozen Dossiers
 
-- **Status:** Accepted. Implemented on `feat/posting-applications` (PR #69, CI green on `10aba83`); migration `20261012090000` not yet applied to production (pending deploy, after `20261010090000` and `20261011090000`).
+- **Status:** Accepted. Implemented on `feat/posting-applications` (PR #69, CI green on `10aba83`); merged as `b1a5d0b`. Migration `20261012090000` applied to production 2026-10-09 by Release run 37968165098 (dry run 37968114816), after `20261010090000` (run 37966269473) and `20261011090000` (run 37967194469); smoke test passed.
 - **Date:** 2026-10-08
 - **Deciders:** Core Engineering (owner-approved story and brief, 2026-10-08)
 - **Builds on:** ADR 0020, ADR 0022, ADR 0023, ADR 0025, ADR 0026

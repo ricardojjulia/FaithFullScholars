@@ -3,7 +3,7 @@
 - **Date:** 2026-10-08
 - **Subject:** PR #66 (`fix/real-portal-data`; spec `docs/superpowers/specs/2026-10-08-real-portal-data.md`), head `fbdcd73`.
 - **Scope statement:** Scoped to a single vertical slice. Agents 1 (data/API), 2+3 (routes/pages and UX/shell, combined) and 7 (Stakeholder & Trust Lens) ran in one pass. Agents 4 (feature/competitive) and 5 (Wildcard) were omitted for a single slice. Agent 6 (Documenter) wrote this record. Individual agent reports were not written as separate files; findings are consolidated below.
-- **Result:** No Critical findings. Important findings were fixed in `fbdcd73`. Merge awaits owner approval. No database, RLS or migration change, so there is no deploy step beyond the merge.
+- **Result:** No Critical findings. Important findings were fixed in `fbdcd73`. Merged as PR #66 (`1e0a5a2`). No database, RLS or migration change, so there is no deploy step beyond the merge.
 - **Re-review of fbdcd73:** no Critical. Important items handled: the Vercel preview fails by design on every branch (no preview environment); contact-email wording now says app-layer minimisation (column-level control is a follow-up); added `tests/unit/respond-to-inquiry.test.ts`. Also fixed the chunked-body size cap on the profile PATCH (commit 46f92d6).
 
 ## 1. Gates

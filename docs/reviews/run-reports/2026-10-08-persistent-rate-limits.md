@@ -3,7 +3,7 @@
 ## 1. Run Metadata
 - **Branch:** `fix/persistent-rate-limits`
 - **Head reviewed:** `affc243` (builds on `9135620`, `d097c8f`, `1161fac`)
-- **Execution status:** VERIFIED (CI green on `affc243`), AWAITING OWNER APPROVAL AND DEPLOY. Migration `20261008090000` is not applied to production.
+- **Execution status:** VERIFIED (CI green on `affc243`), MERGED AND LIVE (PR #65, `4048fcf`). Migration `20261008090000` was applied to production by the owner via the SQL Editor and verified. `RATE_LIMIT_SALT` in Vercel production is still unconfirmed.
 
 ## 2. Intent
 Make the search rate limits of ADR 0008 real (the old limiter was never called and the inquiry limiter was in memory), and make the inquiry cap database-enforced so direct PostgREST inserts, restarts and multiple instances cannot bypass it.

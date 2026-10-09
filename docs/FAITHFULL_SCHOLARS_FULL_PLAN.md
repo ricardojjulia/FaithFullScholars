@@ -46,7 +46,7 @@ FaithFull Scholars creates a trusted, searchable academic directory where:
 - **Hosting:** Vercel.
 - **Authentication:** Supabase Auth with cookie-based SSR sessions.
 - **Database:** Supabase Postgres with 100% Row Level Security (RLS) enforcement.
-- **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, persistent database-enforced rate limiting (ADR 0008, ADR 0026; pending production migration), deep-pagination walls, and signed storage URLs (ADR 0008).
+- **Security & Data Protection:** Multi-tenant isolation (Scholars, Institutions, Admins, Public), PII segregation, persistent database-enforced rate limiting (ADR 0008, ADR 0026; live in production), deep-pagination walls, and signed storage URLs (ADR 0008).
 - **File storage:** Supabase Storage with private encrypted buckets for CVs, full syllabi, and administrative review assets.
 - **External media:** YouTube and other external platforms for video, podcasts, and public course content.
 - **Styling & Iconography:** Tailwind CSS with accessible semantic tokens, modern Aptos / clean sans geometric typography, and edge-grade Lucide vector iconography.
@@ -271,7 +271,7 @@ Revision Staging Model (ADR 0005):
 - Modifications are saved to a versioned draft revision that is submitted for admin review.
 - Admins review changes as structured diffs; approval promotes the revision to the published snapshot.
 
-Implemented lifecycle (ADR 0024, PR #56; migration `20261006090000` not yet applied to production):
+Implemented lifecycle (ADR 0024, PR #56; migration `20261006090000` applied to production, deployed 2026-10-07):
 
 - Revisions are persisted in `scholar_profile_revisions`; `sessionStorage` drafts and the hard-coded demo scholar are removed. The editor, onboarding, and preview load and save the real revision.
 - Statuses: `draft`, `submitted`, `changes_requested`, `approved`, `superseded`, `rejected`. One open revision (draft, submitted, changes_requested) per scholar, enforced by a partial unique index. A database guard trigger allows only draft, submit, withdraw (while unreviewed), and changes-requested edit or resubmit; the database assigns `revision_number`.
@@ -285,19 +285,19 @@ Review-gated profile content (ADR 0025, PR #62; LIVE in production: migration `2
 - The editor and the admin diff load the live baseline from the scholar's real rows, so a first approval cannot wipe existing data. Taxonomy uses database-backed slug pickers; credentials, publications and tradition editors and onboarding CV-import merge (never wipes or invents data) are added. Confession adherence must be chosen explicitly and an Art. 9 public-data notice is shown.
 - Deploy: applied by the owner on 2026-10-07 after a passing preflight (0 open revisions, taxonomy 9/6/12). Verified: the three functions are executable by postgres and service_role only, the five child guard triggers and `trg_guard_scholars` exist, all 8 private helpers are present, the `lausanne-covenant` (1974) row exists and the version is recorded. Record: `docs/reviews/2026-10-07-council-review-14-synthesis.md`.
 
-Persistent, enforced rate limits (ADR 0026, PR #65; migration `20261008090000` built and reviewed, NOT yet applied to production):
+Persistent, enforced rate limits (ADR 0026, PR #65; migration `20261008090000` applied to production by the owner via the SQL Editor and verified; app live since #65 merged as `4048fcf`):
 
 - One service-role-only Postgres limiter (`check_rate_limit`, fixed window, atomic upsert, bounded SKIP LOCKED cleanup; `rate_limit_buckets` has FORCE RLS and a deny-all policy). `/scholars` searches (15/min anonymous, 120/min signed in) and `GET /api/postings` use it (HTTP 429 with Retry-After; IP keys are HMAC-SHA256 with `RATE_LIMIT_SALT`). Reads fail open with an error log after 1.5 s.
 - The inquiry cap (10/hour per institution, shared by members) is a database trigger (`trg_guard_inquiry_rate`, FS429) that fails closed. `inquiries.created_at` is server-controlled so back-dating cannot evade it. The in-memory limiter is deleted.
-- Until the migration is applied, search is not limited and the inquiry cap is not database-enforced. Record: `docs/reviews/2026-10-08-council-review-15-synthesis.md`.
+- Historical note: before the migration was applied, search was not limited and the inquiry cap was not database-enforced. Both are now live. Record: `docs/reviews/2026-10-08-council-review-15-synthesis.md`.
 
-Real data on portal screens (PR #66, branch `fix/real-portal-data`; no DB, RLS or migration change; pending merge):
+Real data on portal screens (PR #66, merged `1e0a5a2`; no DB, RLS or migration change):
 
 - `/institution`, `/institution/saved`, `/institution/inquiries`, `/institution/profile`, `/dashboard` and `/dashboard/inquiries` read the signed-in user's own rows through the RLS client. Saved-item removal is an explicit idempotent `DELETE` (fixes the toggle-add bug). `PATCH /api/institution/profile` is session-scoped and allow-listed and cannot write trust columns. The nav "Verified" badge reflects the real institution status. "Awaiting" means `pending` + `read` everywhere.
 - A session lookup failure is an outage (error panel or 503), never a fake empty state. Contact email is withheld from the scholar inbox payload until the inquiry is accepted (app layer only; inquiry RLS is row-level, so a column-level control is a follow-up).
 - `/dashboard/analytics` is labelled sample data; the conference hub is a staff-only preview; unused demo exports were deleted.
-- `/dashboard/courses` is real (spec `docs/superpowers/specs/2026-10-08-scholar-courses.md`): `INITIAL_COURSES` is gone, courses are created private, publish toggles visibility, delete is blocked while licensing agreements exist (enforced in the database by migration `20261011090000`), and slugs are globally unique; courses stay self-service (ADR 0025 accepted risk).
-- Institution profile edits are limited to institution owners and admins, plus platform admins (migration `20261010090000`, applied to production 2026-10-09; ADR 0023 note). Recruiters and members see it read-only. The legacy `search_rate_limits` / `check_search_rate_limit` are dropped (ADR 0026). Owner decision 2026-10-08: the "hide the dean's email" follow-up is closed as not worth doing, because `institutions.contact_email` is already public. The applications rebuild is built (PR #69, ADR 0027); next slice: the conference hub. Record: `docs/reviews/2026-10-08-council-review-16-synthesis.md`.
+- `/dashboard/courses` is real (spec `docs/superpowers/specs/2026-10-08-scholar-courses.md`): `INITIAL_COURSES` is gone, courses are created private, publish toggles visibility, delete is blocked while licensing agreements exist (enforced in the database by migration `20261011090000`, PR #68, applied to production 2026-10-09 by Release run 37967194469 after dry run 37967105582; the duplicate-slug preflight passed; merged `f9a23c7`; smoke test passed), and slugs are globally unique; courses stay self-service (ADR 0025 accepted risk).
+- Institution profile edits are limited to institution owners and admins, plus platform admins (migration `20261010090000`, PR #67; applied to production 2026-10-09 by Release run 37966269473 after dry run 37966218194, which listed exactly that migration; merged `7b00bb2`; smoke test passed; ADR 0023 note). Recruiters and members see it read-only. The legacy `search_rate_limits` / `check_search_rate_limit` are dropped (ADR 0026). Owner decision 2026-10-08: the "hide the dean's email" follow-up is closed as not worth doing, because `institutions.contact_email` is already public. The applications rebuild is built (PR #69, ADR 0027); next slice: the conference hub. Record: `docs/reviews/2026-10-08-council-review-16-synthesis.md`.
 
 Known gaps (accepted residual risk, see ADR 0024 and ADR 0025):
 
@@ -807,7 +807,7 @@ Acceptance:
 
 ### Phase 6: Institution Workflows (Completed)
 
-> **Status:** Completed, with caveats (Council 12 found rate limiting in-memory and per instance; ADR 0026 / PR #65 replaces it with a database limiter and trigger, pending its production migration. Also: inquiry `contact_email` is client-supplied; `/institution`, `/institution/profile`, `/dashboard`, `/institution/saved`, `/institution/inquiries` and the scholar inbox now show real data (spec 2026-10-08; `/dashboard/analytics` is labelled sample data); scholar express-interest is covered under Phase 17). Built: Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
+> **Status:** Completed, with caveats (Council 12 found rate limiting in-memory and per instance; ADR 0026 / PR #65 replaces it with a database limiter and trigger, live in production (migration applied by the owner, verified). Also: inquiry `contact_email` is client-supplied; `/institution`, `/institution/profile`, `/dashboard`, `/institution/saved`, `/institution/inquiries` and the scholar inbox now show real data (spec 2026-10-08; `/dashboard/analytics` is labelled sample data); scholar express-interest is covered under Phase 17). Built: Structured faculty outreach modal on public profiles, candidate shortlists and saved courses in `saved_scholars` / `saved_courses`, scholar inquiry inbox at `/dashboard/inquiries`, institution portal workspace at `/institution`, `/institution/inquiries`, `/institution/saved`, `/institution/profile`, 10 inquiries/hr rate limiting, transactional notification email abstraction, and complete integration test coverage).
 
 1. Build institution profiles and membership.
 2. Build saved scholars and courses.
@@ -945,9 +945,9 @@ Acceptance:
 4. [x] Create error boundaries (`app/not-found.tsx` and `app/error.tsx`).
 5. [x] Add unit tests in `tests/unit/ats-matrix-generator.test.ts` and E2E test in `tests/e2e/accreditation-matrix.spec.ts`.
 
-### Phase 17: Confessional Common Application & Search Committee Applicant Matrix (Built, pending production migration)
+### Phase 17: Confessional Common Application & Search Committee Applicant Matrix (Built, live in production)
 
-> **Status:** Rebuilt by ADR 0027 (spec `docs/superpowers/specs/2026-10-08-posting-applications.md`, branch `feat/posting-applications`): built and gated in CI, live once migration `20261012090000` is applied to production. Before this, `POST /api/postings/[id]/express-interest` always failed under RLS (scholars cannot insert `inquiries`) and the matrix guessed applications from inquiries with the service role (Council Review 12). Scope now: real `posting_applications` with a SQL-sealed dossier, one insert path (`submit_posting_application`), a transition-table guard, private institution notes, an audit trail, contact released at interview, a 20-per-day database cap, the scholar's My applications page, and the applicant matrix on real data. Deferred: email notifications, interview scheduling (conference hub slice), messaging inside applications.
+> **Status:** Rebuilt by ADR 0027 (spec `docs/superpowers/specs/2026-10-08-posting-applications.md`, branch `feat/posting-applications`): built and gated in CI, live in production: migration `20261012090000` applied 2026-10-09 by Release run 37968165098 after dry run 37968114816; merged as PR #69 (`b1a5d0b`); smoke test passed (posting pages load without the status-load error, `/dashboard/applications` redirects signed-out visitors, anonymous express-interest returns 401). Before this, `POST /api/postings/[id]/express-interest` always failed under RLS (scholars cannot insert `inquiries`) and the matrix guessed applications from inquiries with the service role (Council Review 12). Scope now: real `posting_applications` with a SQL-sealed dossier, one insert path (`submit_posting_application`), a transition-table guard, private institution notes, an audit trail, contact released at interview, a 20-per-day database cap, the scholar's My applications page, and the applicant matrix on real data. Deferred: email notifications, interview scheduling (conference hub slice), messaging inside applications.
 
 1. [x] Implement `lib/postings/applicant-service.ts` compiling applicant reports from the frozen snapshots (member client, two queries), ATS Standard 3 doctorates and confessional fit; CSV export in `lib/postings/applicants-csv.ts`.
 2. [x] Build search committee candidate matrix UI (`components/institution/posting-applicant-matrix.tsx`) with status filtering, CSV export, and print styles.
@@ -1087,3 +1087,9 @@ Before implementing:
 7. Run verification.
 8. Update implementation status and documentation.
 
+## Production Status and Next Slice (2026-10-09)
+
+- Applied to production and live: ADR 0026 rate limits (`20261008090000`, PR #65), DB follow-ups (`20261010090000`, PR #67, Release run 37966269473), course integrity (`20261011090000`, PR #68, run 37967194469), posting applications (`20261012090000`, ADR 0027, PR #69, run 37968165098). Each dry run listed exactly its migration and each smoke test passed. PR #66, #70 and #71 are merged.
+- Release workflow: manual dispatch, dry run by default, fail-loud, pinned CLI 2.120.0, authenticates with `SUPABASE_ACCESS_TOKEN` alone. The production environment has no required reviewer by owner choice.
+- Next slice (owner): the conference hub.
+- Open items: Turnstile keys in Vercel production are unconfirmed; `RATE_LIMIT_SALT` in Vercel production is unconfirmed.
