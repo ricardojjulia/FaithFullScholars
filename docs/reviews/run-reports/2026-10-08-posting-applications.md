@@ -3,7 +3,7 @@
 ## 1. Run Metadata
 - **Branch:** `feat/posting-applications`
 - **Head reviewed:** `10aba83` (after `209a4da`, `ebaaa73`; rebased onto `fd73735`)
-- **Execution status:** VERIFIED (CI green on `10aba83`), AWAITING OWNER APPROVAL, PRODUCTION MIGRATION AND MERGE. The builder was interrupted by an account usage limit and resumed with no work lost.
+- **Execution status:** VERIFIED (CI green on `10aba83`), MERGED AND LIVE (PR #69, `b1a5d0b`). Migration `20261012090000` applied to production 2026-10-09 by Release run 37968165098 (dry run 37968114816); smoke test passed. The builder was interrupted by an account usage limit and resumed with no work lost.
 
 ## 2. Intent
 Make express interest work, replace guessed applicants with real applications, and give institutions a sealed record of what the scholar applied with, without exposing contact details early.

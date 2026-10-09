@@ -45,7 +45,7 @@ Scholars, meanwhile, have no single trusted place to present their **credentials
 > - review-gated profile content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)) is live in production (PR #62; migration `20261007090000` applied 2026-10-07): direct edits to live profile content are closed and credentials, publications and confessions publish on approval;
 > - posting applications ([ADR 0027](./docs/adr/0027-posting-applications-and-frozen-dossiers.md)): express interest, the scholar's "My applications" page and the real applicant matrix are built (branch `feat/posting-applications`) but not live. The owner must apply migration `20261012090000` to production before merging; until then express interest fails;
 > - institution invitations;
-> - live data on the remaining demo screens: the institution home, profile, shortlist, outreach log, scholar dashboard and inbox now show real data (PR #66, pending merge), analytics is labelled as sample data and the conference hub is a staff-only preview. `/dashboard/courses` is now real (My Courses: create, publish, edit and delete, saved to the database, PR pending);
+> - live data on the remaining demo screens: the institution home, profile, shortlist, outreach log, scholar dashboard and inbox now show real data (PR #66, merged `1e0a5a2`), analytics is labelled as sample data and the conference hub is a staff-only preview. `/dashboard/courses` is now real (My Courses: create, publish, edit and delete, saved to the database, PR #68, live in production 2026-10-09);
 > - deploying the persistent rate limits ([ADR 0026](./docs/adr/0026-persistent-enforced-rate-limits.md)): the code is built and reviewed (PR #65), but it is not deployed: the owner must set `RATE_LIMIT_SALT` and apply migration `20261008090000` to production before merging. Until then search is not rate-limited (the limiter fails open) and the inquiry cap is not enforced in the database;
 > - GDPR and field-level encryption.
 >
@@ -172,7 +172,7 @@ Guarantees:
 - **Atomic approval.** One service-role-only database function publishes the revision, supersedes the previous one, and writes the audit row in the same transaction.
 - **Private revisions.** Only the owning scholar and admins can read revisions.
 - **Moderation wins.** Approving a hidden scholar's revision keeps the profile hidden.
-- **Review-gated content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)).** Database guards stop scholars editing live profile content or its relational lists directly, and approval promotes disciplines, traditions, confessions, credentials and publications atomically. Pending the production migration.
+- **Review-gated content ([ADR 0025](./docs/adr/0025-review-gated-profile-content.md)).** Database guards stop scholars editing live profile content or its relational lists directly, and approval promotes disciplines, traditions, confessions, credentials and publications atomically. Live in production (migration applied 2026-10-07).
 
 ---
 

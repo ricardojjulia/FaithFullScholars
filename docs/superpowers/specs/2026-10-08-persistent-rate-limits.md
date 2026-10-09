@@ -1,6 +1,6 @@
 # Spec: Persistent, Enforced Rate Limits
 
-- **Status:** Approved, implemented, pending deploy. Story and technical brief approved by the owner on 2026-10-08 (gate 5); built in PR #65 (ADR 0026); migration `20261008090000` is not yet applied to production.
+- **Status:** Approved, implemented, live in production. Story and technical brief approved by the owner on 2026-10-08 (gate 5); built in PR #65 (ADR 0026); migration `20261008090000` was applied to production by the owner via the SQL Editor and verified; merged as `4048fcf`.
 - **Order:** slice 1 of the remaining known-broken fixes. The owner chose the order rate limits → real portal data → applications → conference hub (later).
 - **Extends:** ADR 0008 (search abuse gating), ADR 0022 (follow-up: the inquiry cap is bypassable).
 - **Branch:** `fix/persistent-rate-limits`

@@ -2,8 +2,9 @@ name: Release (production database migrations)
 
 # Manual only. Applies pending supabase/migrations to production with
 # `supabase db push`. Runs as a dry run (plan only) unless `dry_run` is unticked.
-# The `production` environment should require a reviewer, so every run waits
-# for an explicit approval before it can read the production secrets.
+# The `production` environment currently has no required reviewer (owner choice:
+# automatic approval). Adding one makes every run wait for an explicit approval
+# before it can read the production secrets.
 on:
   workflow_dispatch:
     inputs:

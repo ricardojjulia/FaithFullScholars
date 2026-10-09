@@ -4,7 +4,7 @@
 - **Subject:** PR #69 (`feat/posting-applications`; ADR 0027; spec `docs/superpowers/specs/2026-10-08-posting-applications.md`), head `10aba83`.
 - **Scope statement:** Scoped to a single vertical slice. Agents 1 (data/API), 2+3 (routes/pages and UX/shell, combined) and 7 (Stakeholder & Trust Lens), plus implementation validation, ran in one pass. Agents 4 (feature/competitive) and 5 (Wildcard) were omitted for a single slice. Agent 6 (Documenter) wrote this record. Individual agent reports were not written as separate files; findings are consolidated below.
 - **Numbering:** 16 was the last synthesis on this branch. PRs #67 and #68 are on other branches and carry their own run reports; if either adds a synthesis, renumber at merge.
-- **Result:** No Critical findings. Important findings were fixed in `ebaaa73` and `10aba83`. Merge awaits owner approval and the production migration (a deploy step exists, see section 6).
+- **Result:** No Critical findings. Important findings were fixed in `ebaaa73` and `10aba83`. Merged as PR #69 (`b1a5d0b`) after the production migration (see section 6). Applied 2026-10-09: `20261010090000` by Release run 37966269473, `20261011090000` by run 37967194469, `20261012090000` by run 37968165098; all smoke tests passed. Applied through the Release workflow, not the SQL Editor as planned in section 6.
 
 ## 1. Gates
 

@@ -26,8 +26,8 @@ Create two environments in your repository under **Settings -> Environments**:
    - Secrets: `STAGING_SUPABASE_PROJECT_REF` and environment-specific settings.
 
 2. **`production`**:
-   - Deployment branch: `main` only.
-   - Required reviewers: Require review from repository owner (`@ricardojjulia`).
+   - Deployment branches: no restriction (current setting). The release runbook dispatches from the reviewed PR branch so a migration is applied before its code merges; see `docs/deployment/vercel-supabase.md`.
+   - Required reviewers: optional. The owner chose automatic approval for `production` (no required reviewer); enabling `@ricardojjulia` as reviewer adds a manual gate.
    - Secrets: `SUPABASE_PROJECT_REF`, `SUPABASE_ACCESS_TOKEN`, etc.
 
 ## Branch Protection

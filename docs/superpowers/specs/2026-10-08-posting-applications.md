@@ -1,6 +1,6 @@
 # Spec: Posting Applications (Express Interest / Common Application)
 
-- **Status:** Approved, implemented, pending production migration and merge (PR #69). Story approved by the owner on 2026-10-08 (gate 3), with the defaults confirmed. Technical brief approved by the owner on 2026-10-08 (gate 5), with the defaults confirmed.
+- **Status:** Approved, implemented, live in production (PR #69, merged `b1a5d0b`; migration `20261012090000` applied 2026-10-09, Release run 37968165098, dry run 37968114816; smoke test passed). Story approved by the owner on 2026-10-08 (gate 3), with the defaults confirmed. Technical brief approved by the owner on 2026-10-08 (gate 5), with the defaults confirmed.
 - **Order:** slice 3 of the remaining known-broken fixes. Owner order: rate limits (done) → real portal data (done) → applications → conference hub.
 - **Supersedes/extends:** ADR 0020 (Confessional Common Application). A new ADR 0027 is written before the code.
 - **Branch:** `feat/posting-applications`
