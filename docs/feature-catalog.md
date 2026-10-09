@@ -103,6 +103,7 @@ The recommended MVP is a Scholar Profile Network:
 - Assisted CV onboarding with automated PDF extraction pre-filling draft profile fields to eliminate onboarding friction.
 - CV and publication showcase, including downloadable CV files when the scholar chooses to publish them.
 - Revision staging model keeping approved profiles live and searchable while ongoing edits are reviewed.
+- **My Courses (`/dashboard/courses`):** scholars create, edit, publish/unpublish and delete their own courses (saved to the database, private by default; deletion blocked while licensing agreements exist, enforced in the database; public pages are unreviewed and hidden until the profile is approved; slugs are globally unique). Self-service, not admin-reviewed (ADR 0025).
 - Course showcase with syllabi, sample content, YouTube lecture links, reading lists, and free course previews.
 - Availability signals for adjunct instruction, online courses, guest lectures, intensive modules, curriculum consulting, doctoral supervision, and conference speaking.
 - Institutional discovery tools for colleges looking for qualified professors by discipline, availability, language, delivery format, and doctrinal or confessional fit.

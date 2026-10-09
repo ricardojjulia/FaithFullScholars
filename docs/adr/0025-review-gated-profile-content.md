@@ -75,7 +75,7 @@ Confessional standards, tradition and the doctrinal statement reveal religious b
 
 ## Residual risk and accepted risks
 
-1. **Accepted:** Courses, `course_disciplines`, media links, speaker topics and availability stay self-service by owner decision. Their public free text is not reviewed.
+1. **Accepted:** Courses, `course_disciplines`, media links, speaker topics and availability stay self-service by owner decision (the scholar-facing course manager shipped with spec `2026-10-08-scholar-courses`; new courses default to private). Their public free text is not reviewed.
 2. **Accepted:** Replace-by-delete-and-insert changes the row ids of credentials, publications and the taxonomy join rows on every approval. Nothing references those ids today (preflight confirms it). A future foreign key to them needs an upsert strategy first.
 3. **Accepted:** A scholar whose draft contains an incomplete credential row is blocked at submit (validation) rather than at approval.
 4. **Follow-up:** GDPR erasure and retention (see Data protection), profile photo and doctrinal statement file upload, and notifications remain separate slices.
